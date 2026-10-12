@@ -1,15 +1,17 @@
 # Laboratorio ACB
 
-Herramienta web para analizar partidos de la Liga Endesa con estadística avanzada a partir del play by play público de live.acb.com.
+Herramienta web para analizar partidos de la Liga Endesa y de la Basketball Champions League con estadística avanzada a partir del jugada a jugada oficial.
 
 ## Qué hace
 
-- **Partido**: pega el enlace de live.acb.com (o elige jornada y partido) y obtienes posesiones contadas jugada a jugada, cuatro factores por cuarto y en clutch, reparto de la diferencia por factores, estadística avanzada por jugador (USG%, AST%, rebote%, on/off, WPA), quintetos, tríos y parejas, rotaciones con el +/- de cada tramo, parciales, efecto de los tiempos muertos, probabilidad de victoria, eficiencia según cómo empieza la posesión, red de asistencias y el listado de jugadas. En partidos en juego se actualiza cada 30 segundos.
-- **Scouting de equipo**: acumula todos los partidos terminados de un equipo en la temporada.
-- **Validación**: compara lo calculado con la estadística oficial de cada jugador y lo indica en el marcador.
+- **Partido**: pega el enlace de live.acb.com o de championsleague.basketball (o elige jornada y partido). Posesiones contadas jugada a jugada, cuatro factores, reparto de la diferencia, estadística avanzada por jugador, quintetos, rotaciones, parciales, tiempos muertos, probabilidad de victoria, eficiencia según el inicio de la posesión, red de asistencias y jugadas.
+- **Entrenador**: panel personalizable con los bloques que elijas (en pista ahora con faltas y tiempos muertos, últimas jugadas, rotación, etc.).
+- **Mapa de tiro**: en la Champions League, que publica la posición de cada tiro.
+- **Directo**: se actualiza cada segundo (configurable).
+- **Scouting de equipo**: acumula todos los partidos terminados de un equipo.
+- **Validación**: compara lo calculado con la estadística oficial (y en la BCL también minutos y +/-).
 
 ## Cómo funciona
 
-Un único `index.html` sin dependencias ni servidor propio. Lee los datos directamente de `api2.acb.com` con la clave pública que usa la web oficial; si cambia, se actualiza en «Ajustes de conexión».
-
-El acta de la ACB no incluye coordenadas de tiro, así que no hay mapas de tiro por zonas.
+- `index.html`: la herramienta completa, sin dependencias.
+- `api/bcl.js`: puente para la Champions League (función de Vercel). La web de la BCL no permite que otras webs lean su jugada a jugada; este puente lo lee y lo devuelve con acceso abierto.

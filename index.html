@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="description" content="Estadística avanzada de partidos ACB desde el play by play">
+<meta name="description" content="Estadística avanzada de partidos ACB y Champions League desde el play by play">
 <meta name="theme-color" content="#1d3b53">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Lab ACB">
@@ -38,7 +38,8 @@
   --home: #3987e5; --away: #d95926; --good: #4cb882; --bad: #e46b62; --warn: #d9a03a; color-scheme: dark }
 * { box-sizing: border-box }
 body { background: var(--bg); color: var(--ink); font: 14px/1.5 var(--f-body); }
-.wrap { max-width: 1240px; margin: 0 auto; padding-inline: 16px; padding-block: 12px 48px; display: grid; gap: 14px }
+.wrap { max-width: 1240px; margin: 0 auto; padding-inline: 16px; padding-block: 12px 48px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px }
+.wrap > * { min-width: 0 }
 h1, h2, h3 { font-family: var(--f-display); font-weight: 600; letter-spacing: .01em; margin: 0; text-wrap: balance }
 h2 { font-size: 1.35rem } h3 { font-size: 1.1rem }
 .muted { color: var(--ink-2) } .faint { color: var(--ink-3) }
@@ -46,7 +47,9 @@ h2 { font-size: 1.35rem } h3 { font-size: 1.1rem }
 button, select, input, textarea { font: inherit; color: inherit }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
 .top { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; justify-content: space-between }
-.brand { display: flex; align-items: baseline; gap: 10px }
+.brand { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; min-width: 0 }
+.top > .row { justify-content: flex-end }
+.seg button { white-space: nowrap }
 .brand h1 { font-size: 1.7rem; text-transform: uppercase; letter-spacing: .04em }
 .brand span { color: var(--ink-3); font-size: .85rem }
 .seg { display: inline-flex; border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; background: var(--surface) }
@@ -70,7 +73,7 @@ details > summary { cursor: pointer; color: var(--ink-2); font-size: .85rem }
 code { font-family: var(--f-data); font-size: .8rem; background: var(--surface-2); padding: 1px 4px; border-radius: 3px; word-break: break-all }
 
 /* Marcador */
-.board { display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; align-items: center }
+.board { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 12px; align-items: center }
 .team { display: grid; gap: 2px; min-width: 0 }
 .team.r { text-align: right }
 .team .nm { font-family: var(--f-display); font-size: 1.5rem; font-weight: 600; line-height: 1.1; overflow-wrap: anywhere }
@@ -89,7 +92,7 @@ code { font-family: var(--f-data); font-size: .8rem; background: var(--surface-2
 .pill.ok { color: var(--good); border-color: color-mix(in srgb, var(--good) 40%, transparent) }
 .pill.bad { color: var(--bad); border-color: color-mix(in srgb, var(--bad) 40%, transparent) }
 .pill.warn { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 40%, transparent) }
-@media (max-width: 560px) { .score .big { font-size: 2.3rem } .team .nm { font-size: 1.15rem } }
+@media (max-width: 560px) { .score .big { font-size: 2.3rem } .team .nm { font-size: 1.15rem } .board { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) } .score { grid-column: 1 / -1; order: -1 } }
 
 /* Pestañas */
 .tabs { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); padding-block: 4px; display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; border-bottom: 1px solid var(--line) }
@@ -106,9 +109,11 @@ code { font-family: var(--f-data); font-size: .8rem; background: var(--surface-2
 .note { font-size: .8rem; color: var(--ink-3); max-width: 75ch }
 
 /* Comparativa */
-.cmp { display: grid; grid-template-columns: 1fr auto 1fr; gap: 4px 10px; align-items: center }
+.cmp { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 4px 10px; align-items: center }
 .cmp .k { text-align: center; font-size: .74rem; text-transform: uppercase; letter-spacing: .07em; color: var(--ink-3); white-space: nowrap }
-.cmp .v { font-family: var(--f-data); font-variant-numeric: tabular-nums; display: flex; align-items: center; gap: 6px }
+.cmp .v { font-family: var(--f-data); font-variant-numeric: tabular-nums; display: flex; align-items: center; gap: 6px; min-width: 0; overflow: hidden }
+.cmp .bar { flex-shrink: 1 }
+@media (max-width: 480px) { .cmp .k { white-space: normal; font-size: .66rem } }
 .cmp .v.l { justify-content: flex-end }
 .cmp .v b { font-weight: 500 }
 .cmp .v.win b { font-weight: 700; color: var(--ink) }
@@ -163,31 +168,43 @@ td.wrap { white-space: normal; min-width: 180px }
 .kv div { display: grid; gap: 1px }
 .kv b { font-family: var(--f-display); font-size: 1.45rem; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.1 }
 .kv span { font-size: .72rem; color: var(--ink-3); text-transform: uppercase; letter-spacing: .06em }
+.warnc { color: var(--warn) }
+.coach-ed { display: grid; gap: 10px; border-top: 1px solid var(--line-2); padding-top: 10px }
+.ced-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 330px), 1fr)); gap: 4px 14px }
+.ced-list li { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 4px 6px; border-radius: 4px; background: var(--surface-2) }
+.ced-list li.off { background: none; color: var(--ink-3) }
+.ced-list label { display: flex; gap: 6px; align-items: center; cursor: pointer; min-width: 0 }
+.ced-act { display: flex; gap: 2px; flex: none }
 .badge-ex { font-size: .72rem; background: var(--surface-2); border: 1px dashed var(--line); border-radius: 4px; padding: 1px 7px; color: var(--ink-2) }
 </style>
 
 <div class="wrap">
   <header class="top">
-    <div class="brand"><h1>Laboratorio ACB</h1><span>Estadística avanzada desde el play by play</span></div>
+    <div class="brand"><h1>Laboratorio ACB</h1><span>Estadística avanzada desde el play by play · ACB y Champions League</span></div>
+    <div class="row">
+    <div class="seg" role="group" aria-label="Competición">
+      <button data-compet="acb" aria-pressed="true">Liga Endesa</button>
+      <button data-compet="bcl" aria-pressed="false">Champions League</button>
+    </div>
     <div class="seg" role="group" aria-label="Modo">
       <button id="m-match" aria-pressed="true">Partido</button>
       <button id="m-scout" aria-pressed="false">Scouting de equipo</button>
-    </div>
+    </div></div>
   </header>
 
   <section class="panel loader" id="loader-match">
     <div class="row">
-      <div class="field" style="flex:3 1 260px"><label for="in-url">Enlace del partido en live.acb.com o ID</label>
+      <div class="field" style="flex:3 1 260px"><label for="in-url">Enlace del partido (live.acb.com o championsleague.basketball) o número</label>
         <input type="text" id="in-url" placeholder="https://live.acb.com/es/partidos/unicaja-vs-morabanc-andorra-105394/jugadas" autocomplete="off"></div>
       <button class="btn" id="b-load">Analizar</button>
     </div>
     <div class="row">
-      <div class="field"><label for="sel-round">Jornada (Liga Endesa)</label><select id="sel-round"><option value="">Cargando jornadas…</option></select></div>
+      <div class="field"><label for="sel-round" id="lbl-round">Jornada (Liga Endesa)</label><select id="sel-round"><option value="">Cargando jornadas…</option></select></div>
       <div class="field" style="flex:2 1 260px"><label for="sel-match">Partido</label><select id="sel-match"><option value="">Elige una jornada</option></select></div>
     </div>
     <div class="row" style="justify-content:space-between">
       <div class="status" id="st-match"></div>
-      <label class="row status" id="live-wrap" hidden><input type="checkbox" id="in-live" checked> En directo: actualizar cada 30 s</label>
+      <div class="row status" id="live-wrap" hidden><label class="row"><input type="checkbox" id="in-live" checked> En directo: actualizar cada</label><select id="sel-every" style="width:auto;padding:3px 6px" aria-label="Intervalo de actualización"><option value="1">1 s</option><option value="3">3 s</option><option value="5">5 s</option><option value="15">15 s</option><option value="30">30 s</option></select></div>
     </div>
     <div id="fallback" hidden>
       <div class="note" style="max-width:none">
@@ -201,6 +218,7 @@ td.wrap { white-space: normal; min-width: 180px }
     </div>
     <details><summary>Ajustes de conexión</summary>
       <div class="row" style="margin-top:8px"><div class="field"><label for="in-key">Clave pública de la API (la que usa live.acb.com)</label><input type="text" id="in-key"></div><button class="btn ghost" id="b-key">Guardar</button></div>
+      <div class="row" style="margin-top:8px"><div class="field"><label for="in-proxy">Dirección del puente de la Champions League</label><input type="text" id="in-proxy"></div><button class="btn ghost" id="b-proxy">Guardar</button></div>
     </details>
   </section>
 
@@ -211,7 +229,7 @@ td.wrap { white-space: normal; min-width: 180px }
       <button class="btn" id="b-scout">Cargar partidos</button>
     </div>
     <div class="progress" id="sc-prog" hidden><i></i></div>
-    <div class="status" id="st-scout">Se cargan todos los partidos terminados del equipo en la Liga Endesa actual y se acumulan jugada a jugada.</div>
+    <div class="status" id="st-scout">Se cargan todos los partidos terminados del equipo en la competición elegida y se acumulan jugada a jugada.</div>
   </section>
 
   <section id="view"></section>
@@ -302,6 +320,7 @@ td.wrap { white-space: normal; min-width: 180px }
         i, order: x.order, type: x.playType, tag: x.playTag, q: x.quarter, m: x.minute, s: x.second,
         t: elapsed(x.quarter, x.minute, x.second), clock: fmtClock(x.minute, x.second),
         side, pid: x.playerLicenseId || 0, sh: x.scoreHome, sa: x.scoreAway,
+        x: x.x != null ? x.x : null, y: x.y != null ? x.y : null, src: x.src || null, txt: x.txt || x.shotTxt || null,
         d: [x.scoreHome - pH, x.scoreAway - pA], preH: pH, preA: pA
       };
       pH = x.scoreHome; pA = x.scoreAway;
@@ -743,19 +762,23 @@ td.wrap { white-space: normal; min-width: 180px }
   // ---------- Validación contra la estadística oficial ----------
   function validate(g) {
     const own = playerBoxes(g);
+    const adv = new Map(playerAdvanced(g).map(p => [p.pid, p]));
     const map = { points: 'pts', twoPointersMade: 'fg2m', twoPointersAttempted: 'fg2a', threePointersMade: 'fg3m', threePointersAttempted: 'fg3a',
       freeThrowsMade: 'ftm', freeThrowsAttempted: 'fta', offRebounds: 'orb', defRebounds: 'drb', assists: 'ast', steals: 'stl',
       turnovers: 'tov', blocks: 'blk', personalFouls: 'pf', foulsDrawn: 'fd' };
-    let ok = 0, n = 0; const diffs = [];
+    let ok = 0, n = 0; const diffs = []; let minOk = 0, minN = 0, pmOk = 0, pmN = 0;
     for (const [pid, p] of g.players) {
       if (!p.last) continue; n++;
       const b = own.get(pid) || newBox(); let good = true;
-      for (const k in map) if ((p.last[k] || 0) !== (b[map[k]] || 0)) { good = false; diffs.push(p.name + ': ' + k + ' oficial ' + p.last[k] + ' / calculado ' + b[map[k]]); }
+      for (const k in map) { if (p.last[k] == null) continue; if (p.last[k] !== (b[map[k]] || 0)) { good = false; diffs.push(p.name + ': ' + k + ' oficial ' + p.last[k] + ' / calculado ' + (b[map[k]] || 0)); } }
       if (good) ok++;
+      const a = adv.get(pid);
+      if (p.last.secondsPlayed != null && a) { minN++; if (Math.abs(p.last.secondsPlayed - a.min * 60) <= 2) minOk++; else diffs.push(p.name + ': segundos oficial ' + p.last.secondsPlayed + ' / calculado ' + Math.round(a.min * 60)); }
+      if (p.last.plusMinus != null && a) { pmN++; if (p.last.plusMinus === a.pm) pmOk++; else diffs.push(p.name + ': +/- oficial ' + p.last.plusMinus + ' / calculado ' + a.pm); }
     }
     const tb = teamBoxes(g);
     const ptsOk = tb[0].pts === g.final[0] && tb[1].pts === g.final[1];
-    return { ok, n, diffs, ptsOk };
+    return { ok, n, diffs, ptsOk, minOk, minN, pmOk, pmN };
   }
 
   // ---------- Multi-partido (scouting) ----------
@@ -767,6 +790,130 @@ td.wrap { white-space: normal; min-width: 180px }
     teamMetrics, playerAdvanced, playerRaw, mergeRaw, playerMetrics, runs, bestStretch, timeouts, possessionProfile, validate, wpHome,
     newBox, addBox, pir, gmsc, sideOf, elapsed, periodStart, periodLen
   };
+})(typeof globalThis !== 'undefined' ? globalThis : this);
+
+/* Adaptador FIBA (Basketball Champions League) → formato del motor (ACB)
+   Entrada: { game, players:[[personId,'A'|'B',dorsal,nombre]], rows:[...], box?:[...] }
+   rows: [order, periodo, reloj, SA, SB, ac, txt, oId, pId, made, x, y, in, p2Id] */
+(function (root) {
+  'use strict';
+  const periodNum = q => { const m = String(q).match(/(\d+)/); if (/^OT|^E|^P/i.test(q)) return 4 + (m ? +m[1] : 1); return m ? +m[1] : 1; };
+
+  function foulType(txt) {
+    const t = (txt || '').toLowerCase();
+    const n = /3 free/.test(t) ? 3 : /2 free/.test(t) ? 2 : /1 free|free throw awarded/.test(t) ? 1 : 0;
+    if (/offensive/.test(t)) return 109;
+    if (/technical/.test(t) && /coach|bench/.test(t)) return 176;
+    if (/technical/.test(t)) return n ? (n === 1 ? 537 : 538) : 172;
+    if (/unsportsmanlike/.test(t)) return n === 1 ? 165 : n === 3 ? 167 : n === 2 ? 166 : 169;
+    if (/disqualif/.test(t)) return n === 1 ? 548 : n === 2 ? 549 : n === 3 ? 550 : 170;
+    return n === 1 ? 160 : n === 2 ? 161 : n === 3 ? 162 : 159;
+  }
+  function tovTag(txt) {
+    const t = (txt || '').toLowerCase();
+    if (/bad pass/.test(t)) return 12; if (/travel/.test(t)) return 1; if (/3 sec/.test(t)) return 2;
+    if (/shot clock|24/.test(t)) return 7; if (/8 sec/.test(t)) return 8; if (/5 sec/.test(t)) return 10;
+    if (/double dribble/.test(t)) return 14; if (/backcourt|back court/.test(t)) return 15;
+    return 13;
+  }
+
+  const isIn = r => /in$/i.test(String(r[6] || '').trim()) ? true : /out$/i.test(String(r[6] || '').trim()) ? false : !!r[12];
+
+  function fibaToRaw(d) {
+    const G = d.game, A = G.A, B = G.B;
+    const sideOf = oId => (oId === A.organisationId ? 0 : oId === B.organisationId ? 1 : null);
+    const pinfo = new Map(d.players.map(p => [p[0], { side: p[1] === 'A' ? 0 : 1, num: p[2], name: p[3] }]));
+    const rows = d.rows.slice().sort((a, b) => a[0] - b[0]);
+    const plays = [];
+    const push = (r, type, extra) => {
+      const [order, Q, Time, SA, SB, ac, txt, oId, pId] = r;
+      const [m, s] = String(Time || '0:00').split(':').map(Number);
+      let side = sideOf(oId); if (side == null && pId && pinfo.has(pId)) side = pinfo.get(pId).side;
+      const pi = pId && pinfo.get(pId);
+      plays.push(Object.assign({
+        order, playType: type, playTag: null, quarter: periodNum(Q), minute: m || 0, second: s || 0,
+        local: side === 0, scoreHome: SA, scoreAway: SB, licenseType: pId ? 1 : null,
+        playerLicenseId: pId || null, playerName: pi ? pi.name : null, playerNumber: pi ? pi.num : null,
+        playerStats: null, src: ac, txt
+      }, extra || {}));
+    };
+
+    // Titulares: del boxscore oficial si existe; si no, se deducen del primer cambio de cada jugador
+    const starters = new Set();
+    if (d.box && d.box.some(b => b[2])) d.box.forEach(b => { if (b[2]) starters.add(b[0]); });
+    else {
+      const first = new Map();
+      for (const r of rows) {
+        const pId = r[8]; if (!pId || first.has(pId)) continue;
+        if (r[5] === 'SUBST') first.set(pId, isIn(r) ? 'in' : 'out'); else first.set(pId, 'act');
+      }
+      first.forEach((v, pid) => { if (v !== 'in') starters.add(pid); });
+    }
+    const firstRow = rows[0] || [0, 'Q1', '10:00', 0, 0];
+    starters.forEach(pid => { const pi = pinfo.get(pid); if (!pi) return; push([10, 'Q1', '10:00', 0, 0, 'STARTER', '', pi.side === 0 ? A.organisationId : B.organisationId, pid], 599); });
+
+    // Asistencias: se resuelven contra la acción previa del mismo equipo
+    let lastMade = null, lastFD = null;
+    for (const r of rows) {
+      const ac = r[5], txt = r[6] || '', made = r[9], sideR = sideOf(r[7]);
+      switch (ac) {
+        case 'STARTG': push(r, 122); break;
+        case 'STARTP': push(r, 121); break;
+        case 'ENDP': push(r, 116); break;
+        case 'ENDG': push(r, 123); break;
+        case 'JB': push(r, /won/i.test(txt) ? 178 : 179); break;
+        case 'P2': case 'P3': {
+          const dunk = /dunk/i.test(txt);
+          const t = ac === 'P3' ? (made ? 94 : 98) : (made ? (dunk ? 100 : 93) : (dunk ? 533 : 97));
+          push(r, t, { x: r[10], y: r[11], shotTxt: txt });
+          if (made) lastMade = { side: sideR, ac, order: r[0] };
+          break;
+        }
+        case 'FT': push(r, made ? 92 : 96); break;
+        case 'REB': push(r, /offensive/i.test(txt) ? 101 : 104); break;
+        case 'TREB': push(Object.assign(r.slice(), { 8: 0 }), /offensive/i.test(txt) ? 101 : 104); break;
+        case 'ASS': {
+          const t = lastMade && lastMade.side === sideR && r[0] - lastMade.order < 1000 ? (lastMade.ac === 'P3' ? 108 : 107) : 119;
+          push(r, t); break;
+        }
+        case 'FOUL': push(r, foulType(txt)); break;
+        case 'RFOUL': push(r, 110); lastFD = r; break;
+        case 'SUBST': push(r, isIn(r) ? 112 : 115); break;
+        case 'TO': { push(r, 106); plays[plays.length - 1].playTag = tovTag(txt); break; }
+        case 'TTO': { push(Object.assign(r.slice(), { 8: 0 }), 106); plays[plays.length - 1].playTag = tovTag(txt); break; }
+        case 'ST': push(r, 103); break;
+        case 'BS': push(r, 102); break;
+        case 'TIMO': push(r, 113); break;
+        case 'VTR': push(r, /successful/i.test(txt) && !/unsuccessful/i.test(txt) ? 748 : 749); break;
+        default: break; // JS y otras acciones sin efecto estadístico
+      }
+    }
+    // Estadística oficial por jugador (para el cuadre)
+    if (d.box) {
+      const last = new Map(); plays.forEach((p, i) => { if (p.playerLicenseId) last.set(p.playerLicenseId, i); });
+      d.box.forEach(b => {
+        const i = last.get(b[0]); if (i == null) return;
+        plays[i].playerStats = { points: b[4], twoPointersMade: b[5], twoPointersAttempted: b[6], threePointersMade: b[7], threePointersAttempted: b[8],
+          freeThrowsMade: b[9], freeThrowsAttempted: b[10], offRebounds: b[11], defRebounds: b[12], assists: b[13], steals: b[14],
+          turnovers: b[15], blocks: b[16], personalFouls: b[17], secondsPlayed: b[3], plusMinus: b[18] };
+      });
+    }
+    const team = (t, color) => ({ id: t.teamId, clubId: t.organisationId, fullName: t.shortName || t.officialName, shortName: t.shortName, abbreviatedName: t.code, primaryColorHex: color || null });
+    const finished = !!d.finished || rows.some(r => r[5] === 'ENDG');
+    return { homeTeam: team(A, d.colors && d.colors.teamA), awayTeam: team(B, d.colors && d.colors.teamB), plays, matchFinished: finished, competition: 'BCL' };
+  }
+
+  // Zona de tiro a partir de las coordenadas FIBA (media pista 280 × 262, aro en (140, 29), 18,67 u/m)
+  function shotZone(x, y, isThree) {
+    if (x == null || y == null) return null;
+    const dx = (x - 140) / 18.67, dy = (y - 29) / 18.67, r = Math.hypot(dx, dy);
+    if (isThree) return (y < 57) ? 'Triple de esquina' : 'Triple frontal';
+    if (r <= 1.25) return 'Zona restringida';
+    if (Math.abs(x - 140) <= 45.7 && y <= 137) return 'Pintura';
+    return 'Media distancia';
+  }
+
+  root.ACB_FIBA = { fibaToRaw, shotZone, periodNum };
 })(typeof globalThis !== 'undefined' ? globalThis : this);
 
 const SAMPLE = {"id":105375,"label":"Jornada 1 · 26/09/2026","home":{"id":4475,"clubId":4,"fullName":"Surne Bilbao","shortName":"Surne Bilbao","abbreviatedName":"SBB"},"away":{"id":4471,"clubId":10,"fullName":"Kids&Us Manresa","shortName":"Kids&Us Manresa","abbreviatedName":"K&U"},"names":{"20200243":"Ferran Bassas|6","20210147":"Aleix Font|22","20211456":"Eric Vila|4","20212056":"Manex Ansorregi|9","20212461":"Tryggvi Hlinason|32","20212984":"Darrun Hilliard|11","30000192":"Martin Krampelj|10","30001001":"Pablo Tamba|8","30001091":"Adam Somogyi|30","30001243":"Rafael Villar|44","30003398":"Harald Frey|3","30003943":"Hugo Benitez|2","30003947":"Luke Petrasek|18","30004013":"Margiris Normantas|2","30005341":"Lucas Beaufort|5","30005342":"Lukasz Kolenda|1","30005343":"Nick Ongenda|14","30005344":"Chibuzo Agbo|11","30005347":"Nate Darling|8","30005348":"Bastien Vautier|34","30005354":"Yordan Minchev|91","30005444":"JD Notae|13"},"val":{"20200243":[5,1,3,1,5,0,0,0,0,7,1,1,0,0,4],"20210147":[8,0,1,2,2,2,2,0,1,0,0,0,0,5,1],"20211456":[3,1,1,0,4,1,2,3,4,1,0,2,0,1,0],"20212056":[0,0,0,0,0,0,0,0,0,0,0,0,0,1,0],"20212461":[12,4,5,0,0,4,6,4,4,2,1,1,0,1,6],"20212984":[19,1,4,4,8,5,7,1,4,7,1,1,0,1,4],"30000192":[11,2,2,1,1,4,4,1,1,0,0,5,1,2,4],"30001001":[5,2,2,0,0,1,2,0,3,2,2,0,0,4,1],"30001091":[7,2,6,1,2,0,0,1,0,5,1,1,1,3,0],"30001243":[9,4,6,0,2,1,2,1,3,5,1,2,0,3,5],"30003398":[14,2,3,3,4,1,2,0,0,6,1,0,0,1,2],"30003943":[2,1,2,0,1,0,0,1,0,0,0,0,0,2,0],"30003947":[8,2,2,0,3,4,4,0,2,0,0,1,0,2,2],"30004013":[14,2,6,2,3,4,6,1,3,2,0,2,0,1,5],"30005341":[4,2,3,0,0,0,0,0,0,0,0,1,0,1,0],"30005342":[16,3,4,2,5,4,4,0,1,3,0,1,0,2,2],"30005343":[17,8,11,0,0,1,2,1,1,0,2,2,0,3,5],"30005344":[7,0,0,2,3,1,3,0,1,0,0,0,0,5,1],"30005347":[2,0,4,0,4,2,2,0,2,3,1,0,0,0,1],"30005348":[12,5,7,0,0,2,2,3,1,0,2,0,0,4,1],"30005354":[10,2,3,2,4,0,0,3,3,1,0,2,0,4,2],"30005444":[14,4,6,2,7,0,0,0,2,1,1,2,0,1,1]},"rows":[[10,599,null,1,10,0,0,0,0,30001001],[10,599,null,1,10,0,0,0,0,30005444],[10,599,null,1,10,0,0,0,0,30003943],[10,599,null,1,10,0,0,0,0,30005344],[10,599,null,1,10,0,0,0,0,30005343],[10,599,null,1,10,0,1,0,0,20212984],[10,599,null,1,10,0,1,0,0,30000192],[10,599,null,1,10,0,1,0,0,30004013],[10,599,null,1,10,0,1,0,0,30005348],[10,599,null,1,10,0,1,0,0,30003398],[301,122,null,1,10,0,0,0,0,0],[401,121,null,1,10,0,0,0,0,0],[501,178,null,1,10,0,0,0,0,30005343],[601,179,null,1,10,0,1,0,0,30005348],[802,600,null,1,10,0,1,0,0,0],[1001,97,null,1,9,45,0,0,0,30003943],[1101,104,null,1,9,45,1,0,0,30000192],[1601,161,null,1,9,20,0,0,0,30003943],[1701,110,null,1,9,20,1,0,0,30003398],[1801,92,null,1,9,20,1,1,0,30003398],[1901,96,null,1,9,20,1,1,0,30003398],[2101,101,null,1,9,20,1,1,0,30005348],[2201,93,null,1,9,18,1,3,0,30005348],[2401,98,null,1,9,6,0,3,0,30005444],[2501,104,null,1,9,6,1,3,0,0],[2602,600,null,1,9,0,1,3,0,0],[2701,100,null,1,8,48,1,5,0,30005348],[2801,107,null,1,8,48,1,5,0,30003398],[2901,100,null,1,8,28,0,5,2,30001001],[3001,98,null,1,8,10,1,5,2,20212984],[3101,101,null,1,8,10,1,5,2,30000192],[3201,93,null,1,8,3,1,7,2,30005348],[3301,107,null,1,8,3,1,7,2,20212984],[3302,600,null,1,8,0,1,7,2,0],[3401,106,13,1,7,42,0,7,2,30005444],[3501,103,null,1,7,42,1,7,2,20212984],[3801,162,null,1,7,35,0,7,2,30005444],[3901,110,null,1,7,35,1,7,2,30004013],[4101,119,null,1,7,35,1,7,2,20212984],[4201,115,null,1,7,35,0,7,2,30005444],[4301,115,null,1,7,35,0,7,2,30005343],[4401,112,null,1,7,35,0,7,2,20200243],[4501,112,null,1,7,35,0,7,2,30005354],[4601,96,null,1,7,35,1,7,2,30004013],[4701,92,null,1,7,35,1,8,2,30004013],[4801,92,null,1,7,35,1,9,2,30004013],[5101,93,null,1,7,28,0,9,4,30003943],[5301,97,null,1,7,9,1,9,4,30004013],[5501,159,null,1,7,8,1,9,4,30005348],[5601,110,null,1,7,8,0,9,4,30005354],[6002,600,null,1,7,0,1,9,4,0],[6201,94,null,1,6,49,0,9,7,30005344],[6301,108,null,1,6,49,0,9,7,30001001],[6401,98,null,1,6,29,1,9,7,20212984],[6501,101,null,1,6,29,1,9,7,30004013],[6601,97,null,1,6,24,1,9,7,30004013],[7101,159,null,1,6,22,0,9,7,30003943],[7201,110,null,1,6,22,1,9,7,30000192],[7401,115,null,1,6,22,1,9,7,30004013],[7501,115,null,1,6,22,1,9,7,30003398],[7601,115,null,1,6,22,1,9,7,30000192],[7701,115,null,1,6,22,1,9,7,20212984],[7801,115,null,1,6,22,1,9,7,30005348],[7901,112,null,1,6,22,1,9,7,30001091],[8001,112,null,1,6,22,1,9,7,30003947],[8101,112,null,1,6,22,1,9,7,30005347],[8201,112,null,1,6,22,1,9,7,20212461],[8301,112,null,1,6,22,1,9,7,20210147],[8501,115,null,1,6,22,0,9,7,30003943],[8601,112,null,1,6,22,0,9,7,30001243],[9101,106,12,1,6,14,1,9,7,30001091],[9201,103,null,1,6,14,0,9,7,30001001],[9301,93,null,1,6,10,0,9,9,30001243],[9501,107,null,1,6,10,0,9,9,30001001],[9502,600,null,1,6,0,1,9,9,0],[9801,115,null,1,5,57,0,9,9,30001001],[9901,112,null,1,5,57,0,9,9,30005342],[10201,97,null,1,5,45,1,9,9,30001091],[10401,159,null,1,5,43,0,9,9,30005354],[10501,110,null,1,5,43,1,9,9,20212461],[10701,94,null,1,5,40,1,12,9,20210147],[10801,108,null,1,5,40,1,12,9,30001091],[10901,98,null,1,5,28,0,12,9,30005342],[11001,101,null,1,5,28,0,12,9,30001243],[11101,97,null,1,5,17,0,12,9,20200243],[11201,104,null,1,5,17,1,12,9,20212461],[11401,93,null,1,5,6,1,14,9,30001091],[11501,161,null,1,5,6,0,14,9,30005344],[11601,110,null,1,5,6,1,14,9,20212461],[11701,96,null,1,5,6,1,14,9,20212461],[11801,92,null,1,5,6,1,15,9,20212461],[12002,600,null,1,5,0,1,15,9,0],[12101,98,null,1,4,51,0,15,9,30001243],[12201,104,null,1,4,51,1,15,9,30003947],[12301,98,null,1,4,31,1,15,9,30003947],[12401,104,null,1,4,31,0,15,9,30005354],[13001,115,null,1,4,22,0,15,9,30005344],[13101,112,null,1,4,22,0,15,9,20211456],[13301,94,null,1,4,21,0,15,12,30005342],[13401,108,null,1,4,21,0,15,12,20200243],[13402,600,null,1,4,0,1,15,12,0],[13601,97,null,1,3,59,1,15,12,30005347],[13701,101,null,1,3,59,1,15,12,0],[13901,98,null,1,3,46,1,15,12,30001091],[14001,104,null,1,3,46,0,15,12,30001243],[14401,159,null,1,3,38,1,15,12,30001091],[14501,110,null,1,3,38,0,15,12,30001243],[14701,115,null,1,3,38,0,15,12,30005354],[14801,112,null,1,3,38,0,15,12,30005343],[15001,97,null,1,3,25,0,15,12,30005343],[15101,104,null,1,3,25,1,15,12,20212461],[15201,93,null,1,3,19,1,17,12,30003947],[15401,107,null,1,3,19,1,17,12,20212461],[16402,600,null,1,3,0,1,17,12,0],[16601,159,null,1,2,59,1,17,12,30003947],[16701,110,null,1,2,59,0,17,12,30005343],[16901,115,null,1,2,59,1,17,12,20210147],[17001,112,null,1,2,59,1,17,12,20212984],[17201,93,null,1,2,58,0,17,14,30001243],[17301,107,null,1,2,58,0,17,14,20200243],[17501,97,null,1,2,42,1,17,14,30001091],[17701,159,null,1,2,41,1,17,14,20212461],[17801,110,null,1,2,41,0,17,14,20200243],[18001,115,null,1,2,41,1,17,14,20212461],[18101,112,null,1,2,41,1,17,14,30005348],[18601,98,null,1,2,29,0,17,14,30005342],[19001,161,null,1,2,24,1,17,14,20212984],[19101,110,null,1,2,24,0,17,14,30005343],[19301,115,null,1,2,24,1,17,14,30001091],[19401,112,null,1,2,24,1,17,14,30003398],[19501,115,null,1,2,24,0,17,14,20200243],[19601,112,null,1,2,24,0,17,14,30005444],[19701,92,null,1,2,24,0,17,15,20211456],[19801,96,null,1,2,24,0,17,15,20211456],[20001,104,null,1,2,24,1,17,15,30003947],[20601,93,null,1,2,6,1,19,15,30005348],[20902,600,null,1,2,0,1,19,15,0],[21601,161,null,1,1,54,1,19,15,30005348],[21701,110,null,1,1,54,0,19,15,30005343],[21801,92,null,1,1,54,0,19,16,30005343],[21901,96,null,1,1,54,0,19,16,30005343],[22101,104,null,1,1,54,1,19,16,30005348],[22201,106,12,1,1,38,1,19,16,20212984],[22301,103,null,1,1,38,0,19,16,30005343],[22401,106,12,1,1,35,0,19,16,30005343],[22501,103,null,1,1,35,1,19,16,30005347],[22801,97,null,1,1,23,1,19,16,30005347],[22901,104,null,1,1,23,0,19,16,30001243],[23101,98,null,1,1,16,0,19,16,20211456],[23201,104,null,1,1,16,1,19,16,0],[23501,115,null,1,1,14,1,19,16,30005347],[23601,115,null,1,1,14,1,19,16,30005348],[23701,112,null,1,1,14,1,19,16,30000192],[23801,112,null,1,1,14,1,19,16,30004013],[23901,115,null,1,1,14,0,19,16,20211456],[24001,112,null,1,1,14,0,19,16,30001001],[24201,115,null,1,1,14,0,19,16,30001243],[24301,112,null,1,1,14,0,19,16,30005341],[24402,600,null,1,1,0,1,19,16,0],[24501,98,null,1,0,59,1,19,16,20212984],[24601,104,null,1,0,59,0,19,16,30001001],[24701,93,null,1,0,46,0,19,18,30005343],[24801,107,null,1,0,46,0,19,18,30005342],[25201,106,12,1,0,18,1,19,18,30000192],[25401,115,null,1,0,18,0,19,18,30005343],[25501,112,null,1,0,18,0,19,18,20200243],[25701,115,null,1,0,18,0,19,18,30005341],[25801,112,null,1,0,18,0,19,18,30005354],[26001,115,null,1,0,18,1,19,18,30003947],[26101,112,null,1,0,18,1,19,18,20212056],[26301,98,null,1,0,6,0,19,18,30005444],[26401,101,null,1,0,6,0,19,18,30005354],[26601,116,null,1,0,0,0,19,18,0],[26701,121,null,2,10,0,0,19,18,0],[26901,115,null,2,10,0,1,19,18,20212056],[27001,112,null,2,10,0,1,19,18,20212461],[27101,115,null,2,10,0,0,19,18,30005342],[27201,115,null,2,10,0,0,19,18,20200243],[27301,112,null,2,10,0,0,19,18,30003943],[27401,112,null,2,10,0,0,19,18,30005344],[27502,600,null,2,10,0,1,19,18,0],[28001,159,null,2,9,52,0,19,18,30005354],[28101,110,null,2,9,52,1,19,18,20212461],[28301,98,null,2,9,45,1,19,18,20212984],[28401,104,null,2,9,45,0,19,18,30005444],[28801,98,null,2,9,18,0,19,18,30005444],[28901,104,null,2,9,18,1,19,18,20212461],[29401,161,null,2,9,2,0,19,18,30001001],[29501,110,null,2,9,2,1,19,18,20212984],[29701,115,null,2,9,2,0,19,18,30005354],[29801,112,null,2,9,2,0,19,18,30005343],[29901,92,null,2,9,2,1,20,18,20212984],[30001,92,null,2,9,2,1,21,18,20212984],[30301,115,null,2,9,2,1,21,18,20212984],[30401,112,null,2,9,2,1,21,18,20210147],[30502,600,null,2,9,0,1,21,18,0],[30601,93,null,2,8,49,0,21,20,30005343],[30701,97,null,2,8,33,1,21,20,30004013],[30801,101,null,2,8,33,1,21,20,20212461],[30901,97,null,2,8,28,1,21,20,20212461],[31001,104,null,2,8,28,0,21,20,30001001],[31101,98,null,2,8,21,0,21,20,30003943],[31201,101,null,2,8,21,0,21,20,30003943],[31401,97,null,2,8,14,0,21,20,30005444],[31501,159,null,2,8,11,0,21,20,30005344],[31601,110,null,2,8,11,1,21,20,30004013],[31801,115,null,2,8,11,1,21,20,30000192],[31901,112,null,2,8,11,1,21,20,30003947],[32001,115,null,2,8,11,0,21,20,30003943],[32101,115,null,2,8,11,0,21,20,30005444],[32201,112,null,2,8,11,0,21,20,20200243],[32301,112,null,2,8,11,0,21,20,30001243],[32402,600,null,2,8,0,1,21,20,0],[32801,115,null,2,7,58,0,21,20,30005344],[32901,112,null,2,7,58,0,21,20,20211456],[33301,161,null,2,7,50,0,21,20,30001001],[33401,110,null,2,7,50,1,21,20,30004013],[33501,92,null,2,7,50,1,22,20,30004013],[33601,92,null,2,7,50,1,23,20,30004013],[33901,115,null,2,7,50,1,23,20,30004013],[34001,112,null,2,7,50,1,23,20,30005347],[34201,93,null,2,7,34,0,23,22,30005343],[34301,107,null,2,7,34,0,23,22,30001243],[34401,97,null,2,7,13,1,23,22,30003398],[34501,104,null,2,7,13,0,23,22,20211456],[34801,159,null,2,7,1,1,23,22,20210147],[34901,110,null,2,7,1,0,23,22,30001243],[35101,115,null,2,7,1,1,23,22,30003398],[35201,112,null,2,7,1,1,23,22,30001091],[35301,115,null,2,7,1,0,23,22,30001001],[35401,112,null,2,7,1,0,23,22,30005342],[35502,600,null,2,7,0,1,23,22,0],[35701,106,13,2,6,55,0,23,22,20211456],[35901,97,null,2,6,44,1,23,22,20210147],[36001,101,null,2,6,44,1,23,22,20212461],[36101,94,null,2,6,39,1,26,22,20210147],[36201,108,null,2,6,39,1,26,22,30001091],[36501,93,null,2,6,32,0,26,24,30005342],[36701,160,null,2,6,32,1,26,24,30003947],[36801,110,null,2,6,32,0,26,24,30005342],[36901,92,null,2,6,32,0,26,25,30005342],[37201,98,null,2,6,17,1,26,25,30003947],[37301,104,null,2,6,17,0,26,25,30005342],[37302,600,null,2,6,0,1,26,25,0],[37401,106,12,2,5,52,0,26,25,30001243],[37501,103,null,2,5,52,1,26,25,20212461],[37601,98,null,2,5,37,1,26,25,30005347],[37701,104,null,2,5,37,0,26,25,0],[37901,113,null,2,5,33,0,26,25,0],[38101,115,null,2,5,33,1,26,25,20212461],[38201,115,null,2,5,33,1,26,25,30003947],[38301,112,null,2,5,33,1,26,25,30005348],[38401,112,null,2,5,33,1,26,25,30000192],[38801,100,null,2,5,19,0,26,27,30005343],[38901,107,null,2,5,19,0,26,27,20200243],[39001,106,13,2,5,4,1,26,27,30000192],[39101,103,null,2,5,4,0,26,27,20200243],[39102,600,null,2,5,0,1,26,27,0],[39301,98,null,2,4,56,0,26,27,30001243],[39401,159,null,2,4,54,1,26,27,30005348],[39501,110,null,2,4,54,0,26,27,30005343],[39701,115,null,2,4,54,1,26,27,30005348],[39801,115,null,2,4,54,1,26,27,20210147],[39901,112,null,2,4,54,1,26,27,20212461],[40001,112,null,2,4,54,1,26,27,20212984],[40101,115,null,2,4,54,0,26,27,30001243],[40201,112,null,2,4,54,0,26,27,30005444],[40501,98,null,2,4,53,0,26,27,20211456],[40601,104,null,2,4,53,1,26,27,0],[40801,94,null,2,4,39,1,29,27,30000192],[40901,108,null,2,4,39,1,29,27,20212984],[41101,159,null,2,4,30,1,29,27,30000192],[41201,110,null,2,4,30,0,29,27,30005343],[41401,100,null,2,4,26,0,29,29,30005343],[41501,107,null,2,4,26,0,29,29,20200243],[41601,97,null,2,4,9,1,29,29,20212984],[41701,101,null,2,4,9,1,29,29,20212461],[41801,106,13,2,4,9,1,29,29,20212461],[41802,103,null,2,4,9,0,29,29,30005444],[41803,98,null,2,4,0,0,29,29,20200243],[41901,101,null,2,4,0,0,29,29,20211456],[41902,600,null,2,4,0,1,29,29,0],[42001,98,null,2,3,51,0,29,29,20211456],[42101,104,null,2,3,51,1,29,29,20212984],[42201,94,null,2,3,32,1,32,29,20212984],[42301,108,null,2,3,32,1,32,29,20212461],[42401,98,null,2,3,19,0,32,29,20200243],[42501,104,null,2,3,19,1,32,29,20212984],[42801,161,null,2,3,10,0,32,29,30005343],[42901,110,null,2,3,10,1,32,29,30000192],[43101,119,null,2,3,10,1,32,29,30005347],[43301,115,null,2,3,10,1,32,29,30001091],[43401,112,null,2,3,10,1,32,29,30003398],[43501,115,null,2,3,10,0,32,29,30005343],[43601,115,null,2,3,10,0,32,29,20200243],[43701,112,null,2,3,10,0,32,29,30005354],[43801,112,null,2,3,10,0,32,29,30001243],[43901,92,null,2,3,10,1,33,29,30000192],[44001,92,null,2,3,10,1,34,29,30000192],[44202,600,null,2,3,0,1,34,29,0],[44301,93,null,2,2,54,0,34,31,30001243],[44801,106,null,2,2,38,1,34,31,30000192],[45001,115,null,2,2,38,0,34,31,20211456],[45101,112,null,2,2,38,0,34,31,30005344],[45301,97,null,2,2,19,0,34,31,30005342],[45401,104,null,2,2,19,1,34,31,30005347],[45701,109,null,2,2,12,1,34,31,30000192],[45801,106,null,2,2,12,1,34,31,30000192],[45901,110,null,2,2,12,0,34,31,30001243],[46101,115,null,2,2,12,1,34,31,30000192],[46201,112,null,2,2,12,1,34,31,20212056],[46302,600,null,2,2,0,1,34,31,0],[46401,93,null,2,1,51,0,34,33,30005444],[46701,161,null,2,1,30,0,34,33,30005354],[46801,110,null,2,1,30,1,34,33,20212984],[47001,115,null,2,1,30,1,34,33,30005347],[47101,112,null,2,1,30,1,34,33,30004013],[47201,115,null,2,1,30,0,34,33,30005354],[47301,112,null,2,1,30,0,34,33,30005343],[47401,92,null,2,1,30,1,35,33,20212984],[47501,92,null,2,1,30,1,36,33,20212984],[47901,162,null,2,1,19,1,36,33,20212056],[48001,110,null,2,1,19,0,36,33,30005344],[48101,119,null,2,1,19,0,36,33,30001243],[48301,115,null,2,1,19,0,36,33,30005444],[48401,112,null,2,1,19,0,36,33,30005341],[48501,92,null,2,1,19,0,36,34,30005344],[48601,96,null,2,1,19,0,36,34,30005344],[48701,96,null,2,1,19,0,36,34,30005344],[48901,104,null,2,1,19,1,36,34,20212984],[49001,94,null,2,1,4,1,39,34,30003398],[49101,108,null,2,1,4,1,39,34,20212984],[49102,600,null,2,1,0,1,39,34,0],[49401,100,null,2,0,51,0,39,36,30005343],[49501,107,null,2,0,51,0,39,36,30001243],[49601,93,null,2,0,33,1,41,36,20212461],[49801,107,null,2,0,33,1,41,36,30003398],[49901,113,null,2,0,33,0,41,36,0],[50101,115,null,2,0,33,0,41,36,30001243],[50201,115,null,2,0,33,0,41,36,30005341],[50301,112,null,2,0,33,0,41,36,20200243],[50401,112,null,2,0,33,0,41,36,30001001],[50601,93,null,2,0,31,0,41,38,30005342],[50701,107,null,2,0,31,0,41,38,20200243],[50801,94,null,2,0,8,1,44,38,20212984],[50901,98,null,2,0,0,0,44,38,20200243],[51101,116,null,2,0,0,0,44,38,0],[51201,121,null,3,10,0,0,44,38,0],[51401,115,null,3,10,0,1,44,38,20212056],[51501,112,null,3,10,0,1,44,38,30003947],[51601,115,null,3,10,0,0,44,38,30005342],[51701,112,null,3,10,0,0,44,38,30001243],[51902,600,null,3,10,0,1,44,38,0],[52101,159,null,3,9,48,1,44,38,30003398],[52201,110,null,3,9,48,0,44,38,20200243],[52401,93,null,3,9,43,0,44,40,30001243],[52501,94,null,3,9,23,1,47,40,30004013],[52601,108,null,3,9,23,1,47,40,20212984],[52602,600,null,3,9,0,1,47,40,0],[52701,97,null,3,8,58,0,47,40,30005343],[52801,104,null,3,8,58,1,47,40,30004013],[52901,106,12,3,8,54,1,47,40,30004013],[53001,103,null,3,8,54,0,47,40,30001001],[53101,93,null,3,8,52,0,47,42,30001001],[53401,93,null,3,8,41,1,49,42,20212984],[53501,160,null,3,8,41,0,49,42,30001001],[53601,110,null,3,8,41,1,49,42,20212984],[53801,115,null,3,8,41,0,49,42,30001001],[53901,112,null,3,8,41,0,49,42,30005342],[54001,96,null,3,8,41,1,49,42,20212984],[54201,101,null,3,8,41,1,49,42,20212984],[54301,93,null,3,8,29,1,51,42,20212461],[54401,97,null,3,8,0,0,51,42,30005343],[54501,104,null,3,8,0,1,51,42,30004013],[54502,600,null,3,8,0,1,51,42,0],[54601,106,12,3,7,47,1,51,42,30003947],[54701,103,null,3,7,47,0,51,42,30001243],[54801,94,null,3,7,42,0,51,45,20200243],[55001,108,null,3,7,42,0,51,45,30001243],[55301,161,null,3,7,24,0,51,45,30005344],[55401,110,null,3,7,24,1,51,45,30003947],[55501,119,null,3,7,24,1,51,45,30003398],[55701,115,null,3,7,24,0,51,45,30001243],[55801,112,null,3,7,24,0,51,45,30005341],[56001,115,null,3,7,24,1,51,45,30003398],[56101,112,null,3,7,24,1,51,45,30001091],[56201,92,null,3,7,24,1,52,45,30003947],[56301,92,null,3,7,24,1,53,45,30003947],[56601,93,null,3,7,2,0,53,47,30005342],[56602,600,null,3,7,0,1,53,47,0],[56701,97,null,3,6,49,1,53,47,20212984],[56801,101,null,3,6,49,1,53,47,20212461],[56901,100,null,3,6,46,1,55,47,20212461],[57001,106,12,3,6,42,0,55,47,20200243],[57101,103,null,3,6,42,1,55,47,30001091],[57401,161,null,3,6,37,0,55,47,30005343],[57501,110,null,3,6,37,1,55,47,30003947],[57701,119,null,3,6,37,1,55,47,20212984],[57801,113,null,3,6,37,0,55,47,0],[58101,115,null,3,6,37,1,55,47,20212984],[58201,112,null,3,6,37,1,55,47,30005347],[58301,115,null,3,6,37,0,55,47,30005343],[58401,115,null,3,6,37,0,55,47,30005344],[58501,112,null,3,6,37,0,55,47,20211456],[58601,112,null,3,6,37,0,55,47,30005354],[58701,92,null,3,6,37,1,56,47,30003947],[58801,92,null,3,6,37,1,57,47,30003947],[59101,98,null,3,6,19,0,57,47,20200243],[59201,104,null,3,6,19,1,57,47,30005347],[59301,94,null,3,6,2,1,60,47,30004013],[59401,108,null,3,6,2,1,60,47,30005347],[59402,600,null,3,6,0,1,60,47,0],[59701,159,null,3,5,43,1,60,47,30004013],[59801,110,null,3,5,43,0,60,47,30005354],[60001,115,null,3,5,43,0,60,47,20200243],[60101,112,null,3,5,43,0,60,47,30005444],[60301,98,null,3,5,36,0,60,47,30005354],[60401,101,null,3,5,36,0,60,47,20211456],[60501,93,null,3,5,22,0,60,49,30005341],[60801,159,null,3,5,9,0,60,49,30005341],[60901,110,null,3,5,9,1,60,49,30004013],[61401,161,null,3,5,9,0,60,49,30005342],[61501,110,null,3,5,9,1,60,49,20212461],[61601,119,null,3,5,9,1,60,49,30001091],[61801,115,null,3,5,9,1,60,49,30003947],[61901,115,null,3,5,9,1,60,49,30004013],[62001,112,null,3,5,9,1,60,49,30000192],[62101,112,null,3,5,9,1,60,49,20210147],[62201,92,null,3,5,9,1,61,49,20212461],[62301,92,null,3,5,9,1,62,49,20212461],[62601,115,null,3,5,9,1,62,49,20212461],[62701,112,null,3,5,9,1,62,49,30005348],[62802,600,null,3,5,0,1,62,49,0],[62901,98,null,3,4,50,0,62,49,30005342],[63001,101,null,3,4,50,0,62,49,30005354],[63101,93,null,3,4,37,0,62,51,30005341],[63201,93,null,3,4,21,1,64,51,30001091],[63301,98,null,3,4,14,0,64,51,30005444],[63401,105,null,3,4,14,0,64,51,30005444],[63501,102,null,3,4,14,1,64,51,30001091],[63601,101,null,3,4,14,0,64,51,20211456],[63701,93,null,3,4,10,0,64,53,20211456],[63702,600,null,3,4,0,1,64,53,0],[64001,115,null,3,3,56,0,64,53,30005341],[64101,112,null,3,3,56,0,64,53,30001243],[64301,97,null,3,3,54,1,64,53,30005347],[64401,104,null,3,3,54,0,64,53,20211456],[64501,100,null,3,3,44,0,64,55,30005354],[64601,107,null,3,3,44,0,64,55,30005342],[64701,98,null,3,3,33,1,64,55,30005347],[64801,104,null,3,3,33,0,64,55,0],[65301,162,null,3,3,15,1,64,55,20210147],[65401,110,null,3,3,15,0,64,55,30005342],[65501,119,null,3,3,15,0,64,55,30005354],[65601,92,null,3,3,15,0,64,56,30005342],[65701,92,null,3,3,15,0,64,57,30005342],[65801,92,null,3,3,15,0,64,58,30005342],[66101,97,null,3,3,11,1,64,58,30005347],[66201,104,null,3,3,11,0,64,58,30005354],[66301,97,null,3,3,5,0,64,58,30005354],[66401,101,null,3,3,5,0,64,58,30005354],[66601,106,12,3,3,3,0,64,58,30005354],[66702,600,null,3,3,0,1,64,58,0],[67001,161,null,3,2,53,0,64,58,30001243],[67101,110,null,3,2,53,1,64,58,30005347],[67201,92,null,3,2,53,1,65,58,30005347],[67301,92,null,3,2,53,1,66,58,30005347],[67601,115,null,3,2,53,1,66,58,30005347],[67701,112,null,3,2,53,1,66,58,20212984],[67901,93,null,3,2,42,0,66,60,30005444],[68001,97,null,3,2,25,1,66,60,30005348],[68101,104,null,3,2,25,0,66,60,20211456],[68201,93,null,3,2,15,0,66,62,30005444],[68202,600,null,3,2,0,1,66,62,0],[68301,94,null,3,1,57,1,69,62,20212984],[68601,159,null,3,1,49,1,69,62,20210147],[68701,110,null,3,1,49,0,69,62,30001243],[68901,115,null,3,1,49,1,69,62,30001091],[69001,112,null,3,1,49,1,69,62,30003398],[69101,115,null,3,1,49,0,69,62,30005342],[69201,112,null,3,1,49,0,69,62,30001001],[69401,98,null,3,1,38,0,69,62,20211456],[69501,104,null,3,1,38,1,69,62,20210147],[69601,100,null,3,1,21,1,71,62,30000192],[69701,107,null,3,1,21,1,71,62,30003398],[69901,98,null,3,1,7,0,71,62,30005444],[70001,161,null,3,1,5,0,71,62,30001001],[70101,110,null,3,1,5,1,71,62,20210147],[70301,115,null,3,1,5,0,71,62,30005354],[70401,112,null,3,1,5,0,71,62,30005343],[70601,115,null,3,1,5,1,71,62,30005348],[70701,112,null,3,1,5,1,71,62,20212461],[70801,92,null,3,1,5,1,72,62,20210147],[70901,92,null,3,1,5,1,73,62,20210147],[71201,115,null,3,1,5,0,73,62,30001001],[71301,112,null,3,1,5,0,73,62,30005344],[71402,600,null,3,1,0,1,73,62,0],[71501,94,null,3,0,45,0,73,65,30005344],[71601,108,null,3,0,45,0,73,65,20211456],[71701,106,12,3,0,28,1,73,65,30000192],[71702,103,null,3,0,28,0,73,65,30005343],[71901,98,null,3,0,21,0,73,65,30005344],[72001,104,null,3,0,21,1,73,65,20212984],[72101,94,null,3,0,0,1,76,65,30003398],[72201,108,null,3,0,0,1,76,65,20212984],[72401,116,null,3,0,0,0,76,65,0],[72501,121,null,4,10,0,0,76,65,0],[72701,115,null,4,10,0,1,76,65,20212461],[72801,115,null,4,10,0,1,76,65,20210147],[72901,112,null,4,10,0,1,76,65,30005348],[73001,112,null,4,10,0,1,76,65,30004013],[73202,600,null,4,10,0,1,76,65,0],[73301,97,null,4,9,45,1,76,65,30004013],[73401,104,null,4,9,45,0,76,65,30005444],[73501,97,null,4,9,39,0,76,65,30001243],[73601,105,null,4,9,39,0,76,65,30001243],[73701,102,null,4,9,39,1,76,65,30000192],[73801,104,null,4,9,39,1,76,65,30004013],[74001,106,12,4,9,35,1,76,65,30004013],[74801,97,null,4,9,21,0,76,65,30005444],[74901,101,null,4,9,21,0,76,65,30005343],[75001,100,null,4,9,18,0,76,67,30005343],[75301,94,null,4,9,0,1,79,67,20212984],[75302,600,null,4,9,0,1,79,67,0],[75701,106,15,4,8,52,0,79,67,30005444],[75901,115,null,4,8,52,1,79,67,30003398],[76001,112,null,4,8,52,1,79,67,30001091],[76101,115,null,4,8,52,0,79,67,30005444],[76201,115,null,4,8,52,0,79,67,30001243],[76301,112,null,4,8,52,0,79,67,20200243],[76401,112,null,4,8,52,0,79,67,30005341],[76601,533,null,4,8,42,1,79,67,30005348],[76701,101,null,4,8,42,1,79,67,30005348],[76801,100,null,4,8,39,1,81,67,30005348],[76901,93,null,4,8,26,0,81,69,20200243],[77101,161,null,4,8,11,0,81,69,30005343],[77201,110,null,4,8,11,1,81,69,30005348],[77301,119,null,4,8,11,1,81,69,30001091],[77401,92,null,4,8,11,1,82,69,30005348],[77501,92,null,4,8,11,1,83,69,30005348],[77801,115,null,4,8,11,1,83,69,20212984],[77901,112,null,4,8,11,1,83,69,30005347],[78301,159,null,4,8,5,1,83,69,30001091],[78401,110,null,4,8,5,0,83,69,20200243],[78601,115,null,4,8,5,1,83,69,30000192],[78701,112,null,4,8,5,1,83,69,30003947],[78802,600,null,4,8,0,1,83,69,0],[78901,106,13,4,7,56,0,83,69,30005343],[78902,103,null,4,7,56,1,83,69,30005348],[79101,98,null,4,7,46,1,83,69,30004013],[79201,104,null,4,7,46,0,83,69,30005343],[79401,106,12,4,7,37,0,83,69,30005341],[79601,93,null,4,7,35,1,85,69,30004013],[79801,107,null,4,7,35,1,85,69,30001091],[80401,113,null,4,7,35,0,85,69,0],[80601,115,null,4,7,35,0,85,69,20211456],[80701,115,null,4,7,35,0,85,69,30005343],[80801,112,null,4,7,35,0,85,69,30005354],[80901,112,null,4,7,35,0,85,69,30001001],[81401,159,null,4,7,29,1,85,69,30001091],[81501,110,null,4,7,29,0,85,69,20200243],[81701,97,null,4,7,24,0,85,69,30005341],[81801,101,null,4,7,24,0,85,69,0],[82301,98,null,4,7,21,0,85,69,30005354],[82401,101,null,4,7,21,0,85,69,0],[82701,106,13,4,7,16,0,85,69,30005354],[82801,103,null,4,7,16,1,85,69,30005348],[82802,600,null,4,7,0,1,85,69,0],[82901,97,null,4,6,58,1,85,69,30001091],[83001,101,null,4,6,58,1,85,69,30001091],[83101,97,null,4,6,54,1,85,69,30001091],[83201,101,null,4,6,54,1,85,69,30005348],[83301,98,null,4,6,51,1,85,69,30003947],[83401,104,null,4,6,51,0,85,69,30005344],[83501,93,null,4,6,33,0,85,71,30005354],[83601,94,null,4,6,15,1,88,71,30001091],[83701,108,null,4,6,15,1,88,71,30004013],[83702,600,null,4,6,0,1,88,71,0],[83801,94,null,4,5,54,0,88,74,30005354],[83901,108,null,4,5,54,0,88,74,20200243],[84201,93,null,4,5,40,1,90,74,30004013],[84301,160,null,4,5,40,0,90,74,30005344],[84401,110,null,4,5,40,1,90,74,30004013],[84601,115,null,4,5,40,1,90,74,30001091],[84701,112,null,4,5,40,1,90,74,30003398],[84801,115,null,4,5,40,0,90,74,30005341],[84901,115,null,4,5,40,0,90,74,30005344],[85001,112,null,4,5,40,0,90,74,30005342],[85101,112,null,4,5,40,0,90,74,30005444],[85201,96,null,4,5,40,1,90,74,30004013],[85401,104,null,4,5,40,0,90,74,30001001],[85501,93,null,4,5,26,0,90,76,30005444],[85601,100,null,4,5,4,1,92,76,30003947],[85701,107,null,4,5,4,1,92,76,30005347],[85702,600,null,4,5,0,1,92,76,0],[85901,161,null,4,4,55,1,92,76,30005348],[86001,110,null,4,4,55,0,92,76,30001001],[86201,115,null,4,4,55,1,92,76,30005348],[86301,115,null,4,4,55,1,92,76,30004013],[86401,112,null,4,4,55,1,92,76,20212461],[86501,112,null,4,4,55,1,92,76,20210147],[86601,115,null,4,4,55,0,92,76,20200243],[86701,112,null,4,4,55,0,92,76,30001243],[86801,96,null,4,4,55,0,92,76,30001001],[86901,92,null,4,4,55,0,92,77,30001001],[87201,115,null,4,4,55,0,92,77,30001001],[87301,112,null,4,4,55,0,92,77,20211456],[87501,100,null,4,4,42,1,94,77,20212461],[87601,107,null,4,4,42,1,94,77,30003398],[87701,97,null,4,4,33,0,94,77,30001243],[87801,104,null,4,4,33,1,94,77,20212461],[87901,98,null,4,4,15,1,94,77,30003398],[88001,104,null,4,4,15,0,94,77,30005354],[88401,159,null,4,4,6,1,94,77,20210147],[88501,110,null,4,4,6,0,94,77,30005444],[88701,94,null,4,4,3,0,94,80,30005354],[88801,108,null,4,4,3,0,94,80,30005444],[88802,600,null,4,4,0,1,94,80,0],[88901,98,null,4,3,44,1,94,80,30005347],[89001,104,null,4,3,44,0,94,80,30001243],[89201,161,null,4,3,37,1,94,80,20210147],[89301,110,null,4,3,37,0,94,80,30001243],[89501,115,null,4,3,37,1,94,80,20210147],[89601,112,null,4,3,37,1,94,80,20212984],[89701,96,null,4,3,37,0,94,80,30001243],[89801,92,null,4,3,37,0,94,81,30001243],[90201,159,null,4,3,21,0,94,81,30005354],[90301,110,null,4,3,21,1,94,81,20212461],[90501,98,null,4,3,19,1,94,81,30005347],[90601,104,null,4,3,19,0,94,81,20211456],[90701,94,null,4,3,10,0,94,84,30005342],[90801,108,null,4,3,10,0,94,84,30001243],[90802,600,null,4,3,0,1,94,84,0],[90901,93,null,4,2,48,1,96,84,30003398],[91101,106,12,4,2,35,0,96,84,30001243],[91201,103,null,4,2,35,1,96,84,30003398],[91301,159,null,4,2,34,0,96,84,30001243],[91401,110,null,4,2,34,1,96,84,30003398],[91601,115,null,4,2,34,1,96,84,30005347],[91701,112,null,4,2,34,1,96,84,30004013],[91801,115,null,4,2,34,0,96,84,30005354],[91901,112,null,4,2,34,0,96,84,30005343],[92401,161,null,4,2,20,0,96,84,30001243],[92501,110,null,4,2,20,1,96,84,20212984],[92701,115,null,4,2,20,1,96,84,30003947],[92801,112,null,4,2,20,1,96,84,30000192],[93001,115,null,4,2,20,0,96,84,30001243],[93101,112,null,4,2,20,0,96,84,20200243],[93201,96,null,4,2,20,1,96,84,20212984],[93301,92,null,4,2,20,1,97,84,20212984],[93501,106,12,4,2,20,0,97,84,20211456],[93901,93,null,4,2,18,1,99,84,30000192],[94001,107,null,4,2,18,1,99,84,30003398],[94002,600,null,4,2,0,1,99,84,0],[94101,100,null,4,1,53,0,99,86,30005343],[94201,107,null,4,1,53,0,99,86,30005342],[94701,161,null,4,1,43,0,99,86,20211456],[94801,110,null,4,1,43,1,99,86,30000192],[95001,115,null,4,1,43,0,99,86,20211456],[95101,112,null,4,1,43,0,99,86,30005344],[95201,92,null,4,1,43,1,100,86,30000192],[95301,92,null,4,1,43,1,101,86,30000192],[95801,109,null,4,1,33,0,101,86,30005342],[95901,106,null,4,1,33,0,101,86,30005342],[96001,110,null,4,1,33,1,101,86,30000192],[96301,93,null,4,1,14,1,103,86,30003398],[96601,97,null,4,1,8,0,103,86,20200243],[96701,104,null,4,1,8,1,103,86,0],[96802,600,null,4,1,0,1,103,86,0],[97301,161,null,4,0,51,0,103,86,30005344],[97401,110,null,4,0,51,1,103,86,20212461],[97501,119,null,4,0,51,1,103,86,30004013],[97701,115,null,4,0,51,0,103,86,30005344],[97801,112,null,4,0,51,0,103,86,30001001],[98001,115,null,4,0,51,1,103,86,30000192],[98101,112,null,4,0,51,1,103,86,20212056],[98201,96,null,4,0,51,1,103,86,20212461],[98301,92,null,4,0,51,1,104,86,20212461],[98601,94,null,4,0,41,0,104,89,30005444],[98701,108,null,4,0,41,0,104,89,20200243],[99001,94,null,4,0,25,1,107,89,30003398],[99301,94,null,4,0,15,0,107,92,30005444],[99601,97,null,4,0,3,1,107,92,20212984],[99801,116,null,4,0,0,0,107,92,0],[99901,123,null,4,0,0,0,107,92,0]]};
@@ -785,7 +932,8 @@ let KEY = store.get('key', DEFAULT_KEY);
 const S = {
   mode: 'match', tab: store.get('tab', 'resumen'), stab: 'resumen', g: null, sample: false, filt: 'all', sort: {},
   lineSize: 5, lineMin: 2, pcols: 'basic', closeMode: 'clutch', pbpSide: 'all', pbpKind: 'all', perGame: true,
-  timer: null, comp: null, scout: { team: null, list: [], loading: false }
+  timer: null, comp: null, scout: { team: null, list: [], loading: false },
+  compet: store.get('compet', 'acb'), every: store.get('every', 1), coachEdit: false, shotQ: 'all', shotPlayer: 'all'
 };
 
 // ---------- Formato ----------
@@ -807,16 +955,46 @@ const div0 = (a, b) => b ? a / b : null;
 const tOf = x => x.t != null ? x.t : x.t1 != null ? x.t1 : x.endT;
 const remIn = x => A.periodStart(x.q) + A.periodLen(x.q) - tOf(x);
 
-// ---------- API ----------
+// ---------- Fuentes de datos ----------
+const F = globalThis.ACB_FIBA;
+const HAPI = 'https://digital-api.fiba.basketball/hapi/';
+const HAPI_KEY = '898cd5e7389140028ecb42943c47eb74';
+const DEFAULT_PROXY = 'https://laboratorio-acb.vercel.app';
+let PROXY = store.get('proxy', /vercel\.app$/.test(location.hostname) ? '' : DEFAULT_PROXY);
+const BCL_COMP_ID = 209123; // BCL 2026-27
+const COMPS = { acb: { name: 'Liga Endesa', short: 'ACB' }, bcl: { name: 'Basketball Champions League', short: 'BCL' } };
+
 async function api(path) {
-  const r = await fetch(API + path, { headers: { 'X-APIKEY': KEY } });
+  const r = await fetch(API + path, { headers: { 'X-APIKEY': KEY }, cache: 'no-store' });
   if (r.status === 204) return null;
   if (r.status === 401 || r.status === 403) throw Object.assign(new Error('La API ha rechazado la clave (HTTP ' + r.status + '). Revisa «Ajustes de conexión».'), { auth: true });
   if (!r.ok) throw new Error('La API respondió HTTP ' + r.status + '.');
   return r.json();
 }
+async function hapi(path) {
+  const r = await fetch(HAPI + path, { headers: { 'Ocp-Apim-Subscription-Key': HAPI_KEY }, cache: 'no-store' });
+  if (!r.ok) throw new Error('La API de la FIBA respondió HTTP ' + r.status + '.');
+  return r.json();
+}
+async function bclPbp(id) {
+  let r;
+  try { r = await fetch((PROXY || '') + '/api/bcl?id=' + id, { cache: 'no-store' }); }
+  catch (e) { throw Object.assign(new Error('No se puede conectar con el puente de la BCL (' + (PROXY || location.host) + '). Revisa «Ajustes de conexión».'), { proxy: true }); }
+  const j = await r.json().catch(() => null);
+  if (!r.ok) throw new Error((j && j.error) || ('El puente de la BCL respondió HTTP ' + r.status + '.'));
+  return j;
+}
 const isNet = e => e instanceof TypeError || /fetch|network|load failed/i.test(String(e && e.message));
-function parseId(s) { const m = String(s || '').match(/(\d{5,7})(?!.*\d{5,7})/); return m ? Number(m[1]) : null; }
+
+// Interpreta enlaces de live.acb.com y championsleague.basketball, o un número
+function parseLink(s) {
+  s = String(s || '').trim();
+  if (/championsleague|fiba\.basketball/i.test(s)) { const m = s.match(/games\/(\d{5,7})/) || s.match(/(\d{5,7})/); return m ? { comp: 'bcl', id: +m[1] } : null; }
+  if (/acb\.com/i.test(s)) { const m = s.match(/(\d{5,7})(?!.*\d{5,7})/); return m ? { comp: 'acb', id: +m[1] } : null; }
+  const m = s.match(/^(acb|bcl)-?(\d{5,7})$/i); if (m) return { comp: m[1].toLowerCase(), id: +m[2] };
+  const n = s.match(/(\d{5,7})/); return n ? { comp: S.compet, id: +n[1] } : null;
+}
+const parseId = s => { const l = parseLink(s); return l ? l.id : null; };
 
 function sampleRaw() {
   const fx = SAMPLE, lastIdx = {};
@@ -832,35 +1010,73 @@ function sampleRaw() {
   return { homeTeam: fx.home, awayTeam: fx.away, plays, matchFinished: true };
 }
 
-// ---------- Carga de partido ----------
-async function loadMatch(id, opts = {}) {
-  const st = $('#st-match');
-  if (!id) { st.textContent = 'No encuentro el número de partido en ese enlace. Debe terminar en un número, por ejemplo …-105394/jugadas.'; st.className = 'status err'; return; }
-  st.className = 'status'; if (!opts.silent) st.textContent = 'Cargando partido ' + id + '…';
-  $('#b-load').disabled = true;
-  try {
-    const [raw, header] = await Promise.all([
-      api('/matchdata/PlayByPlay/play-by-play?matchId=' + id),
-      api('/matchdata/MatchHeader/match-header?matchId=' + id).catch(() => null)
-    ]);
-    if (!raw || !raw.plays || !raw.plays.length) { st.textContent = 'El partido ' + id + ' todavía no tiene jugadas publicadas.'; return; }
-    S.g = A.parseGame(raw, { id, header }); S.sample = false; S.matchId = id;
-    store.set('last', id);
-    $('#fallback').hidden = true;
-    const when = new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-    st.textContent = (S.g.finished ? 'Partido terminado' : 'Partido en juego') + ' · ' + raw.plays.length + ' jugadas · datos de api2.acb.com a las ' + when;
-    try { if (!/^#\d+$/.test(location.hash) || location.hash !== '#' + id) history.replaceState(null, '', '#' + id); } catch (e) { }
-    setupLive();
-    render();
-  } catch (e) {
-    if (isNet(e)) { showFallback(id); st.textContent = 'Sin conexión con la API de la ACB.'; st.className = 'status err'; }
-    else { st.textContent = e.message; st.className = 'status err'; }
-  } finally { $('#b-load').disabled = false; }
+// Descarga un partido y lo deja en el formato del motor
+async function fetchGame(comp, id) {
+  if (comp === 'bcl') {
+    const [d, box] = await Promise.all([bclPbp(id), hapi('getgdapgamestatisticsbygameid?gdapGameId=' + id).catch(() => null)]);
+    d.box = (box || []).filter(b => b.player).map(b => [b.player.playerId, b.team.organisationId, b.isStarter ? 1 : 0, b.playDurationInSeconds, b.points,
+      b.twoPointsMade, b.twoPointsAttempted, b.threePointsMade, b.threePointsAttempted, b.freeThrowsMade, b.freeThrowsAttempted,
+      b.offensiveRebounds, b.defensiveRebounds, b.assists, b.steals, b.turnovers, b.blockedShots, b.personalFouls, b.plusMinus]);
+    if (!d.box.length) delete d.box;
+    const raw = F.fibaToRaw(d);
+    const live = d.game.isLive && !d.finished;
+    const header = { status: live ? 'STARTED' : d.finished ? 'FINALIZED' : 'SCHEDULED', period: F.periodNum(d.game.period || 'Q1'), clock: d.game.chrono };
+    return { raw, header, src: 'championsleague.basketball', sig: d.rows.length + '|' + (d.rows.length ? d.rows[d.rows.length - 1][0] : 0) + '|' + d.game.sa + '-' + d.game.sb + '|' + d.game.chrono };
+  }
+  const [raw, h] = await Promise.all([
+    api('/matchdata/PlayByPlay/play-by-play?matchId=' + id),
+    api('/matchdata/MatchHeader/match-header?matchId=' + id).catch(() => null)
+  ]);
+  if (!raw || !raw.plays || !raw.plays.length) return null;
+  const last = raw.plays[raw.plays.length - 1];
+  const header = h ? { status: h.matchStatus, period: h.currentQuarter, clock: h.timeLeft } : null;
+  return { raw, header, src: 'api2.acb.com', sig: raw.plays.length + '|' + last.order + '|' + last.scoreHome + '-' + last.scoreAway + '|' + (h && h.timeLeft) };
 }
+
+// ---------- Carga de partido ----------
+async function loadMatch(link, opts = {}) {
+  const st = $('#st-match');
+  if (typeof link === 'number') link = { comp: S.compet, id: link };
+  if (!link || !link.id) { st.textContent = 'No encuentro el número de partido. Pega el enlace de live.acb.com o de championsleague.basketball, o escribe el número.'; st.className = 'status err'; return; }
+  if (link.comp !== S.compet) setCompet(link.comp, true);
+  st.className = 'status'; if (!opts.silent) st.textContent = 'Cargando partido ' + link.id + ' (' + COMPS[link.comp].short + ')…';
+  if (!opts.silent) $('#b-load').disabled = true;
+  try {
+    const res = await fetchGame(link.comp, link.id);
+    if (!res) { st.textContent = 'El partido ' + link.id + ' todavía no tiene jugadas publicadas.'; return; }
+    const same = opts.silent && S.g && S.g.comp === link.comp && S.matchId === link.id && S.sig === res.sig;
+    S.lastFetch = new Date();
+    if (!same) {
+      S.g = A.parseGame(res.raw, { id: link.id, header: res.header });
+      S.g.comp = link.comp; S.g.hasShots = S.g.events.some(e => e.x != null && e.x !== 0);
+      S.sample = false; S.matchId = link.id; S.sig = res.sig;
+      store.set('last', link.comp + '-' + link.id);
+      try { if (location.hash !== '#' + link.comp + '-' + link.id) history.replaceState(null, '', '#' + link.comp + '-' + link.id); } catch (e) { }
+    }
+    $('#fallback').hidden = true;
+    const when = S.lastFetch.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    st.textContent = (S.g.finished ? 'Partido terminado' : 'Partido en juego') + ' · ' + res.raw.plays.length + ' jugadas · ' + COMPS[link.comp].short + ' · datos de ' + res.src + ' a las ' + when;
+    if (!opts.silent) setupLive();
+    if (!same) render(opts.silent);
+  } catch (e) {
+    if (opts.silent) { st.textContent = 'Sin respuesta en la última actualización (' + new Date().toLocaleTimeString('es-ES') + '). Se reintenta.'; return; }
+    if (link.comp === 'acb' && isNet(e)) { showFallback(link.id); st.textContent = 'Sin conexión con la API de la ACB.'; }
+    else st.textContent = e.message;
+    st.className = 'status err';
+  } finally { if (!opts.silent) $('#b-load').disabled = false; }
+}
+
+// Directo: actualización encadenada (no se solapan peticiones) cada S.every segundos
 function setupLive() {
-  clearInterval(S.timer); S.timer = null;
+  clearTimeout(S.timer); S.timer = null;
   const w = $('#live-wrap'); w.hidden = !(S.g && !S.g.finished && !S.sample);
-  if (!w.hidden && $('#in-live').checked) S.timer = setInterval(() => { if (S.mode === 'match' && S.matchId) loadMatch(S.matchId, { silent: true }); }, 30000);
+  if (w.hidden || !$('#in-live').checked) return;
+  const tick = async () => {
+    if (S.mode === 'match' && S.matchId && !document.hidden) await loadMatch({ comp: S.g.comp, id: S.matchId }, { silent: true });
+    if (S.g && !S.g.finished && $('#in-live').checked) S.timer = setTimeout(tick, S.every * 1000);
+    else { $('#live-wrap').hidden = true; }
+  };
+  S.timer = setTimeout(tick, S.every * 1000);
 }
 function showFallback(id) {
   $('#fallback').hidden = false;
@@ -868,12 +1084,12 @@ function showFallback(id) {
   $('#snippet').textContent = `copy(JSON.stringify(await (await fetch('${API}/matchdata/PlayByPlay/play-by-play?matchId=${id || 'ID'}',{headers:{'X-APIKEY':'${KEY}'}})).json()))`;
 }
 function loadSample() {
-  S.g = A.parseGame(sampleRaw(), { id: SAMPLE.id }); S.sample = true; S.matchId = null;
+  S.g = A.parseGame(sampleRaw(), { id: SAMPLE.id }); S.g.comp = 'acb'; S.g.hasShots = false; S.sample = true; S.matchId = null;
   $('#st-match').innerHTML = '<span class="badge-ex">Ejemplo</span> Partido real de muestra cargado (' + esc(SAMPLE.label) + '). Pega un enlace o elige jornada para analizar otro.';
   render();
 }
 
-// ---------- Jornadas ----------
+// ---------- Calendario (jornadas ACB / semanas BCL) ----------
 async function loadComp() {
   if (S.comp) return S.comp;
   const cd = await api('/matchdata/Menu/competition-data?competitionIds=1');
@@ -889,76 +1105,124 @@ async function roundMatches(roundId) {
   const list = (ml && ml.matches) || [];
   c.cache.set(roundId, list); return list;
 }
+// Lista unificada de partidos: {id, comp, when, home, away, hs, as, status:'FIN'|'LIVE'|'SCH', round}
+async function bclGames() {
+  if (S.bcl && Date.now() - S.bcl.t < 60000) return S.bcl.list;
+  const g = await hapi('getgdapgamesbycompetitionid?gdapCompetitionId=' + BCL_COMP_ID);
+  const list = g.filter(x => x.teamA && x.teamB).map(x => ({
+    id: x.gameId, comp: 'bcl', when: new Date(x.gameDateTimeUTC + 'Z'), round: (x.round && x.round.roundName) + (x.groupPairingCode && /^[A-H]$/.test(x.groupPairingCode) ? ' · Grupo ' + x.groupPairingCode : ''),
+    home: { id: x.teamA.teamId, abbr: x.teamA.code, name: x.teamA.shortName }, away: { id: x.teamB.teamId, abbr: x.teamB.code, name: x.teamB.shortName },
+    hs: x.teamAScore, as: x.teamBScore, status: x.liveGameStatus === 999 ? 'FIN' : (x.isLive ? 'LIVE' : 'SCH')
+  })).sort((a, b) => a.when - b.when);
+  S.bcl = { t: Date.now(), list };
+  return list;
+}
+const weekKey = d => { const x = new Date(d); x.setHours(0, 0, 0, 0); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x.toISOString().slice(0, 10); };
 const stLabel = m => m.matchStatus === 'FINALIZED' ? 'Final' : m.matchStatus === 'STARTED' ? 'En juego' : new Date(m.startDateTime).toLocaleString('es-ES', { weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+const gLabel = m => m.status === 'FIN' ? 'Final' : m.status === 'LIVE' ? 'En juego' : m.when.toLocaleString('es-ES', { weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
 async function initRounds() {
+  const sel = $('#sel-round');
+  $('#lbl-round').textContent = S.compet === 'bcl' ? 'Semana (Champions League)' : 'Jornada (Liga Endesa)';
+  sel.innerHTML = '<option value="">Cargando…</option>'; $('#sel-match').innerHTML = '<option value="">Elige primero</option>';
   try {
-    const c = await loadComp();
-    const sel = $('#sel-round');
-    sel.innerHTML = c.rounds.map(r => `<option value="${r.id}" ${r.id === c.cur.id ? 'selected' : ''}>Jornada ${r.roundNumber}</option>`).join('');
-    await fillMatches(c.cur.id);
+    if (S.compet === 'bcl') {
+      const list = await bclGames();
+      const weeks = [...new Set(list.map(m => weekKey(m.when)))];
+      const now = weekKey(new Date());
+      const cur = weeks.filter(w => w <= now).pop() || weeks[0];
+      sel.innerHTML = weeks.map(w => `<option value="${w}" ${w === cur ? 'selected' : ''}>Semana del ${new Date(w + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}</option>`).join('');
+      await fillMatches(cur);
+    } else {
+      const c = await loadComp();
+      sel.innerHTML = c.rounds.map(r => `<option value="${r.id}" ${r.id === c.cur.id ? 'selected' : ''}>Jornada ${r.roundNumber}</option>`).join('');
+      await fillMatches(c.cur.id);
+    }
     fillTeams();
   } catch (e) {
-    $('#sel-round').innerHTML = '<option value="">Jornadas no disponibles</option>';
+    sel.innerHTML = '<option value="">Calendario no disponible</option>';
     $('#sel-team').innerHTML = '<option value="">Equipos no disponibles</option>';
-    if (isNet(e)) { $('#st-scout').textContent = 'Sin conexión con la API de la ACB desde este visor. Descarga el HTML para usar el scouting.'; showFallback(null); }
+    if (isNet(e) && S.compet === 'acb') { $('#st-scout').textContent = 'Sin conexión con la API de la ACB desde este visor.'; showFallback(null); }
   }
 }
-async function fillMatches(roundId) {
+async function fillMatches(key) {
   const sel = $('#sel-match'); sel.innerHTML = '<option value="">Cargando…</option>';
-  const list = await roundMatches(roundId);
+  if (S.compet === 'bcl') {
+    const list = (await bclGames()).filter(m => weekKey(m.when) === key);
+    sel.innerHTML = '<option value="">Elige partido</option>' + list.map(m => `<option value="bcl-${m.id}">${esc(m.home.abbr)}${m.status !== 'SCH' ? ' ' + m.hs + '–' + m.as : ''} ${esc(m.away.abbr)} · ${esc(m.home.name)} – ${esc(m.away.name)} · ${esc(m.round)} · ${gLabel(m)}</option>`).join('');
+    return;
+  }
+  const list = await roundMatches(Number(key));
   sel.innerHTML = '<option value="">Elige partido</option>' + list.map(m => {
     const sc = m.homeScore != null ? ` ${m.homeScore}–${m.awayScore}` : '';
-    return `<option value="${m.id}">${esc(m.homeTeam.abbreviatedName)}${sc} ${esc(m.awayTeam.abbreviatedName)} · ${esc(m.homeTeam.shortName)} – ${esc(m.awayTeam.shortName)} · ${stLabel(m)}</option>`;
+    return `<option value="acb-${m.id}">${esc(m.homeTeam.abbreviatedName)}${sc} ${esc(m.awayTeam.abbreviatedName)} · ${esc(m.homeTeam.shortName)} – ${esc(m.awayTeam.shortName)} · ${stLabel(m)}</option>`;
   }).join('');
 }
 async function fillTeams() {
-  const c = S.comp; const list = await roundMatches(c.cur.id);
-  const teams = []; list.forEach(m => { teams.push(m.homeTeam, m.awayTeam); });
-  teams.sort((a, b) => a.fullName.localeCompare(b.fullName, 'es'));
-  const pref = store.get('team', null);
-  const def = pref || (teams.find(t => t.abbreviatedName === 'SBB') || {}).id;
-  $('#sel-team').innerHTML = teams.map(t => `<option value="${t.id}" ${t.id === def ? 'selected' : ''}>${esc(t.fullName)}</option>`).join('');
+  let teams = [];
+  if (S.compet === 'bcl') {
+    const seen = new Map(); (await bclGames()).forEach(m => { seen.set(m.home.id, { id: m.home.id, name: m.home.name, abbr: m.home.abbr }); seen.set(m.away.id, { id: m.away.id, name: m.away.name, abbr: m.away.abbr }); });
+    teams = [...seen.values()];
+  } else {
+    const c = S.comp; const list = await roundMatches(c.cur.id);
+    list.forEach(m => { teams.push({ id: m.homeTeam.id, name: m.homeTeam.fullName, abbr: m.homeTeam.abbreviatedName }, { id: m.awayTeam.id, name: m.awayTeam.fullName, abbr: m.awayTeam.abbreviatedName }); });
+  }
+  teams.sort((a, b) => a.name.localeCompare(b.name, 'es'));
+  const pref = store.get('team-' + S.compet, null);
+  const def = pref || (teams.find(t => t.abbr === 'SBB') || {}).id;
+  $('#sel-team').innerHTML = teams.map(t => `<option value="${t.id}" ${t.id === def ? 'selected' : ''}>${esc(t.name)}</option>`).join('');
+}
+function setCompet(c, keepView) {
+  if (S.compet === c) return;
+  S.compet = c; store.set('compet', c);
+  document.querySelectorAll('[data-compet]').forEach(b => b.setAttribute('aria-pressed', b.dataset.compet === c));
+  $('#st-scout').textContent = 'Se cargan todos los partidos terminados del equipo en la ' + COMPS[c].name + ' y se acumulan jugada a jugada.';
+  S.scout.list = [];
+  initRounds();
+  if (!keepView) render();
 }
 
 // ---------- Scouting ----------
 async function loadScout() {
   const teamId = Number($('#sel-team').value); if (!teamId) return;
-  store.set('team', teamId);
+  store.set('team-' + S.compet, teamId);
   const last = $('#sel-last').value;
   const st = $('#st-scout'), prog = $('#sc-prog'), bar = prog.querySelector('i');
   S.scout.loading = true; $('#b-scout').disabled = true; prog.hidden = false; bar.style.width = '0%'; st.className = 'status';
   try {
-    const c = await loadComp();
-    const rounds = c.rounds.filter(r => r.roundNumber <= c.cur.roundNumber);
-    st.textContent = 'Buscando partidos en ' + rounds.length + ' jornadas…';
-    const found = [];
-    let done = 0;
-    await pool(rounds, 4, async r => {
-      const ms = await roundMatches(r.id);
-      ms.forEach(m => { if (m.matchStatus === 'FINALIZED' && (m.homeTeam.id === teamId || m.awayTeam.id === teamId)) found.push({ m, round: r.roundNumber }); });
-      done++; bar.style.width = (30 * done / rounds.length) + '%';
-    });
+    let found = [];
+    if (S.compet === 'bcl') {
+      found = (await bclGames()).filter(m => m.status === 'FIN' && (m.home.id === teamId || m.away.id === teamId)).map((m, i) => ({ id: m.id, round: i + 1, date: m.when }));
+    } else {
+      const c = await loadComp();
+      const rounds = c.rounds.filter(r => r.roundNumber <= c.cur.roundNumber);
+      st.textContent = 'Buscando partidos en ' + rounds.length + ' jornadas…';
+      let done = 0;
+      await pool(rounds, 4, async r => {
+        const ms = await roundMatches(r.id);
+        ms.forEach(m => { if (m.matchStatus === 'FINALIZED' && (m.homeTeam.id === teamId || m.awayTeam.id === teamId)) found.push({ id: m.id, round: r.roundNumber, date: m.startDateTime }); });
+        done++; bar.style.width = (30 * done / rounds.length) + '%';
+      });
+    }
     found.sort((a, b) => a.round - b.round);
     const sel = last === 'all' ? found : found.slice(-Number(last));
     if (!sel.length) { st.textContent = 'Este equipo todavía no tiene partidos terminados esta temporada.'; return; }
-    const out = []; done = 0;
+    const out = []; let done = 0;
     await pool(sel, 3, async f => {
-      const raw = await api('/matchdata/PlayByPlay/play-by-play?matchId=' + f.m.id);
-      if (raw && raw.plays && raw.plays.length) {
-        const g = A.parseGame(raw, { id: f.m.id });
-        out.push({ g, side: A.sideOf(g, teamId), round: f.round, date: f.m.startDateTime });
-      }
+      try {
+        const res = await fetchGame(S.compet, f.id);
+        if (res) { const g = A.parseGame(res.raw, { id: f.id }); g.comp = S.compet; g.hasShots = g.events.some(e => e.x != null && e.x !== 0); out.push({ g, side: A.sideOf(g, teamId), round: f.round, date: f.date }); }
+      } catch (e) { if (e.proxy) throw e; }
       done++; bar.style.width = (30 + 70 * done / sel.length) + '%'; st.textContent = 'Analizando partidos: ' + done + ' de ' + sel.length + '…';
     });
+    if (!out.length) { st.textContent = 'No se ha podido descargar ningún partido.'; return; }
     out.sort((a, b) => a.round - b.round);
     S.scout.list = out; S.scout.team = teamId;
     const t = out[0].g.teams[out[0].side];
-    st.textContent = t.name + ': ' + out.length + ' partido' + (out.length > 1 ? 's' : '') + ' analizado' + (out.length > 1 ? 's' : '') + ' jugada a jugada.';
-    S.stab = S.stab || 'resumen';
+    st.textContent = t.name + ' (' + COMPS[S.compet].short + '): ' + out.length + ' partido' + (out.length > 1 ? 's' : '') + ' analizado' + (out.length > 1 ? 's' : '') + ' jugada a jugada.';
     render();
   } catch (e) {
     st.className = 'status err';
-    st.textContent = isNet(e) ? 'Sin conexión con la API de la ACB desde este visor. Descarga el HTML para usar el scouting.' : e.message;
+    st.textContent = isNet(e) ? 'Sin conexión con la fuente de datos desde este visor.' : e.message;
   } finally { S.scout.loading = false; $('#b-scout').disabled = false; setTimeout(() => { prog.hidden = true; }, 600); }
 }
 async function pool(items, n, fn) {
@@ -1281,40 +1545,51 @@ let rz; addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(dra
 function scoreboard(g) {
   const h = g.meta && g.meta.header;
   const live = !g.finished && !S.sample;
-  const st = live ? `En juego · ${h ? qLabel(h.currentQuarter) + ' ' + (h.timeLeft || '') : clockAt(g.lastT)}` : 'Final';
+  const st = live ? `En juego · ${h && h.period ? qLabel(h.period) + ' ' + (h.clock || '') : clockAt(g.lastT)}` : 'Final';
   const v = A.validate(g);
   const qs = g.quarterScores.map(q => `<span>${qLabel(q.q)} ${q.h}–${q.a}</span>`).join('');
-  const val = v.n ? `<span class="pill ${v.ok === v.n && v.ptsOk ? 'ok' : 'warn'}" data-tip="${esc(v.ok === v.n ? 'Las estadísticas calculadas desde las jugadas coinciden con las oficiales de cada jugador.' : 'Diferencias: ' + v.diffs.slice(0, 6).join(' · '))}">${v.ok === v.n ? '✓' : '!'} Cuadre con la estadística oficial ${v.ok}/${v.n}</span>` : '';
+  const allOk = v.ok === v.n && v.ptsOk && v.minOk === v.minN && v.pmOk === v.pmN;
+  const extraV = v.minN ? ` · minutos ${v.minOk}/${v.minN} · +/- ${v.pmOk}/${v.pmN}` : '';
+  const val = v.n ? `<span class="pill ${allOk ? 'ok' : 'warn'}" data-tip="${esc(allOk ? 'Las estadísticas calculadas desde las jugadas coinciden con las oficiales de cada jugador' + (v.minN ? ', incluidos minutos en pista y +/-' : '') + '.' : 'Diferencias: ' + v.diffs.slice(0, 6).join(' · '))}">${allOk ? '✓' : '!'} Cuadre con la estadística oficial ${v.ok}/${v.n}${extraV}</span>` : '';
+  const compTag = `<span class="pill">${esc(COMPS[g.comp || 'acb'].name)}</span>`;
   const warn = g.warnings.length ? `<span class="pill warn" data-tip="${esc(g.warnings.join(' '))}">! Aviso en los datos</span>` : '';
   const sm = S.sample ? '<span class="badge-ex">Ejemplo</span>' : '';
   return `<section class="panel"><div class="board">
     <div class="team"><span class="ab"><i class="sw t0"></i>${esc(g.teams[0].abbr)} · Local</span><span class="nm">${esc(g.teams[0].name)}</span></div>
     <div class="score"><div class="big">${g.final[0]}<span class="faint">–</span>${g.final[1]}</div><div class="st ${live ? 'live' : ''}">${st}</div><div class="qs">${qs}</div></div>
     <div class="team r"><span class="ab">Visitante · ${esc(g.teams[1].abbr)}<i class="sw t1"></i></span><span class="nm">${esc(g.teams[1].name)}</span></div>
-  </div><div class="boardfoot">${sm}${val}${warn}<span>${g.poss.filter(p => p.side === 0).length} posesiones por equipo</span><span>${g.events.length} jugadas</span></div></section>`;
+  </div><div class="boardfoot">${sm}${compTag}${val}${warn}<span>${g.poss.filter(p => p.side === 0).length} posesiones por equipo</span><span>${g.events.length} jugadas</span></div></section>`;
 }
-const TABS = [['resumen', 'Resumen'], ['factores', 'Factores'], ['jugadores', 'Jugadores'], ['quintetos', 'Quintetos'], ['rotaciones', 'Rotaciones'], ['dinamica', 'Dinámica'], ['posesiones', 'Posesiones'], ['clutch', 'Clutch'], ['jugadas', 'Jugadas']];
+const TABS = [['entrenador', 'Entrenador'], ['resumen', 'Resumen'], ['factores', 'Factores'], ['jugadores', 'Jugadores'], ['quintetos', 'Quintetos'], ['rotaciones', 'Rotaciones'], ['dinamica', 'Dinámica'], ['posesiones', 'Posesiones'], ['tiro', 'Tiro'], ['clutch', 'Clutch'], ['jugadas', 'Jugadas']];
 const STABS = [['resumen', 'Resumen'], ['jugadores', 'Jugadores'], ['quintetos', 'Quintetos'], ['posesiones', 'Posesiones'], ['cierres', 'Clutch y cierres'], ['partidos', 'Partidos']];
 function tabsBar(list, cur, attr) { return `<nav class="tabs" role="tablist">${list.map(([k, l]) => `<button role="tab" ${attr}="${k}" aria-selected="${cur === k}">${l}</button>`).join('')}</nav>`; }
 
-function vResumen(g) {
+// ---------- Resumen (piezas reutilizables) ----------
+const CMP_ROWS = [
+  { k: 'ortg', label: 'Pts / 100 pos.', better: 1, fmt: v => nf(v, 1) }, { k: 'efg', label: 'eFG%', better: 1, fmt: pct }, { k: 'ts', label: 'TS%', better: 1, fmt: pct },
+  { k: 'tovp', label: 'Pérdidas/pos.', better: -1, fmt: pct }, { k: 'orbp', label: 'Reb. of. %', better: 1, fmt: pct }, { k: 'ftr', label: 'TLI / TCI', better: 1, fmt: v => nf(v, 2) },
+  { k: 'fg3', label: 'T3%', better: 1, fmt: pct }, { k: 'r3', label: '% tiros de 3', better: 0, fmt: pct }, { k: 'astp', label: '% canastas asist.', better: 1, fmt: pct }
+];
+const CMP_EXTRA = [{ k: 'x', label: 'Pts tras pérdida', better: 1, fmt: v => v }, { k: 'y', label: 'Pts 2ª oportunidad', better: 1, fmt: v => v }, { k: 'z', label: 'Pts transición', better: 1, fmt: v => v }, { k: 'b', label: 'Pts banquillo', better: 1, fmt: v => v }];
+const DEC_NOTE = 'Reparto en puntos de la diferencia final entre los factores de Dean Oliver: cada tiro libre cuenta neto de la posesión que consume y cada pérdida o rebote ofensivo vale un tiro al acierto medio del partido. La suma de las barras es exactamente la diferencia del marcador.';
+function gameCtx(g) {
+  if (g._ctx) return g._ctx;
   const tb = A.teamBoxes(g); const m = [A.teamMetrics(tb[0], tb[1]), A.teamMetrics(tb[1], tb[0])];
   const names = g.teams.map(t => esc(t.abbr));
   const P = [0, 1].map(s => A.possessionProfile(g.poss.filter(p => p.side === s)));
   const adv = A.playerAdvanced(g);
   const bench = [0, 1].map(s => adv.filter(p => p.side === s && !p.starter).reduce((a, p) => a + p.box.pts, 0));
-  const rows = [
-    { k: 'ortg', label: 'Pts / 100 pos.', better: 1, fmt: v => nf(v, 1) }, { k: 'efg', label: 'eFG%', better: 1, fmt: pct }, { k: 'ts', label: 'TS%', better: 1, fmt: pct },
-    { k: 'tovp', label: 'Pérdidas/pos.', better: -1, fmt: pct }, { k: 'orbp', label: 'Reb. of. %', better: 1, fmt: pct }, { k: 'ftr', label: 'TLI / TCI', better: 1, fmt: v => nf(v, 2) },
-    { k: 'fg3', label: 'T3%', better: 1, fmt: pct }, { k: 'r3', label: '% tiros de 3', better: 0, fmt: pct }, { k: 'astp', label: '% canastas asist.', better: 1, fmt: pct }
-  ];
-  const extra = [{ k: 'x', label: 'Pts tras pérdida', better: 1, fmt: v => v }, { k: 'y', label: 'Pts 2ª oportunidad', better: 1, fmt: v => v }, { k: 'z', label: 'Pts transición', better: 1, fmt: v => v }, { k: 'b', label: 'Pts banquillo', better: 1, fmt: v => v }];
   const ex = [0, 1].map(s => ({ x: P[s].offTO, y: P[s].second, z: P[s].fastPts, b: bench[s] }));
-  // Ideas clave
+  g._ctx = { tb, m, names, P, adv, ex };
+  return g._ctx;
+}
+function insights(g) {
+  const { tb, m, names, P, adv } = gameCtx(g);
   const ins = [];
   const w = g.final[0] === g.final[1] ? -1 : g.final[0] > g.final[1] ? 0 : 1;
   const T = s => esc(g.teams[s].name);
   if (w >= 0) ins.push(`${g.finished || S.sample ? 'Ganó' : 'Va ganando'} <b>${T(w)}</b> por ${Math.abs(g.final[0] - g.final[1])} con ${m[0].poss} posesiones cada uno (ritmo ${nf(m[0].pace, 1)} por 40 min). Anotó ${nf(m[w].ortg, 1)} puntos por 100 posesiones frente a ${nf(m[1 - w].ortg, 1)}.`);
+  else ins.push(`Empate a ${g.final[0]} con ${m[0].poss} posesiones cada uno (ritmo ${nf(m[0].pace, 1)} por 40 min).`);
   const dec = decomposition(tb[0], tb[1]).slice(0, 4).sort((a, b) => Math.abs(b.v) - Math.abs(a.v));
   if (dec[0] && Math.abs(dec[0].v) >= 1) ins.push(`La mayor parte de la diferencia sale de <b>${dec[0].label.toLowerCase()}</b> (${sg(dec[0].v, 1)} puntos para ${names[dec[0].v >= 0 ? 0 : 1]})${dec[1] && Math.abs(dec[1].v) >= 1 ? `, seguido de ${dec[1].label.toLowerCase()} (${sg(dec[1].v, 1)}).` : '.'}`);
   const rr = A.runs(g, 8).sort((a, b) => b.pts - a.pts);
@@ -1328,16 +1603,248 @@ function vResumen(g) {
   });
   if (Math.abs(P[0].offTO - P[1].offTO) >= 6) { const s = P[0].offTO > P[1].offTO ? 0 : 1; ins.push(`${names[s]} castigó las pérdidas: ${P[s].offTO} puntos tras pérdida rival frente a ${P[1 - s].offTO}.`); }
   if (Math.abs(P[0].second - P[1].second) >= 6) { const s = P[0].second > P[1].second ? 0 : 1; ins.push(`${names[s]} sacó ${P[s].second} puntos de segunda oportunidad (rival: ${P[1 - s].second}).`); }
+  return ins;
+}
+function vResumen(g) {
+  const { tb, m, names, ex } = gameCtx(g);
   return `<div class="grid2">
     <section class="panel"><div class="sec-h"><h2>Comparativa</h2><span class="note">Posesiones contadas jugada a jugada</span></div>
-      ${cmpBlock(names, m[0], m[1], rows)}<div style="height:10px"></div>${cmpBlock(names, ex[0], ex[1], extra)}</section>
+      ${cmpBlock(names, m[0], m[1], CMP_ROWS)}<div style="height:10px"></div>${cmpBlock(names, ex[0], ex[1], CMP_EXTRA)}</section>
     <div class="stack">
-      <section class="panel"><div class="sec-h"><h2>Claves del partido</h2></div><ul class="ins">${ins.map(i => `<li>${i}</li>`).join('')}</ul></section>
-      <section class="panel"><div class="sec-h"><h2>De dónde sale la diferencia</h2></div>${decBlock(decomposition(tb[0], tb[1]), names)}
-      <p class="note">Reparto en puntos de la diferencia final entre los factores de Dean Oliver: cada tiro libre cuenta neto de la posesión que consume y cada pérdida o rebote ofensivo vale un tiro al acierto medio del partido. La suma de las barras es exactamente la diferencia del marcador.</p></section>
+      <section class="panel"><div class="sec-h"><h2>Claves del partido</h2></div><ul class="ins">${insights(g).map(i => `<li>${i}</li>`).join('')}</ul></section>
+      <section class="panel"><div class="sec-h"><h2>De dónde sale la diferencia</h2></div>${decBlock(decomposition(tb[0], tb[1]), names)}<p class="note">${DEC_NOTE}</p></section>
     </div></div>
     <section class="panel"><div class="sec-h"><h2>Evolución del marcador</h2></div>${chart(el => drawFlow(el, g), 230)}</section>`;
 }
+
+// ---------- Situación en pista (directo) ----------
+function courtNow(g) {
+  const last = g.events[g.events.length - 1];
+  const q = last ? last.q : 1;
+  const half = q <= 2 ? [1, 2] : q <= 4 ? [3, 4] : [q];
+  const isPF = t => t === 109 || (t >= 159 && t <= 174) || (t >= 537 && t <= 539) || (t >= 548 && t <= 551) || (t >= 750 && t <= 787);
+  const out = [0, 1].map(s => {
+    const on = last ? (last.linAfter[s] ? last.linAfter[s].split(',').map(Number) : []) : [];
+    const teamFouls = g.events.filter(e => e.q === q && e.side === s && e.pid && isPF(e.type)).length;
+    const tos = g.events.filter(e => e.type === 113 && e.side === s && half.includes(e.q)).length;
+    return { on, teamFouls, tos, q };
+  });
+  return out;
+}
+function bCourt(g, sides) {
+  const now = courtNow(g);
+  const adv = new Map(gameCtx(g).adv.map(p => [p.pid, p]));
+  const lastT = g.lastT;
+  const stintOf = pid => g.stints.filter(z => z.pid === pid).sort((a, b) => b.t0 - a.t0)[0];
+  const half = now[0].q <= 2 ? 'primera parte' : now[0].q <= 4 ? 'segunda parte' : 'prórroga';
+  const maxTO = now[0].q <= 2 ? 2 : now[0].q <= 4 ? 3 : 1;
+  return sides.map(s => {
+    const n = now[s];
+    const rows = n.on.map(pid => { const a = adv.get(pid) || {}; const st = stintOf(pid); return { pid, name: a.name, num: a.num, min: a.min || 0, pf: (a.box && a.box.pf) || 0, pts: (a.box && a.box.pts) || 0, stint: st ? lastT - st.t0 : 0, spm: st ? st.pm : 0, pm: a.pm || 0 }; });
+    const pfCls = r => r.pf >= 4 || (n.q <= 2 && r.pf >= 3) ? 'neg' : r.pf >= 3 ? 'warnc' : '';
+    const bonus = n.teamFouls >= 4;
+    return `<section class="panel"><div class="sec-h"><h2>${tm(g, s)} En pista ${g.finished ? 'al final' : 'ahora'}</h2><span class="note">${qLabel(n.q)}</span></div>
+      <div class="kv" style="margin-bottom:10px"><div><b class="${bonus ? 'neg' : ''}">${n.teamFouls}</b><span>Faltas de equipo en el ${qLabel(n.q)}${bonus ? ' · en bonus' : ''}</span></div><div><b>${Math.max(0, maxTO - n.tos)}</b><span>Tiempos muertos restantes (${half})</span></div></div>
+      ${rows.length ? `<div class="scroll"><table><thead><tr><th>Jugador</th><th class="n">Faltas</th><th class="n">Pts</th><th class="n">Min</th><th class="n" title="Tiempo seguido en pista">En pista</th><th class="n" title="+/- desde que entró">+/- tramo</th><th class="n">+/- total</th></tr></thead><tbody>
+      ${rows.sort((a, b) => b.pf - a.pf).map(r => `<tr><td>${r.num ? '<span class="faint n">' + esc(r.num) + '</span> ' : ''}${esc(r.name)}</td><td class="n"><b class="${pfCls(r)}">${r.pf}</b></td><td class="n">${r.pts}</td><td class="n">${mmss(r.min * 60)}</td><td class="n">${mmss(r.stint)}</td><td class="n">${sgc(r.spm)}</td><td class="n">${sgc(r.pm)}</td></tr>`).join('')}</tbody></table></div>` : '<p class="empty">Sin datos de quinteto.</p>'}
+    </section>`;
+  }).join('');
+}
+function bFouls(g, sides) {
+  const adv = gameCtx(g).adv;
+  return sides.map(s => {
+    const rows = adv.filter(p => p.side === s && (p.box.pf > 0 || p.min > 0)).sort((a, b) => b.box.pf - a.box.pf || b.min - a.min);
+    const per = g.periods;
+    const isPF = t => t === 109 || (t >= 159 && t <= 174) || (t >= 537 && t <= 539) || (t >= 548 && t <= 551) || (t >= 750 && t <= 787);
+    const byQ = pid => per.map(q => g.events.filter(e => e.pid === pid && e.q === q && isPF(e.type)).length);
+    return `<section class="panel"><div class="sec-h"><h2>${tm(g, s)} Faltas por jugador</h2></div><div class="scroll"><table><thead><tr><th>Jugador</th>${per.map(q => `<th class="n">${qLabel(q)}</th>`).join('')}<th class="n">Total</th><th class="n">Recibidas</th></tr></thead><tbody>
+      ${rows.map(p => { const b = byQ(p.pid); return `<tr><td>${esc(p.name)}</td>${b.map(x => `<td class="n">${x || '<span class="faint">·</span>'}</td>`).join('')}<td class="n"><b class="${p.box.pf >= 4 ? 'neg' : p.box.pf >= 3 ? 'warnc' : ''}">${p.box.pf}</b></td><td class="n">${p.box.fd}</td></tr>`; }).join('')}</tbody></table></div></section>`;
+  }).join('');
+}
+function bLastPlays(g, sides, n = 12) {
+  const ev = g.events.filter(e => e.type !== 600 && e.type !== 599 && e.type !== 112 && e.type !== 115 && (sides.length === 2 || e.side === sides[0] || !e.pid)).slice(-n).reverse();
+  return `<section class="panel"><div class="sec-h"><h2>Últimas jugadas</h2></div><div class="scroll"><table><tbody>${ev.map(e => `<tr><td class="n">${qLabel(e.q)} ${e.clock}</td><td>${e.pid || [113, 101, 104, 106].includes(e.type) ? tm(g, e.side) : ''}</td><td>${e.pid ? esc(short(g.players.get(e.pid).name)) : ''}</td><td>${esc(A.label(e))}</td><td class="n">${e.d[0] || e.d[1] ? '<b>' + e.sh + '-' + e.sa + '</b>' : '<span class="faint">' + e.sh + '-' + e.sa + '</span>'}</td></tr>`).join('')}</tbody></table></div></section>`;
+}
+
+// ---------- Mapa de tiro (BCL: coordenadas FIBA) ----------
+const SHOT_T = new Set([93, 94, 97, 98, 100, 533]);
+const MADE_T = new Set([93, 94, 100]);
+const THREE_T = new Set([94, 98]);
+function shotList(g, f) {
+  return g.events.filter(e => SHOT_T.has(e.type) && e.x != null && (e.x || e.y) && (!f || f(e)));
+}
+function courtSVG(shots, side, opts = {}) {
+  // Media pista FIBA: 280 × 262 unidades (18,67 por metro), aro en (140, 29). Se dibuja con el aro abajo.
+  const W = 280, H = 262, Y = y => H - y;
+  const k = 18.67, bx = 140, by = 29;
+  const r3 = 6.75 * k, cx = 0.9 * k, yc = by + Math.sqrt(r3 * r3 - (bx - cx) * (bx - cx));
+  const L = (x1, y1, x2, y2) => `<line x1="${x1}" y1="${Y(y1)}" x2="${x2}" y2="${Y(y2)}"/>`;
+  let s = `<svg viewBox="-4 -4 ${W + 8} ${H + 8}" role="img" aria-label="Mapa de tiro" style="max-width:420px;margin:0 auto">
+    <g fill="none" stroke="var(--line)" stroke-width="1.5">
+      <rect x="0" y="0" width="${W}" height="${H}" fill="var(--surface-2)"/>
+      <rect x="${bx - 2.45 * k}" y="${Y(5.8 * k)}" width="${4.9 * k}" height="${5.8 * k}"/>
+      <circle cx="${bx}" cy="${Y(5.8 * k)}" r="${1.8 * k}"/>
+      <path d="M ${bx - 1.25 * k} ${Y(by)} A ${1.25 * k} ${1.25 * k} 0 0 1 ${bx + 1.25 * k} ${Y(by)}"/>
+      ${L(cx, 0, cx, yc)}${L(W - cx, 0, W - cx, yc)}
+      <path d="M ${cx} ${Y(yc)} A ${r3} ${r3} 0 0 1 ${W - cx} ${Y(yc)}"/>
+      ${L(bx - 0.9 * k, 1.2 * k, bx + 0.9 * k, 1.2 * k)}
+      <circle cx="${bx}" cy="${Y(by)}" r="${0.225 * k}" stroke="var(--ink-3)"/>
+      <path d="M ${bx - 1.8 * k} 0 A ${1.8 * k} ${1.8 * k} 0 0 0 ${bx + 1.8 * k} 0"/>
+    </g>`;
+  const col = side ? 'var(--away)' : 'var(--home)';
+  shots.forEach(e => {
+    const made = MADE_T.has(e.type), p = e.pid && S.g && S.g.players.get(e.pid);
+    const tipTxt = `<b>${esc(p ? p.name : '')}</b><br>${qLabel(e.q)} ${e.clock} · ${made ? 'Anotado' : 'Fallado'}${e.txt ? '<br>' + esc(e.txt) : ''}`;
+    s += made
+      ? `<circle cx="${e.x}" cy="${Y(e.y)}" r="5" fill="${col}" stroke="var(--surface)" stroke-width="1.5" data-tip="${esc(tipTxt)}"/>`
+      : `<g data-tip="${esc(tipTxt)}"><circle cx="${e.x}" cy="${Y(e.y)}" r="7" fill="transparent"/><path d="M ${e.x - 3.5} ${Y(e.y) - 3.5} L ${e.x + 3.5} ${Y(e.y) + 3.5} M ${e.x + 3.5} ${Y(e.y) - 3.5} L ${e.x - 3.5} ${Y(e.y) + 3.5}" stroke="var(--ink-3)" stroke-width="1.8"/></g>`;
+  });
+  return s + '</svg>';
+}
+function zoneRows(shots) {
+  const Z = ['Zona restringida', 'Pintura', 'Media distancia', 'Triple de esquina', 'Triple frontal'];
+  const tot = shots.length;
+  return Z.map(z => {
+    const ss = shots.filter(e => F.shotZone(e.x, e.y, THREE_T.has(e.type)) === z);
+    const m = ss.filter(e => MADE_T.has(e.type)).length;
+    const pts = ss.reduce((a, e) => a + (MADE_T.has(e.type) ? (THREE_T.has(e.type) ? 3 : 2) : 0), 0);
+    return { z, n: ss.length, m, pct: div0(m, ss.length), share: div0(ss.length, tot), pps: div0(pts, ss.length) };
+  });
+}
+const zoneCols = [{ k: 'z', label: 'Zona', v: r => r.z }, { k: 'n', label: 'Tiros', num: true, f: r => r.m + '/' + r.n, t: r => r.n },
+  { k: 'pct', label: '% acierto', num: true, f: r => pct(r.pct, 0) }, { k: 'share', label: '% de sus tiros', num: true, f: r => pct(r.share, 0) },
+  { k: 'pps', label: 'Pts por tiro', num: true, f: r => nf(r.pps, 2) }];
+function bShotMap(g, sides, opts = {}) {
+  if (!g.hasShots) return `<section class="panel"><div class="sec-h"><h2>Mapa de tiro</h2></div><p class="empty">${g.comp === 'acb' ? 'La ACB no publica la posición de los tiros en su jugada a jugada. El mapa de tiro está disponible en los partidos de la Champions League.' : 'Este partido no tiene posición de tiros.'}</p></section>`;
+  const pf = S.shotPlayer || 'all', qf = S.shotQ || 'all';
+  const f = e => (qf === 'all' || e.q === Number(qf)) && (pf === 'all' || e.pid === Number(pf));
+  return sides.map(s => {
+    const shots = shotList(g, e => e.side === s && f(e));
+    const m = shots.filter(e => MADE_T.has(e.type)).length;
+    return `<section class="panel"><div class="sec-h"><h2>${tm(g, s)} Mapa de tiro</h2><span class="note">${m}/${shots.length} en tiros de campo · punto: anotado · aspa: fallado</span></div>
+      ${courtSVG(shots, s)}${opts.table === false ? '' : '<div style="height:10px"></div>' + tbl('zn' + s + (opts.key || ''), zoneCols, zoneRows(shots))}</section>`;
+  }).join('');
+}
+function shotFilters(g) {
+  const ps = [...g.players.values()].filter(p => shotList(g, e => e.pid === p.pid).length).sort((a, b) => a.side - b.side || a.name.localeCompare(b.name));
+  return `<div class="filters"><span class="lbl">Periodo</span>${[['all', 'Todos'], ...g.periods.map(q => [String(q), qLabel(q)])].map(([k, l]) => `<button class="chipbtn" data-shotq="${k}" aria-pressed="${(S.shotQ || 'all') === k}">${l}</button>`).join('')}</div>
+    <div class="row"><label class="lbl" for="sel-shotp">Jugador</label><select id="sel-shotp" style="max-width:320px"><option value="all">Todos</option>${ps.map(p => `<option value="${p.pid}" ${String(S.shotPlayer) === String(p.pid) ? 'selected' : ''}>${esc(g.teams[p.side].abbr)} · ${esc(p.name)}</option>`).join('')}</select></div>`;
+}
+function vTiro(g) {
+  return `<section class="panel stack" style="gap:8px">${g.hasShots ? shotFilters(g) : ''}</section><div class="grid2">${bShotMap(g, [0, 1])}</div>`;
+}
+
+// ---------- Pestaña Entrenador ----------
+// Cada bloque devuelve uno o varios paneles; "sides" son los equipos en foco
+const BLOCKS = [
+  { id: 'claves', label: 'Claves del partido', w: 'half', r: g => `<section class="panel"><div class="sec-h"><h2>Claves del partido</h2></div><ul class="ins">${insights(g).map(i => `<li>${i}</li>`).join('')}</ul></section>` },
+  { id: 'pista', label: 'En pista ahora: faltas, tiempos y +/-', w: 'half', team: true, r: (g, s) => bCourt(g, s) },
+  { id: 'ultimas', label: 'Últimas jugadas', w: 'half', r: (g, s) => bLastPlays(g, s) },
+  { id: 'comparativa', label: 'Comparativa de equipos', w: 'half', r: g => { const { m, names, ex } = gameCtx(g); return `<section class="panel"><div class="sec-h"><h2>Comparativa</h2></div>${cmpBlock(names, m[0], m[1], CMP_ROWS)}<div style="height:10px"></div>${cmpBlock(names, ex[0], ex[1], CMP_EXTRA)}</section>`; } },
+  { id: 'factores', label: 'Cuatro factores', w: 'half', r: g => { const { m, names } = gameCtx(g); return `<section class="panel"><div class="sec-h"><h2>Cuatro factores</h2></div>${cmpBlock(names, m[0], m[1], FF)}</section>`; } },
+  { id: 'diferencia', label: 'De dónde sale la diferencia', w: 'half', r: g => { const { tb, names } = gameCtx(g); return `<section class="panel"><div class="sec-h"><h2>De dónde sale la diferencia</h2></div>${decBlock(decomposition(tb[0], tb[1]), names)}</section>`; } },
+  { id: 'marcador', label: 'Evolución del marcador', w: 'full', r: g => `<section class="panel"><div class="sec-h"><h2>Evolución del marcador</h2></div>${chart(el => drawFlow(el, g), 230)}</section>` },
+  { id: 'wp', label: 'Probabilidad de victoria', w: 'full', r: g => `<section class="panel"><div class="sec-h"><h2>Probabilidad de victoria</h2></div>${chart(el => drawWP(el, g), 190)}</section>` },
+  { id: 'jugadores', label: 'Jugadores: estadística básica', w: 'full', team: true, r: (g, s) => coachPlayers(g, s, 'basic') },
+  { id: 'avanzada', label: 'Jugadores: estadística avanzada', w: 'full', team: true, r: (g, s) => coachPlayers(g, s, 'adv') },
+  { id: 'impacto', label: 'Jugadores: impacto (on/off, WPA)', w: 'full', team: true, r: (g, s) => coachPlayers(g, s, 'imp') },
+  { id: 'faltas', label: 'Faltas por jugador y cuarto', w: 'half', team: true, r: (g, s) => bFouls(g, s) },
+  { id: 'quintetos', label: 'Quintetos más usados', w: 'full', team: true, r: (g, s) => { const L = A.lineupTallies(g); return s.map(x => `<section class="panel"><div class="sec-h"><h2>${tm(g, x)} Quintetos</h2></div>${tbl('cq' + x, lineupCols, lineupRows(L.filter(l => l.side === x), 5, pid => short(g.players.get(pid).name)), { sort: { k: 'min', d: -1 } })}</section>`).join(''); } },
+  { id: 'parejas', label: 'Mejores parejas', w: 'half', team: true, r: (g, s) => { const L = A.lineupTallies(g); return s.map(x => `<section class="panel"><div class="sec-h"><h2>${tm(g, x)} Parejas</h2></div>${tbl('cp2' + x, lineupCols.slice(0, 7), lineupRows(L.filter(l => l.side === x), 2, pid => short(g.players.get(pid).name)).filter(r => r.min >= 3), { sort: { k: 'net', d: -1 } })}</section>`).join(''); } },
+  { id: 'rotacion', label: 'Rotación (minutos en pista)', w: 'full', team: true, r: (g, s) => s.map(x => `<section class="panel"><div class="sec-h"><h2>${tm(g, x)} Rotación</h2></div>${chart(el => drawGantt(el, g, x), 200)}</section>`).join('') },
+  { id: 'parciales', label: 'Parciales (7-0 o más)', w: 'full', r: g => `<section class="panel"><div class="sec-h"><h2>Parciales</h2></div>${runsTable(g)}</section>` },
+  { id: 'tiempos', label: 'Efecto de los tiempos muertos', w: 'full', r: g => `<section class="panel"><div class="sec-h"><h2>Tiempos muertos</h2></div>${timeoutTable(g)}</section>` },
+  { id: 'momentos', label: 'Jugadas de mayor impacto', w: 'half', r: g => `<section class="panel"><div class="sec-h"><h2>Jugadas de mayor impacto</h2></div>${swingTable(g)}</section>` },
+  { id: 'posesiones', label: 'Perfil de posesiones', w: 'half', team: true, r: (g, s) => { const { P } = gameCtx(g); return s.map(x => `<section class="panel"><div class="sec-h"><h2>${tm(g, x)} Posesiones</h2></div>${profileKV(P[x])}</section>`).join(''); } },
+  { id: 'inicio', label: 'Eficiencia según inicio de posesión', w: 'full', r: g => { const { P, names } = gameCtx(g); return `<section class="panel"><div class="sec-h"><h2>Cómo empieza la posesión</h2></div>${profileTable('cpst', P[0], P[1], names)}</section>`; } },
+  { id: 'mapa', label: 'Mapa de tiro (Champions League)', w: 'half', team: true, r: (g, s) => bShotMap(g, s, { key: 'c' }) },
+  { id: 'asistencias', label: 'Red de asistencias', w: 'half', team: true, r: (g, s) => s.map(x => `<section class="panel"><div class="sec-h"><h2>${tm(g, x)} Asistencias</h2></div>${assistNet(g, x)}</section>`).join('') },
+  { id: 'clutch', label: 'Clutch (equipos)', w: 'half', r: g => { const tb = A.teamBoxes(g, x => x.clutch); if (!tb[0].sec) return `<section class="panel"><div class="sec-h"><h2>Clutch</h2></div><p class="empty">Todavía no hay minutos clutch.</p></section>`; const m = [A.teamMetrics(tb[0], tb[1]), A.teamMetrics(tb[1], tb[0])]; return `<section class="panel"><div class="sec-h"><h2>Clutch</h2><span class="note">${mmss(tb[0].sec)} jugados</span></div>${cmpBlock(gameCtx(g).names, m[0], m[1], [{ k: 'pts', label: 'Puntos', better: 1, fmt: v => v }, { k: 'ortg', label: 'Pts / 100 pos.', better: 1, fmt: v => nf(v, 1) }, ...FF])}</section>`; } }
+];
+const COACH_DEFAULT = { blocks: ['pista', 'claves', 'ultimas', 'marcador', 'factores', 'jugadores', 'rotacion', 'parciales', 'faltas'], focus: 'mine', mine: 'SBB' };
+function coachCfg() { const c = store.get('coach', null); return c && Array.isArray(c.blocks) ? Object.assign({}, COACH_DEFAULT, c) : JSON.parse(JSON.stringify(COACH_DEFAULT)); }
+function coachSides(g, cfg) {
+  if (cfg.focus === '0') return [0]; if (cfg.focus === '1') return [1];
+  if (cfg.focus === 'mine') { const i = g.teams.findIndex(t => String(t.abbr).toUpperCase() === String(cfg.mine || '').toUpperCase()); return i >= 0 ? [i] : [0, 1]; }
+  return [0, 1];
+}
+function coachPlayers(g, sides, set) {
+  const adv = gameCtx(g).adv;
+  return sides.map(s => `<section class="panel"><div class="sec-h"><h2>${tm(g, s)} Jugadores</h2></div>${tbl('cpl' + s + set, playerCols(set, g), adv.filter(p => p.side === s && (p.min > 0 || p.box.pts)), { sort: { k: 'min', d: -1 } })}</section>`).join('');
+}
+function vEntrenador(g) {
+  const cfg = coachCfg();
+  const sides = coachSides(g, cfg);
+  const foc = [['mine', 'Mi equipo'], ['all', 'Ambos'], ['0', g.teams[0].abbr + ' (local)'], ['1', g.teams[1].abbr + ' (visitante)']];
+  const head = `<section class="panel stack" style="gap:8px">
+    <div class="row" style="justify-content:space-between"><div class="filters"><span class="lbl">Equipo</span>${foc.map(([k, l]) => `<button class="chipbtn" data-cfocus="${k}" aria-pressed="${cfg.focus === k}">${esc(l)}</button>`).join('')}</div>
+    <button class="btn ghost" data-cedit="1">${S.coachEdit ? 'Cerrar edición' : 'Personalizar panel'}</button></div>
+    ${cfg.focus === 'mine' && sides.length === 2 ? `<p class="note" style="margin:0">«Mi equipo» es ${esc(cfg.mine)} y no juega este partido: se muestran los dos equipos.</p>` : ''}
+    ${S.coachEdit ? coachEditor(cfg) : ''}</section>`;
+  const blocks = cfg.blocks.map(id => BLOCKS.find(b => b.id === id)).filter(Boolean);
+  if (!blocks.length) return head + '<div class="panel empty">El panel está vacío. Pulsa «Personalizar panel» y marca lo que quieres ver.</div>';
+  // Empareja los bloques de media anchura en filas de dos
+  let html = '', buf = [];
+  const flush = () => { if (buf.length) { html += `<div class="grid2">${buf.join('')}</div>`; buf = []; } };
+  blocks.forEach(b => {
+    let inner = ''; try { inner = b.r(g, sides); } catch (e) { inner = `<section class="panel"><p class="empty">No se pudo calcular «${esc(b.label)}».</p></section>`; }
+    const w = (cfg.w && cfg.w[b.id]) || b.w;
+    if (w === 'full') { flush(); html += `<div class="stack">${b.team && sides.length === 2 ? `<div class="grid2">${inner}</div>` : inner}</div>`; }
+    else { if (b.team && sides.length === 2) { flush(); html += `<div class="grid2">${inner}</div>`; } else { buf.push(`<div class="stack">${inner}</div>`); if (buf.length === 2) flush(); } }
+  });
+  flush();
+  return head + html;
+}
+function coachEditor(cfg) {
+  const on = new Set(cfg.blocks);
+  const ordered = [...cfg.blocks.map(id => BLOCKS.find(b => b.id === id)).filter(Boolean), ...BLOCKS.filter(b => !on.has(b.id))];
+  return `<div class="coach-ed">
+    <div class="row"><div class="field" style="flex:0 1 200px"><label for="in-mine">Mi equipo (siglas)</label><input type="text" id="in-mine" value="${esc(cfg.mine)}" maxlength="6"></div>
+    <p class="note" style="margin:0;flex:1 1 260px">Marca los bloques que quieres ver, ordénalos con las flechas y elige su ancho. Se guarda en este dispositivo; para usar la misma configuración en otro, copia el código y pégalo allí.</p></div>
+    <ol class="ced-list">${ordered.map(b => `<li class="${on.has(b.id) ? '' : 'off'}"><label><input type="checkbox" data-cblock="${b.id}" ${on.has(b.id) ? 'checked' : ''}> ${esc(b.label)}</label>
+      ${on.has(b.id) ? `<span class="ced-act"><button class="lnk" data-cwidth="${b.id}" title="Cambiar ancho">${((cfg.w && cfg.w[b.id]) || b.w) === 'full' ? 'Ancho completo' : 'Media anchura'}</button><button class="lnk" data-cmove="${b.id}|-1" aria-label="Subir">↑</button><button class="lnk" data-cmove="${b.id}|1" aria-label="Bajar">↓</button></span>` : ''}</li>`).join('')}</ol>
+    <div class="row"><button class="btn ghost" data-ccopy="1">Copiar código de configuración</button><input type="text" id="in-ccode" placeholder="Pega aquí un código de configuración" style="flex:1 1 220px;width:auto"><button class="btn ghost" data-cpaste="1">Aplicar código</button><button class="lnk" data-creset="1">Restablecer</button></div>
+    <div class="status" id="st-coach"></div></div>`;
+}
+function saveCoach(cfg) { store.set('coach', cfg); delete S.g._ctx; render(); }
+
+// Tablas reutilizadas (Dinámica y Entrenador)
+function runsTable(g) {
+  const rr = A.runs(g, 7);
+  const cols = [{ k: 'side', label: 'Equipo', f: r => tm(g, r.side), v: r => g.teams[r.side].abbr }, { k: 'pts', label: 'Parcial', num: true, f: r => r.pts + '-0' },
+    { k: 't0', label: 'Desde', num: true, f: r => clockAt(r.t0) }, { k: 't1', label: 'Hasta', num: true, f: r => clockAt(r.t1) },
+    { k: 'score', label: 'Marcador', num: true, v: r => r.endScore[0] - r.endScore[1], f: r => `${r.startScore[0]}-${r.startScore[1]} → ${r.endScore[0]}-${r.endScore[1]}` },
+    { k: 'to', label: 'Tiempo muerto rival', v: r => r.timeouts.length ? r.timeouts.join(', ') + ` (después: ${r.afterTO}-0)` : 'No' }];
+  return tbl('crun', cols, rr, { sort: { k: 't0', d: -1 }, empty: 'No hay parciales de 7-0 o más.' });
+}
+function timeoutTable(g) {
+  const to = A.timeouts(g, 4);
+  const ppp = a => div0(a[0], a[1]);
+  const cols = [{ k: 'side', label: 'Pide', f: r => tm(g, r.side), v: r => g.teams[r.side].abbr }, { k: 'when', label: 'Momento', num: true, v: r => r.e.t, f: r => qLabel(r.q) + ' ' + r.clock },
+    { k: 'p2', label: '2 min antes', num: true, v: r => r.prev2[0] - r.prev2[1], f: r => `${r.prev2[0]}-${r.prev2[1]}` },
+    { k: 'n2', label: '2 min después', num: true, v: r => r.next2[0] - r.next2[1], f: r => `${r.next2[0]}-${r.next2[1]}` },
+    { k: 'eff', label: 'Efecto neto (PPP)', num: true, v: r => { const a = ppp(r.afterO), b = ppp(r.afterD), c = ppp(r.beforeO), d = ppp(r.beforeD); return a == null || b == null || c == null || d == null ? null : (a - b) - (c - d); }, f: r => { const a = ppp(r.afterO), b = ppp(r.afterD), c = ppp(r.beforeO), d = ppp(r.beforeD); return sgc(a == null || b == null || c == null || d == null ? null : (a - b) - (c - d), 2); } }];
+  return tbl('cto', cols, to, { sort: { k: 'when', d: -1 }, empty: 'Sin tiempos muertos todavía.' });
+}
+function swingTable(g) {
+  const sw = g.swings.map(s => ({ s, t: s.e.t }));
+  const cols = [{ k: 't', label: 'Momento', num: true, f: r => clockAt(r.t) }, { k: 'tm', label: 'Equipo', f: r => tm(g, r.s.side), v: r => g.teams[r.s.side].abbr },
+    { k: 'who', label: 'Jugada', cls: 'wrap', v: r => (r.s.e.pid ? g.players.get(r.s.e.pid).name + ' · ' : '') + A.label(r.s.e) },
+    { k: 'dwp', label: 'Δ prob. victoria', num: true, v: r => Math.abs(r.s.dwp), f: r => sgc(100 * (r.s.side === 0 ? r.s.dwp : -r.s.dwp), 1) + '<span class="faint">%</span>' }];
+  return tbl('csw', cols, sw.slice(0, 8), { sort: { k: 'dwp', d: -1 } });
+}
+function assistNet(g, s) {
+  const as = g.assists.filter(a => a.side === s);
+  if (!as.length) return '<p class="empty">Sin asistencias todavía.</p>';
+  const passers = [...new Set(as.map(a => a.from))], scorers = [...new Set(as.map(a => a.to))];
+  const cnt = (a, b) => as.filter(x => x.from === a && x.to === b).length;
+  const max = Math.max(1, ...passers.flatMap(a => scorers.map(b => cnt(a, b))));
+  passers.sort((a, b) => as.filter(x => x.from === b).length - as.filter(x => x.from === a).length);
+  scorers.sort((a, b) => as.filter(x => x.to === b).length - as.filter(x => x.to === a).length);
+  const nm = pid => esc(short(g.players.get(pid).name));
+  return `<div class="scroll"><table><thead><tr><th>Pasa ↓ / Anota →</th>${scorers.map(b => `<th class="n">${nm(b)}</th>`).join('')}<th class="n">Total</th><th class="n">Pts gen.</th></tr></thead><tbody>${passers.map(a => `<tr><td>${nm(a)}</td>${scorers.map(b => { const c = cnt(a, b); return `<td class="n" style="background:color-mix(in srgb, var(--${s ? 'away' : 'home'}) ${Math.round(70 * c / max)}%, transparent)">${c || ''}</td>`; }).join('')}<td class="n"><b>${as.filter(x => x.from === a).length}</b></td><td class="n">${as.filter(x => x.from === a).reduce((t, x) => t + x.pts, 0)}</td></tr>`).join('')}</tbody></table></div>`;
+}
+
 function vFactores(g) {
   const names = g.teams.map(t => esc(t.abbr));
   const splits = [['Partido', null], ...g.periods.map(q => [qLabel(q), x => x.q === q]), ['1ª parte', x => x.q <= 2], ['2ª parte', x => x.q >= 3], ['Clutch', x => x.clutch]];
@@ -1599,9 +2106,12 @@ function sPartidos(list) {
 }
 
 // ---------- Render ----------
-function render() {
-  CHARTS.length = 0;
+function render(silent) {
   const view = $('#view');
+  const ae = document.activeElement;
+  if (silent && ae && view.contains(ae) && /INPUT|SELECT|TEXTAREA/.test(ae.tagName)) { S.pendingRender = true; return; }
+  S.pendingRender = false;
+  CHARTS.length = 0; hideTip();
   $('#m-match').setAttribute('aria-pressed', S.mode === 'match'); $('#m-scout').setAttribute('aria-pressed', S.mode === 'scout');
   $('#loader-match').hidden = S.mode !== 'match'; $('#loader-scout').hidden = S.mode !== 'scout';
   let html = '';
@@ -1609,7 +2119,7 @@ function render() {
     const g = S.g;
     if (!g) { view.innerHTML = '<div class="panel empty">Carga un partido para empezar.</div>'; return; }
     if (!TABS.find(t => t[0] === S.tab)) S.tab = 'resumen';
-    const V = { resumen: vResumen, factores: vFactores, jugadores: vJugadores, quintetos: vQuintetos, rotaciones: vRotaciones, dinamica: vDinamica, posesiones: vPosesiones, clutch: vClutch, jugadas: vJugadas }[S.tab];
+    const V = { entrenador: vEntrenador, resumen: vResumen, factores: vFactores, jugadores: vJugadores, quintetos: vQuintetos, rotaciones: vRotaciones, dinamica: vDinamica, posesiones: vPosesiones, tiro: vTiro, clutch: vClutch, jugadas: vJugadas }[S.tab];
     html = scoreboard(g) + tabsBar(TABS, S.tab, 'data-tab') + `<div class="stack" style="margin-top:14px">${V(g)}</div>`;
   } else {
     const list = S.scout.list;
@@ -1637,7 +2147,22 @@ document.addEventListener('click', async e => {
   else if (d.close) { S.closeMode = d.close; render(); }
   else if (d.pside) { S.pbpSide = d.pside; render(); }
   else if (d.pkind) { S.pbpKind = d.pkind; render(); }
-  else if (d.open) { setMode('match'); $('#in-url').value = d.open; loadMatch(Number(d.open)); }
+  else if (d.open) { setMode('match'); $('#in-url').value = S.compet + '-' + d.open; loadMatch({ comp: S.compet, id: Number(d.open) }); }
+  else if (d.compet) { setCompet(d.compet); }
+  else if (d.cfocus) { const c = coachCfg(); c.focus = d.cfocus; saveCoach(c); }
+  else if (d.cedit) { S.coachEdit = !S.coachEdit; render(); }
+  else if (d.cwidth) { const c = coachCfg(); const b = BLOCKS.find(x => x.id === d.cwidth); c.w = c.w || {}; c.w[b.id] = ((c.w[b.id] || b.w) === 'full') ? 'half' : 'full'; saveCoach(c); }
+  else if (d.cmove) { const [id, dir] = d.cmove.split('|'); const c = coachCfg(); const i = c.blocks.indexOf(id), j = i + Number(dir); if (i >= 0 && j >= 0 && j < c.blocks.length) { [c.blocks[i], c.blocks[j]] = [c.blocks[j], c.blocks[i]]; saveCoach(c); } }
+  else if (d.creset) { store.set('coach', null); render(); }
+  else if (d.ccopy) {
+    const code = btoa(unescape(encodeURIComponent(JSON.stringify(coachCfg()))));
+    try { await navigator.clipboard.writeText(code); $('#st-coach').textContent = 'Código copiado. Pégalo en «Aplicar código» en el otro dispositivo.'; }
+    catch (err) { const i = $('#in-ccode'); i.value = code; i.select(); $('#st-coach').textContent = 'Copia el código seleccionado en la casilla.'; }
+  } else if (d.cpaste) {
+    try { const c = JSON.parse(decodeURIComponent(escape(atob($('#in-ccode').value.trim())))); if (!Array.isArray(c.blocks)) throw 0; c.blocks = c.blocks.filter(id => BLOCKS.some(b => b.id === id)); store.set('coach', c); render(); }
+    catch (err) { $('#st-coach').textContent = 'Ese código no es válido. Cópialo de nuevo desde el otro dispositivo.'; }
+  }
+  else if (d.shotq) { S.shotQ = d.shotq; render(); }
   else if (d.copy) {
     const txt = tableText(d.copy, '\t');
     try { await navigator.clipboard.writeText(txt); b.textContent = 'Copiada'; } catch (err) { b.textContent = 'No se pudo copiar'; }
@@ -1654,24 +2179,39 @@ document.addEventListener('click', e => {
   S.sort[id] = cur && cur.k === k ? { k, d: -cur.d } : { k, d: typeof sample === 'string' ? 1 : -1 };
   render();
 });
-function setMode(m) { S.mode = m; render(); if (m === 'scout' && S.comp === null) initRounds(); }
+function setMode(m) { S.mode = m; render(); }
+document.addEventListener('change', e => {
+  const t = e.target;
+  if (t.dataset && t.dataset.cblock) { const c = coachCfg(); const id = t.dataset.cblock; c.blocks = t.checked ? [...c.blocks.filter(x => x !== id), id] : c.blocks.filter(x => x !== id); saveCoach(c); }
+  else if (t.id === 'in-mine') { const c = coachCfg(); c.mine = t.value.trim().toUpperCase(); saveCoach(c); }
+  else if (t.id === 'sel-shotp') { S.shotPlayer = t.value; render(); }
+});
+document.addEventListener('focusout', () => { if (S.pendingRender) setTimeout(() => { if (S.pendingRender) render(true); }, 0); });
 $('#m-match').onclick = () => setMode('match');
 $('#m-scout').onclick = () => setMode('scout');
-$('#b-load').onclick = () => loadMatch(parseId($('#in-url').value));
-$('#in-url').addEventListener('keydown', e => { if (e.key === 'Enter') loadMatch(parseId($('#in-url').value)); });
-$('#in-url').addEventListener('paste', e => { setTimeout(() => { const id = parseId($('#in-url').value); if (id) loadMatch(id); }, 0); });
-$('#sel-round').onchange = e => { if (e.target.value) fillMatches(Number(e.target.value)).catch(() => { }); };
-$('#sel-match').onchange = e => { if (e.target.value) { $('#in-url').value = e.target.value; loadMatch(Number(e.target.value)); } };
+$('#b-load').onclick = () => loadMatch(parseLink($('#in-url').value));
+$('#in-url').addEventListener('keydown', e => { if (e.key === 'Enter') loadMatch(parseLink($('#in-url').value)); });
+$('#in-url').addEventListener('paste', e => { setTimeout(() => { const l = parseLink($('#in-url').value); if (l) loadMatch(l); }, 0); });
+$('#sel-round').onchange = e => { if (e.target.value) fillMatches(e.target.value).catch(() => { }); };
+$('#sel-match').onchange = e => { if (e.target.value) { $('#in-url').value = e.target.value; loadMatch(parseLink(e.target.value)); } };
 $('#in-live').onchange = setupLive;
+$('#sel-every').value = String(S.every);
+$('#sel-every').onchange = e => { S.every = Number(e.target.value); store.set('every', S.every); setupLive(); };
+$('#in-proxy').value = PROXY || DEFAULT_PROXY;
+$('#b-proxy').onclick = () => { PROXY = $('#in-proxy').value.trim().replace(/\/+$/, ''); store.set('proxy', PROXY); $('#st-match').textContent = 'Dirección del puente BCL guardada.'; };
+document.addEventListener('visibilitychange', () => { if (!document.hidden && S.g && !S.g.finished && S.matchId && S.timer) loadMatch({ comp: S.g.comp, id: S.matchId }, { silent: true }); });
 $('#b-scout').onclick = loadScout;
 $('#in-key').value = KEY;
 $('#b-key').onclick = () => { KEY = $('#in-key').value.trim() || DEFAULT_KEY; store.set('key', KEY); S.comp = null; initRounds(); $('#st-match').textContent = 'Clave guardada.'; };
+document.querySelectorAll('[data-compet]').forEach(b => b.setAttribute('aria-pressed', b.dataset.compet === S.compet));
 $('#b-snip').onclick = async () => { try { await navigator.clipboard.writeText($('#snippet').textContent); $('#b-snip').textContent = 'Copiado'; } catch (e) { const r = document.createRange(); r.selectNodeContents($('#snippet')); getSelection().removeAllRanges(); getSelection().addRange(r); } };
 $('#b-json').onclick = () => {
   try {
     const raw = JSON.parse($('#in-json').value);
-    if (!raw.plays) throw new Error();
-    S.g = A.parseGame(raw, { id: null }); S.sample = false; S.matchId = null;
+    if (!raw.plays && !raw.rows) throw new Error();
+    if (raw.rows && raw.game) { S.g = A.parseGame(F.fibaToRaw(raw), { id: raw.game.id }); S.g.comp = 'bcl'; }
+    else { S.g = A.parseGame(raw, { id: null }); S.g.comp = 'acb'; }
+    S.g.hasShots = S.g.events.some(e => e.x != null && e.x !== 0); S.sample = false; S.matchId = null;
     $('#st-match').textContent = 'Datos pegados analizados: ' + raw.plays.length + ' jugadas.'; $('#st-match').className = 'status';
     render();
   } catch (e) { $('#st-match').textContent = 'El texto pegado no es el JSON del play by play (debe contener «plays»).'; $('#st-match').className = 'status err'; }
@@ -1690,11 +2230,12 @@ $('#b-dlhtml').onclick = async () => {
 // ---------- Arranque ----------
 (async function boot() {
   const h = (location.hash || '').replace('#', '');
-  const fromHash = /^\d{5,7}$/.test(h) ? Number(h) : null;
+  let link = /^(acb|bcl)-\d{5,7}$/.test(h) ? parseLink(h) : /^\d{5,7}$/.test(h) ? { comp: 'acb', id: +h } : null;
+  if (!link) { const l = store.get('last', null); link = l == null ? null : typeof l === 'number' ? { comp: 'acb', id: l } : parseLink(String(l)); }
   loadSample();
+  if (link && link.comp !== S.compet) { S.compet = link.comp; store.set('compet', link.comp); document.querySelectorAll('[data-compet]').forEach(b => b.setAttribute('aria-pressed', b.dataset.compet === S.compet)); }
   initRounds();
-  const id = fromHash || store.get('last', null);
-  if (id) { $('#in-url').value = id; loadMatch(id); }
+  if (link) { $('#in-url').value = link.comp + '-' + link.id; loadMatch(link); }
 })();
 })();
 </script>
