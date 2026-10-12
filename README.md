@@ -1,4 +1,4 @@
-# Laboratorio ACB
+# StatsLAB
 
 Herramienta web para analizar partidos de la Liga Endesa y de la Basketball Champions League con estadística avanzada a partir del jugada a jugada oficial.
 

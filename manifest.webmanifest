@@ -1,6 +1,6 @@
 {
-  "name": "Laboratorio ACB",
-  "short_name": "Lab ACB",
+  "name": "StatsLAB",
+  "short_name": "StatsLAB",
   "description": "Estadística avanzada de partidos ACB y Basketball Champions League desde el play by play",
   "lang": "es",
   "start_url": "./",

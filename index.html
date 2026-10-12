@@ -6,14 +6,15 @@
 <meta name="description" content="Estadística avanzada de partidos ACB y Champions League desde el play by play">
 <meta name="theme-color" content="#1d3b53">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Lab ACB">
+<meta name="apple-mobile-web-app-title" content="StatsLAB">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon-180.png">
+<script>try{var k=JSON.parse(localStorage.getItem("lab-acb:skin"));if(k)document.documentElement.setAttribute("data-skin",k)}catch(e){}</script>
 <style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font-size:14px}img{max-width:100%}[hidden]{display:none!important}</style>
 </head>
 <body>
-<title>Laboratorio ACB</title>
+<title>StatsLAB</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
@@ -49,6 +50,61 @@ button, select, input, textarea { font: inherit; color: inherit }
 .top { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; justify-content: space-between }
 .brand-h { font-size: 1.6rem; text-transform: uppercase; letter-spacing: .04em; white-space: nowrap }
 .top-ctl { justify-content: flex-end; gap: 6px }
+
+/* ---------- Estilos (skins) ---------- */
+.tabs { background: var(--bg-solid, var(--bg)) }
+.tm.t0 { color: var(--home-ink, #fff) } .tm.t1 { color: var(--away-ink, #fff) }
+:root[data-skin="noche"] { color-scheme: dark;
+  --bg: #0c0e11; --surface: #15191e; --surface-2: #1b2026; --ink: #f3f2ef; --ink-2: #b9c0c7; --ink-3: #7d8791; --line: #262c33; --line-2: #1f242a;
+  --accent: #f26a21; --accent-ink: #111; --home: #f26a21; --away: #6ea8ff; --away-ink: #0b1a33; --good: #4cb882; --bad: #ff6b5e; --warn: #e0a83a;
+  --f-display: "Barlow Condensed", "Arial Narrow", sans-serif; --f-body: "Inter", "Segoe UI", system-ui, sans-serif; --f-data: "JetBrains Mono", ui-monospace, monospace; --r: 12px }
+:root[data-skin="scouting"] { color-scheme: light;
+  --bg: #f4efe6; --surface: #fffcf6; --surface-2: #f7f1e6; --ink: #1c1a16; --ink-2: #4c463d; --ink-3: #8a8174; --line: #d9d0c1; --line-2: #e8e0d2;
+  --accent: #b5121b; --accent-ink: #fff; --home: #1c1a16; --away: #b5121b; --good: #2f7a3e; --bad: #b5121b; --warn: #a86a00;
+  --f-display: "Fraunces", Georgia, serif; --f-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif; --f-data: "IBM Plex Mono", ui-monospace, monospace; --r: 2px }
+:root[data-skin="scouting"] .panel { border-width: 0; border-top: 2px solid var(--ink); border-radius: 0 }
+:root[data-skin="scouting"] .sec-h h2 { font-style: italic }
+:root[data-skin="scouting"] .top { border-bottom: 3px double var(--ink); padding-bottom: 8px }
+:root[data-skin="scouting"] .brand-h { text-transform: none; letter-spacing: 0 }
+:root[data-skin="scouting"] .tabs button { font-family: var(--f-body); font-size: .8rem; letter-spacing: .08em }
+:root[data-skin="tv"] { color-scheme: dark;
+  --bg: radial-gradient(120% 50% at 50% 0%, #16245a 0%, #070b1a 70%) fixed; --bg-solid: #0a1028; --surface: rgba(255,255,255,.05); --surface-2: rgba(255,255,255,.08); --ink: #fff; --ink-2: #c7d0ef; --ink-3: #8291c4; --line: rgba(255,255,255,.13); --line-2: rgba(255,255,255,.07);
+  --accent: #ffd400; --accent-ink: #0a0f22; --home: #22d3ee; --home-ink: #04121a; --away: #ff4d6d; --good: #4ade80; --bad: #ff4d6d; --warn: #ffd400;
+  --f-display: "Bebas Neue", "Barlow Condensed", "Arial Narrow", sans-serif; --f-body: "Manrope", "Segoe UI", system-ui, sans-serif; --f-data: "JetBrains Mono", ui-monospace, monospace; --r: 14px }
+:root[data-skin="tv"] h1, :root[data-skin="tv"] h2, :root[data-skin="tv"] .tabs button, :root[data-skin="tv"] .score .big, :root[data-skin="tv"] .team .nm, :root[data-skin="tv"] .pk-sum b { font-weight: 400; letter-spacing: .04em }
+:root[data-skin="tv"] h2 { text-transform: uppercase; font-size: 1.5rem }
+:root[data-skin="tv"] .score .big { font-size: 4rem }
+:root[data-skin="tv"] .tabs button { font-size: 1.25rem }
+:root[data-skin="parque"] { color-scheme: light;
+  --bg: linear-gradient(180deg, #ead9be 0%, #e3cda9 100%) fixed; --bg-solid: #e8d5b6; --surface: #fbf6ee; --surface-2: #f3e7d4; --ink: #2a1c10; --ink-2: #5d4a38; --ink-3: #8f7a63; --line: #e2d3bb; --line-2: #eee2cf;
+  --accent: #d9531e; --accent-ink: #fff; --home: #1f5f6e; --away: #d9531e; --good: #2f7a3e; --bad: #b8321a; --warn: #a86a00;
+  --f-display: "Archivo Black", "Arial Black", sans-serif; --f-body: "Archivo", "Segoe UI", system-ui, sans-serif; --f-data: "JetBrains Mono", ui-monospace, monospace; --r: 18px }
+:root[data-skin="parque"] .panel { border: 0; box-shadow: 0 6px 18px rgba(80,50,20,.12) }
+:root[data-skin="parque"] h1, :root[data-skin="parque"] h2, :root[data-skin="parque"] .score .big, :root[data-skin="parque"] .team .nm, :root[data-skin="parque"] .pk-sum b { font-weight: 400 }
+:root[data-skin="parque"] .tabs { border: 0; gap: 6px }
+:root[data-skin="parque"] .tabs button { font-family: var(--f-body); font-weight: 600; font-size: .82rem; letter-spacing: .03em; border-radius: 999px; padding: 6px 13px; border: 0 }
+:root[data-skin="parque"] .tabs button[aria-selected="true"] { background: var(--ink); color: var(--surface) }
+:root[data-skin="parque"] .btn, :root[data-skin="parque"] .seg { border-radius: 999px }
+:root[data-skin="negro"] { color-scheme: light;
+  --bg: #ffffff; --surface: #ffffff; --surface-2: #f2f2f2; --ink: #000; --ink-2: #222; --ink-3: #5a5a5a; --line: #000; --line-2: #d0d0d0;
+  --accent: #e30613; --accent-ink: #fff; --home: #000; --away: #e30613; --good: #1b7a3a; --bad: #e30613; --warn: #9a6400;
+  --f-display: "Space Grotesk", "Arial", sans-serif; --f-body: "Space Grotesk", "Arial", sans-serif; --f-data: "JetBrains Mono", ui-monospace, monospace; --r: 0px }
+:root[data-skin="negro"] .panel { border-width: 2px; box-shadow: 4px 4px 0 #000 }
+:root[data-skin="negro"] .top { background: #000; color: #fff; margin-inline: -16px; padding: 12px 16px }
+:root[data-skin="negro"] .top .seg { background: #000; border-color: #fff } :root[data-skin="negro"] .top .seg button { color: #fff }
+:root[data-skin="negro"] .top .seg button[aria-pressed="true"] { background: var(--accent); color: #fff }
+:root[data-skin="negro"] .top .skin-btn { background: #000; color: #fff; border-color: #fff }
+:root[data-skin="negro"] h2 { text-transform: uppercase; letter-spacing: .05em; font-size: 1.05rem }
+:root[data-skin="negro"] .score .big { font-family: var(--f-data); letter-spacing: -.04em }
+:root[data-skin="negro"] .tabs { border-bottom-width: 2px }
+:root[data-skin="negro"] .tabs button { font-family: var(--f-body); font-size: .9rem }
+/* Selector de estilo */
+.skin-btn { width: 32px; height: 32px; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); color: var(--ink); cursor: pointer; font-size: 1rem; line-height: 1; flex: none }
+.skin-menu { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 6px; scrollbar-width: thin }
+.skin-opt { flex: none; display: grid; gap: 6px; justify-items: center; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--ink); padding: 8px 10px; cursor: pointer; font-size: .78rem; min-width: 96px }
+.skin-opt[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent) }
+.skin-opt i { display: flex; width: 64px; height: 28px; border-radius: 6px; overflow: hidden; border: 1px solid rgba(128,128,128,.35) }
+.skin-opt i b { flex: 1 }
 /* Selector de partido: carrusel + plegado */
 .picker { gap: 0; padding: 10px 12px }
 .pk-bar { display: flex; align-items: center; gap: 8px 12px; flex-wrap: wrap }
@@ -212,7 +268,7 @@ td.wrap { white-space: normal; min-width: 180px }
 
 <div class="wrap">
   <header class="top">
-    <h1 class="brand-h">Laboratorio ACB</h1>
+    <h1 class="brand-h">StatsLAB</h1>
     <div class="row top-ctl">
       <div class="seg" role="group" aria-label="Competición">
         <button data-compet="acb" aria-pressed="true" title="Liga Endesa">ACB</button>
@@ -222,8 +278,10 @@ td.wrap { white-space: normal; min-width: 180px }
         <button id="m-match" aria-pressed="true">Partido</button>
         <button id="m-scout" aria-pressed="false">Scouting</button>
       </div>
+      <button class="skin-btn" id="b-skin" aria-label="Elegir estilo" aria-expanded="false" title="Estilo">🎨</button>
     </div>
   </header>
+  <div class="skin-menu" id="skin-menu" hidden role="group" aria-label="Estilo de la página"></div>
 
   <section class="panel loader picker" id="loader-match">
     <div class="pk-bar" id="pk-bar">
@@ -2217,6 +2275,7 @@ document.addEventListener('click', async e => {
   else if (d.pside) { S.pbpSide = d.pside; render(); }
   else if (d.pkind) { S.pbpKind = d.pkind; render(); }
   else if (d.open) { setMode('match'); loadMatch({ comp: S.compet, id: Number(d.open) }); }
+  else if (d.skin != null && b.classList.contains('skin-opt')) { applySkin(d.skin); }
   else if (d.compet) { setCompet(d.compet); setPick(true); }
   else if (d.pk) { loadMatch(parseLink(d.pk)); }
   else if (d.cfocus) { const c = coachCfg(); c.focus = d.cfocus; saveCoach(c); }
@@ -2295,8 +2354,31 @@ $('#b-dlhtml').onclick = async () => {
   if (!DL) return;
   const c = document.body.cloneNode(true);
   c.querySelector('#view').innerHTML = ''; c.querySelector('#fallback').hidden = true; c.querySelector('#tip').hidden = true;
-  try { await DL.save({ filename: 'laboratorio-acb.html', data: '<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body>' + c.innerHTML + '</body></html>' }); } catch (e) { }
+  try { await DL.save({ filename: 'statslab.html', data: '<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body>' + c.innerHTML + '</body></html>' }); } catch (e) { }
 };
+
+
+// ---------- Estilos visuales (por dispositivo) ----------
+const SKINS = [
+  { id: '', name: 'Original', sw: ['#0f1316', '#93bddc', '#3987e5', '#d95926'] },
+  { id: 'noche', name: 'Noche de partido', sw: ['#0c0e11', '#f26a21', '#6ea8ff', '#f3f2ef'], fonts: 'Inter:wght@400;600&family=JetBrains+Mono:wght@500' },
+  { id: 'scouting', name: 'Informe de scouting', sw: ['#f4efe6', '#1c1a16', '#b5121b', '#fffcf6'], fonts: 'Fraunces:ital,wght@0,600;0,700;1,600' },
+  { id: 'tv', name: 'Retransmisión TV', sw: ['#0a1028', '#ffd400', '#22d3ee', '#ff4d6d'], fonts: 'Bebas+Neue&family=Manrope:wght@500;700&family=JetBrains+Mono:wght@500' },
+  { id: 'parque', name: 'Parqué', sw: ['#e3cda9', '#2a1c10', '#1f5f6e', '#d9531e'], fonts: 'Archivo+Black&family=Archivo:wght@400;600&family=JetBrains+Mono:wght@500' },
+  { id: 'negro', name: 'Bilbao Negro', sw: ['#ffffff', '#000000', '#e30613', '#000000'], fonts: 'Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@500' }
+];
+function applySkin(id) {
+  const sk = SKINS.find(x => x.id === id) || SKINS[0];
+  if (sk.id) document.documentElement.setAttribute('data-skin', sk.id); else document.documentElement.removeAttribute('data-skin');
+  if (sk.fonts && !document.getElementById('font-' + sk.id)) { const l = document.createElement('link'); l.id = 'font-' + sk.id; l.rel = 'stylesheet'; l.href = 'https://fonts.googleapis.com/css2?family=' + sk.fonts + '&display=swap'; document.head.appendChild(l); }
+  const m = document.querySelector('meta[name="theme-color"]'); if (m) m.content = sk.id ? sk.sw[0] : '#1d3b53';
+  store.set('skin', sk.id);
+  document.querySelectorAll('.skin-opt').forEach(b => b.setAttribute('aria-pressed', b.dataset.skin === sk.id));
+  if (S.g || S.scout.list.length) requestAnimationFrame(() => render(true));
+}
+$('#skin-menu').innerHTML = SKINS.map(k => `<button class="skin-opt" data-skin="${k.id}" aria-pressed="false"><i>${k.sw.map(c => `<b style="background:${c}"></b>`).join('')}</i>${k.name}</button>`).join('');
+$('#b-skin').onclick = () => { const m = $('#skin-menu'); m.hidden = !m.hidden; $('#b-skin').setAttribute('aria-expanded', !m.hidden); };
+applySkin(store.get('skin', ''));
 
 // ---------- Arranque ----------
 (async function boot() {
