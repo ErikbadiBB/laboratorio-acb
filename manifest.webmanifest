@@ -1,16 +1,30 @@
 {
   "name": "Laboratorio ACB",
   "short_name": "Lab ACB",
-  "description": "Estadística avanzada de partidos ACB desde el play by play",
+  "description": "Estadística avanzada de partidos ACB y Basketball Champions League desde el play by play",
   "lang": "es",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#eef1f3",
+  "background_color": "#e30613",
   "theme_color": "#1d3b53",
   "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
-    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml" }
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
   ]
 }
