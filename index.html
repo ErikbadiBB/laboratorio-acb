@@ -47,6 +47,38 @@ h2 { font-size: 1.35rem } h3 { font-size: 1.1rem }
 button, select, input, textarea { font: inherit; color: inherit }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
 .top { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; justify-content: space-between }
+.brand-h { font-size: 1.6rem; text-transform: uppercase; letter-spacing: .04em; white-space: nowrap }
+.top-ctl { justify-content: flex-end; gap: 6px }
+/* Selector de partido: carrusel + plegado */
+.picker { gap: 0; padding: 10px 12px }
+.pk-bar { display: flex; align-items: center; gap: 8px 12px; flex-wrap: wrap }
+.pk-sum { flex: 1 1 200px; min-width: 0 }
+.pk-sum b { font-family: var(--f-display); font-size: 1.15rem; letter-spacing: .02em }
+.pk-sum .status { font-size: .76rem; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.pk-sum .status.err { color: var(--bad); white-space: normal }
+.pk-toggle { padding: 6px 12px; font-size: .88rem }
+.picker:not(.open) .pk-body { display: none }
+.picker.open .pk-bar { padding-bottom: 10px; border-bottom: 1px solid var(--line-2) }
+.pk-body { display: grid; gap: 10px; padding-top: 10px; min-width: 0 }
+.pk-nav { display: flex; align-items: center; gap: 8px }
+.pk-round { flex: 1; text-align: center; font-weight: 600 }
+.pk-arrow { width: 34px; height: 34px; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface-2); color: var(--ink); cursor: pointer; font-size: 1.2rem; line-height: 1; flex: none }
+.pk-arrow:disabled { opacity: .35; cursor: default }
+.pk-cards { display: flex; gap: 8px; overflow-x: auto; scroll-snap-type: x proximity; padding: 2px 2px 6px; min-width: 0; scrollbar-width: thin }
+.pk-card { flex: none; width: 128px; scroll-snap-align: start; text-align: left; border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; background: var(--surface-2); color: var(--ink); cursor: pointer; display: grid; gap: 1px; font-size: .86rem }
+.pk-card:hover { border-color: var(--ink-3) }
+.pk-card.on { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent) }
+.pk-card .r { display: flex; justify-content: space-between; gap: 6px; font-weight: 600 }
+.pk-card .r b { font-family: var(--f-data); font-weight: 500 }
+.pk-card .r.win { color: var(--ink) } .pk-card .r.lose { color: var(--ink-2); font-weight: 500 }
+.pk-card .s { font-size: .7rem; color: var(--ink-3); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.pk-card .s.live { color: #ff5a4f; font-weight: 600 }
+.pk-empty { color: var(--ink-3); font-size: .85rem; padding: 10px 2px }
+.pk-tools { display: grid; gap: 8px }
+.pk-link { display: flex; gap: 8px } .pk-link input { flex: 1 }
+.live-dot { width: 8px; height: 8px; border-radius: 50%; background: #ff5a4f; animation: pk-pulse 1.4s infinite }
+@keyframes pk-pulse { 50% { opacity: .3 } }
+@media (prefers-reduced-motion: reduce) { .live-dot { animation: none } }
 .brand { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; min-width: 0 }
 .top > .row { justify-content: flex-end }
 .seg button { white-space: nowrap }
@@ -180,46 +212,50 @@ td.wrap { white-space: normal; min-width: 180px }
 
 <div class="wrap">
   <header class="top">
-    <div class="brand"><h1>Laboratorio ACB</h1><span>Estadística avanzada desde el play by play · ACB y Champions League</span></div>
-    <div class="row">
-    <div class="seg" role="group" aria-label="Competición">
-      <button data-compet="acb" aria-pressed="true">Liga Endesa</button>
-      <button data-compet="bcl" aria-pressed="false">Champions League</button>
+    <h1 class="brand-h">Laboratorio ACB</h1>
+    <div class="row top-ctl">
+      <div class="seg" role="group" aria-label="Competición">
+        <button data-compet="acb" aria-pressed="true" title="Liga Endesa">ACB</button>
+        <button data-compet="bcl" aria-pressed="false" title="Basketball Champions League">BCL</button>
+      </div>
+      <div class="seg" role="group" aria-label="Modo">
+        <button id="m-match" aria-pressed="true">Partido</button>
+        <button id="m-scout" aria-pressed="false">Scouting</button>
+      </div>
     </div>
-    <div class="seg" role="group" aria-label="Modo">
-      <button id="m-match" aria-pressed="true">Partido</button>
-      <button id="m-scout" aria-pressed="false">Scouting de equipo</button>
-    </div></div>
   </header>
 
-  <section class="panel loader" id="loader-match">
-    <div class="row">
-      <div class="field" style="flex:3 1 260px"><label for="in-url">Enlace del partido (live.acb.com o championsleague.basketball) o número</label>
-        <input type="text" id="in-url" placeholder="https://live.acb.com/es/partidos/unicaja-vs-morabanc-andorra-105394/jugadas" autocomplete="off"></div>
-      <button class="btn" id="b-load">Analizar</button>
+  <section class="panel loader picker" id="loader-match">
+    <div class="pk-bar" id="pk-bar">
+      <div class="pk-sum"><b id="pk-title">Elige un partido</b><div class="status" id="st-match"></div></div>
+      <div class="row status" id="live-wrap" hidden><span class="live-dot"></span><label class="row"><input type="checkbox" id="in-live" checked> Directo cada</label><select id="sel-every" style="width:auto;padding:2px 4px" aria-label="Intervalo de actualización"><option value="1">1 s</option><option value="3">3 s</option><option value="5">5 s</option><option value="15">15 s</option><option value="30">30 s</option></select></div>
+      <button class="btn pk-toggle" id="b-pick" aria-expanded="true">Cambiar <span aria-hidden="true">▾</span></button>
     </div>
-    <div class="row">
-      <div class="field"><label for="sel-round" id="lbl-round">Jornada (Liga Endesa)</label><select id="sel-round"><option value="">Cargando jornadas…</option></select></div>
-      <div class="field" style="flex:2 1 260px"><label for="sel-match">Partido</label><select id="sel-match"><option value="">Elige una jornada</option></select></div>
-    </div>
-    <div class="row" style="justify-content:space-between">
-      <div class="status" id="st-match"></div>
-      <div class="row status" id="live-wrap" hidden><label class="row"><input type="checkbox" id="in-live" checked> En directo: actualizar cada</label><select id="sel-every" style="width:auto;padding:3px 6px" aria-label="Intervalo de actualización"><option value="1">1 s</option><option value="3">3 s</option><option value="5">5 s</option><option value="15">15 s</option><option value="30">30 s</option></select></div>
-    </div>
-    <div id="fallback" hidden>
-      <div class="note" style="max-width:none">
-        <p style="margin:.2em 0"><b>No se ha podido conectar con la API de la ACB desde aquí.</b> Este visor puede bloquear conexiones externas. Alternativas:</p>
-        <p style="margin:.2em 0" id="fb-dl">1) Descarga esta herramienta como archivo HTML (botón inferior) y ábrela en tu navegador: ahí la conexión funciona.</p>
-        <p style="margin:.2em 0">2) Abre el partido en live.acb.com, abre la consola del navegador (F12), ejecuta esta línea y pega aquí el resultado:</p>
-        <code id="snippet"></code> <button class="lnk" id="b-snip">Copiar</button>
+    <div class="pk-body" id="pk-body">
+      <div class="pk-nav">
+        <button class="pk-arrow" id="b-prev" aria-label="Anterior">‹</button>
+        <div class="pk-round" id="pk-round">Cargando…</div>
+        <button class="pk-arrow" id="b-next" aria-label="Siguiente">›</button>
       </div>
-      <textarea id="in-json" placeholder="Pega aquí el JSON del play by play"></textarea>
-      <div class="row"><button class="btn ghost" id="b-json">Analizar datos pegados</button><button class="btn ghost" id="b-dlhtml" hidden>Descargar HTML</button></div>
+      <div class="pk-cards" id="pk-cards" role="list"></div>
+      <div class="pk-tools">
+        <div class="pk-link"><input type="text" id="in-url" placeholder="🔗 Pega un enlace de live.acb.com o championsleague.basketball" autocomplete="off" aria-label="Enlace del partido"><button class="btn ghost" id="b-load">Abrir</button></div>
+        <details><summary>⚙ Ajustes de conexión</summary>
+          <div class="row" style="margin-top:8px"><div class="field"><label for="in-key">Clave pública de la API (la que usa live.acb.com)</label><input type="text" id="in-key"></div><button class="btn ghost" id="b-key">Guardar</button></div>
+          <div class="row" style="margin-top:8px"><div class="field"><label for="in-proxy">Dirección del puente de la Champions League</label><input type="text" id="in-proxy"></div><button class="btn ghost" id="b-proxy">Guardar</button></div>
+        </details>
+      </div>
+      <div id="fallback" hidden>
+        <div class="note" style="max-width:none">
+          <p style="margin:.2em 0"><b>No se ha podido conectar con la API de la ACB desde aquí.</b> Este visor puede bloquear conexiones externas. Alternativas:</p>
+          <p style="margin:.2em 0" id="fb-dl">1) Descarga esta herramienta como archivo HTML (botón inferior) y ábrela en tu navegador: ahí la conexión funciona.</p>
+          <p style="margin:.2em 0">2) Abre el partido en live.acb.com, abre la consola del navegador (F12), ejecuta esta línea y pega aquí el resultado:</p>
+          <code id="snippet"></code> <button class="lnk" id="b-snip">Copiar</button>
+        </div>
+        <textarea id="in-json" placeholder="Pega aquí el JSON del play by play"></textarea>
+        <div class="row"><button class="btn ghost" id="b-json">Analizar datos pegados</button><button class="btn ghost" id="b-dlhtml" hidden>Descargar HTML</button></div>
+      </div>
     </div>
-    <details><summary>Ajustes de conexión</summary>
-      <div class="row" style="margin-top:8px"><div class="field"><label for="in-key">Clave pública de la API (la que usa live.acb.com)</label><input type="text" id="in-key"></div><button class="btn ghost" id="b-key">Guardar</button></div>
-      <div class="row" style="margin-top:8px"><div class="field"><label for="in-proxy">Dirección del puente de la Champions League</label><input type="text" id="in-proxy"></div><button class="btn ghost" id="b-proxy">Guardar</button></div>
-    </details>
   </section>
 
   <section class="panel loader" id="loader-scout" hidden>
@@ -1037,7 +1073,7 @@ async function fetchGame(comp, id) {
 async function loadMatch(link, opts = {}) {
   const st = $('#st-match');
   if (typeof link === 'number') link = { comp: S.compet, id: link };
-  if (!link || !link.id) { st.textContent = 'No encuentro el número de partido. Pega el enlace de live.acb.com o de championsleague.basketball, o escribe el número.'; st.className = 'status err'; return; }
+  if (!link || !link.id) { setPick(true); st.textContent = 'No encuentro el número de partido. Pega el enlace de live.acb.com o de championsleague.basketball, o escribe el número.'; st.className = 'status err'; return; }
   if (link.comp !== S.compet) setCompet(link.comp, true);
   st.className = 'status'; if (!opts.silent) st.textContent = 'Cargando partido ' + link.id + ' (' + COMPS[link.comp].short + ')…';
   if (!opts.silent) $('#b-load').disabled = true;
@@ -1055,14 +1091,16 @@ async function loadMatch(link, opts = {}) {
     }
     $('#fallback').hidden = true;
     const when = S.lastFetch.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-    st.textContent = (S.g.finished ? 'Partido terminado' : 'Partido en juego') + ' · ' + res.raw.plays.length + ' jugadas · ' + COMPS[link.comp].short + ' · datos de ' + res.src + ' a las ' + when;
-    if (!opts.silent) setupLive();
+    st.textContent = COMPS[link.comp].short + ' · ' + (S.g.finished ? 'Final' : 'En juego') + ' · ' + res.raw.plays.length + ' jugadas · actualizado ' + when;
+    st.title = 'Datos de ' + res.src;
+    $('#pk-title').textContent = pickTitle();
+    if (!opts.silent) { setupLive(); setPick(false); const at = gameKeyIndex(); if (at >= 0 && at !== S.cal.i) { S.cal.i = at; fillMatches().catch(() => { }); } else markCards(); }
     if (!same) render(opts.silent);
   } catch (e) {
     if (opts.silent) { st.textContent = 'Sin respuesta en la última actualización (' + new Date().toLocaleTimeString('es-ES') + '). Se reintenta.'; return; }
     if (link.comp === 'acb' && isNet(e)) { showFallback(link.id); st.textContent = 'Sin conexión con la API de la ACB.'; }
     else st.textContent = e.message;
-    st.className = 'status err';
+    st.className = 'status err'; setPick(true);
   } finally { if (!opts.silent) $('#b-load').disabled = false; }
 }
 
@@ -1079,13 +1117,14 @@ function setupLive() {
   S.timer = setTimeout(tick, S.every * 1000);
 }
 function showFallback(id) {
-  $('#fallback').hidden = false;
+  $('#fallback').hidden = false; setPick(true);
   $('#fb-dl').hidden = !(window.claude && window.claude.use);
   $('#snippet').textContent = `copy(JSON.stringify(await (await fetch('${API}/matchdata/PlayByPlay/play-by-play?matchId=${id || 'ID'}',{headers:{'X-APIKEY':'${KEY}'}})).json()))`;
 }
 function loadSample() {
   S.g = A.parseGame(sampleRaw(), { id: SAMPLE.id }); S.g.comp = 'acb'; S.g.hasShots = false; S.sample = true; S.matchId = null;
-  $('#st-match').innerHTML = '<span class="badge-ex">Ejemplo</span> Partido real de muestra cargado (' + esc(SAMPLE.label) + '). Pega un enlace o elige jornada para analizar otro.';
+  $('#st-match').innerHTML = '<span class="badge-ex">Ejemplo</span> ' + esc(SAMPLE.label) + ' · elige un partido para analizar otro';
+  $('#pk-title').textContent = pickTitle(); setPick(true);
   render();
 }
 
@@ -1117,45 +1156,75 @@ async function bclGames() {
   S.bcl = { t: Date.now(), list };
   return list;
 }
-const weekKey = d => { const x = new Date(d); x.setHours(0, 0, 0, 0); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x.toISOString().slice(0, 10); };
-const stLabel = m => m.matchStatus === 'FINALIZED' ? 'Final' : m.matchStatus === 'STARTED' ? 'En juego' : new Date(m.startDateTime).toLocaleString('es-ES', { weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
-const gLabel = m => m.status === 'FIN' ? 'Final' : m.status === 'LIVE' ? 'En juego' : m.when.toLocaleString('es-ES', { weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+const weekKey = d => { const x = new Date(d); x.setHours(12, 0, 0, 0); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') + '-' + String(x.getDate()).padStart(2, '0'); };
+const fmtWhen = d => d.toLocaleString('es-ES', { weekday: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }).replace(',', ' ·');
+const acbGame = m => ({ id: m.id, comp: 'acb', when: new Date(m.startDateTime), home: { abbr: m.homeTeam.abbreviatedName, name: m.homeTeam.shortName }, away: { abbr: m.awayTeam.abbreviatedName, name: m.awayTeam.shortName },
+  hs: m.homeScore, as: m.awayScore, status: m.matchStatus === 'FINALIZED' ? 'FIN' : m.matchStatus === 'STARTED' ? 'LIVE' : 'SCH' });
 async function initRounds() {
-  const sel = $('#sel-round');
-  $('#lbl-round').textContent = S.compet === 'bcl' ? 'Semana (Champions League)' : 'Jornada (Liga Endesa)';
-  sel.innerHTML = '<option value="">Cargando…</option>'; $('#sel-match').innerHTML = '<option value="">Elige primero</option>';
+  S.cal = { keys: [], i: 0 };
+  $('#pk-round').textContent = 'Cargando…'; $('#pk-cards').innerHTML = '';
   try {
     if (S.compet === 'bcl') {
       const list = await bclGames();
       const weeks = [...new Set(list.map(m => weekKey(m.when)))];
       const now = weekKey(new Date());
-      const cur = weeks.filter(w => w <= now).pop() || weeks[0];
-      sel.innerHTML = weeks.map(w => `<option value="${w}" ${w === cur ? 'selected' : ''}>Semana del ${new Date(w + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}</option>`).join('');
-      await fillMatches(cur);
+      S.cal.keys = weeks.map(w => ({ key: w, label: 'Semana del ' + new Date(w + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }) }));
+      S.cal.i = Math.max(0, weeks.indexOf(weeks.filter(w => w <= now).pop() || weeks[0]));
     } else {
       const c = await loadComp();
-      sel.innerHTML = c.rounds.map(r => `<option value="${r.id}" ${r.id === c.cur.id ? 'selected' : ''}>Jornada ${r.roundNumber}</option>`).join('');
-      await fillMatches(c.cur.id);
+      S.cal.keys = c.rounds.map(r => ({ key: r.id, label: 'Jornada ' + r.roundNumber }));
+      S.cal.i = Math.max(0, c.rounds.findIndex(r => r.id === c.cur.id));
     }
+    const at = gameKeyIndex(); if (at >= 0) S.cal.i = at;
+    await fillMatches();
     fillTeams();
   } catch (e) {
-    sel.innerHTML = '<option value="">Calendario no disponible</option>';
+    $('#pk-round').textContent = 'Calendario no disponible';
     $('#sel-team').innerHTML = '<option value="">Equipos no disponibles</option>';
     if (isNet(e) && S.compet === 'acb') { $('#st-scout').textContent = 'Sin conexión con la API de la ACB desde este visor.'; showFallback(null); }
   }
 }
-async function fillMatches(key) {
-  const sel = $('#sel-match'); sel.innerHTML = '<option value="">Cargando…</option>';
-  if (S.compet === 'bcl') {
-    const list = (await bclGames()).filter(m => weekKey(m.when) === key);
-    sel.innerHTML = '<option value="">Elige partido</option>' + list.map(m => `<option value="bcl-${m.id}">${esc(m.home.abbr)}${m.status !== 'SCH' ? ' ' + m.hs + '–' + m.as : ''} ${esc(m.away.abbr)} · ${esc(m.home.name)} – ${esc(m.away.name)} · ${esc(m.round)} · ${gLabel(m)}</option>`).join('');
-    return;
-  }
-  const list = await roundMatches(Number(key));
-  sel.innerHTML = '<option value="">Elige partido</option>' + list.map(m => {
-    const sc = m.homeScore != null ? ` ${m.homeScore}–${m.awayScore}` : '';
-    return `<option value="acb-${m.id}">${esc(m.homeTeam.abbreviatedName)}${sc} ${esc(m.awayTeam.abbreviatedName)} · ${esc(m.homeTeam.shortName)} – ${esc(m.awayTeam.shortName)} · ${stLabel(m)}</option>`;
+// Semana/jornada del partido abierto (si se conoce)
+function gameKeyIndex() {
+  if (!S.g || S.sample || S.g.comp !== S.compet || !S.cal || !S.cal.keys.length) return -1;
+  if (S.compet === 'bcl' && S.bcl) { const m = S.bcl.list.find(x => x.id === S.matchId); if (m) return S.cal.keys.findIndex(k => k.key === weekKey(m.when)); }
+  if (S.compet === 'acb' && S.comp) { for (const [rid, l] of S.comp.cache) if (l.some(m => m.id === S.matchId)) return S.cal.keys.findIndex(k => k.key === rid); }
+  return -1;
+}
+async function fillMatches() {
+  const c = S.cal; if (!c || !c.keys.length) return;
+  const k = c.keys[c.i];
+  $('#pk-round').textContent = k.label;
+  $('#b-prev').disabled = c.i <= 0; $('#b-next').disabled = c.i >= c.keys.length - 1;
+  const box = $('#pk-cards'); box.innerHTML = '<div class="pk-empty">Cargando partidos…</div>';
+  const list = S.compet === 'bcl' ? (await bclGames()).filter(m => weekKey(m.when) === k.key) : (await roundMatches(k.key)).map(acbGame);
+  if (S.cal !== c || c.keys[c.i] !== k) return;
+  if (!list.length) { box.innerHTML = '<div class="pk-empty">No hay partidos.</div>'; return; }
+  box.innerHTML = list.map(m => {
+    const done = m.status !== 'SCH', hw = done && m.hs > m.as, aw = done && m.as > m.hs;
+    const sub = m.status === 'FIN' ? 'Final' : m.status === 'LIVE' ? '● En directo' : fmtWhen(m.when);
+    return `<button class="pk-card" role="listitem" data-pk="${m.comp}-${m.id}" title="${esc(m.home.name)} – ${esc(m.away.name)}${m.round ? ' · ' + esc(m.round) : ''}">
+      <span class="r ${done ? (hw ? 'win' : 'lose') : ''}">${esc(m.home.abbr)}<b>${done ? m.hs : '–'}</b></span>
+      <span class="r ${done ? (aw ? 'win' : 'lose') : ''}">${esc(m.away.abbr)}<b>${done ? m.as : '–'}</b></span>
+      <span class="s ${m.status === 'LIVE' ? 'live' : ''}">${sub}</span></button>`;
   }).join('');
+  markCards();
+}
+function markCards() {
+  let on = null;
+  document.querySelectorAll('.pk-card').forEach(b => { const x = S.g && !S.sample && b.dataset.pk === S.g.comp + '-' + S.matchId; b.classList.toggle('on', x); if (x) on = b; });
+  if (on && S.pick) { const box = $('#pk-cards'); box.scrollLeft = on.offsetLeft - box.offsetLeft - 8; }
+}
+function setPick(open) {
+  S.pick = !!open;
+  $('#loader-match').classList.toggle('open', S.pick);
+  const b = $('#b-pick'); b.setAttribute('aria-expanded', S.pick); b.innerHTML = S.pick ? 'Cerrar <span aria-hidden="true">▴</span>' : 'Cambiar <span aria-hidden="true">▾</span>';
+  if (S.pick) markCards();
+}
+function pickTitle() {
+  const g = S.g; if (!g) return 'Elige un partido';
+  const last = g.events[g.events.length - 1] || {};
+  return `${g.teams[0].abbr} ${last.sh ?? ''} – ${last.sa ?? ''} ${g.teams[1].abbr}`;
 }
 async function fillTeams() {
   let teams = [];
@@ -2147,8 +2216,9 @@ document.addEventListener('click', async e => {
   else if (d.close) { S.closeMode = d.close; render(); }
   else if (d.pside) { S.pbpSide = d.pside; render(); }
   else if (d.pkind) { S.pbpKind = d.pkind; render(); }
-  else if (d.open) { setMode('match'); $('#in-url').value = S.compet + '-' + d.open; loadMatch({ comp: S.compet, id: Number(d.open) }); }
-  else if (d.compet) { setCompet(d.compet); }
+  else if (d.open) { setMode('match'); loadMatch({ comp: S.compet, id: Number(d.open) }); }
+  else if (d.compet) { setCompet(d.compet); setPick(true); }
+  else if (d.pk) { loadMatch(parseLink(d.pk)); }
   else if (d.cfocus) { const c = coachCfg(); c.focus = d.cfocus; saveCoach(c); }
   else if (d.cedit) { S.coachEdit = !S.coachEdit; render(); }
   else if (d.cwidth) { const c = coachCfg(); const b = BLOCKS.find(x => x.id === d.cwidth); c.w = c.w || {}; c.w[b.id] = ((c.w[b.id] || b.w) === 'full') ? 'half' : 'full'; saveCoach(c); }
@@ -2191,9 +2261,10 @@ $('#m-match').onclick = () => setMode('match');
 $('#m-scout').onclick = () => setMode('scout');
 $('#b-load').onclick = () => loadMatch(parseLink($('#in-url').value));
 $('#in-url').addEventListener('keydown', e => { if (e.key === 'Enter') loadMatch(parseLink($('#in-url').value)); });
-$('#in-url').addEventListener('paste', e => { setTimeout(() => { const l = parseLink($('#in-url').value); if (l) loadMatch(l); }, 0); });
-$('#sel-round').onchange = e => { if (e.target.value) fillMatches(e.target.value).catch(() => { }); };
-$('#sel-match').onchange = e => { if (e.target.value) { $('#in-url').value = e.target.value; loadMatch(parseLink(e.target.value)); } };
+$('#in-url').addEventListener('paste', e => { setTimeout(() => { const l = parseLink($('#in-url').value); if (l) { loadMatch(l); $('#in-url').value = ''; } }, 0); });
+$('#b-prev').onclick = () => { if (S.cal && S.cal.i > 0) { S.cal.i--; fillMatches().catch(() => { }); } };
+$('#b-next').onclick = () => { if (S.cal && S.cal.i < S.cal.keys.length - 1) { S.cal.i++; fillMatches().catch(() => { }); } };
+$('#b-pick').onclick = () => setPick(!S.pick);
 $('#in-live').onchange = setupLive;
 $('#sel-every').value = String(S.every);
 $('#sel-every').onchange = e => { S.every = Number(e.target.value); store.set('every', S.every); setupLive(); };
@@ -2235,7 +2306,7 @@ $('#b-dlhtml').onclick = async () => {
   loadSample();
   if (link && link.comp !== S.compet) { S.compet = link.comp; store.set('compet', link.comp); document.querySelectorAll('[data-compet]').forEach(b => b.setAttribute('aria-pressed', b.dataset.compet === S.compet)); }
   initRounds();
-  if (link) { $('#in-url').value = link.comp + '-' + link.id; loadMatch(link); }
+  if (link) loadMatch(link);
 })();
 })();
 </script>
