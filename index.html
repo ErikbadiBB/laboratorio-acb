@@ -1075,7 +1075,7 @@ async function bclPbp(id) {
   try { r = await fetch((PROXY || '') + '/api/bcl?id=' + id, { cache: 'no-store' }); }
   catch (e) { throw Object.assign(new Error('No se puede conectar con el puente de la BCL (' + (PROXY || location.host) + '). Revisa «Ajustes de conexión».'), { proxy: true }); }
   const j = await r.json().catch(() => null);
-  if (!r.ok) throw new Error((j && j.error) || ('El puente de la BCL respondió HTTP ' + r.status + '.'));
+  if (!r.ok) throw Object.assign(new Error((j && j.error) || ('El puente de la BCL respondió HTTP ' + r.status + '.')), { notStarted: r.status === 404 });
   return j;
 }
 const isNet = e => e instanceof TypeError || /fetch|network|load failed/i.test(String(e && e.message));
@@ -1112,10 +1112,11 @@ async function fetchGame(comp, id) {
       b.twoPointsMade, b.twoPointsAttempted, b.threePointsMade, b.threePointsAttempted, b.freeThrowsMade, b.freeThrowsAttempted,
       b.offensiveRebounds, b.defensiveRebounds, b.assists, b.steals, b.turnovers, b.blockedShots, b.personalFouls, b.plusMinus]);
     if (!d.box.length) delete d.box;
-    const raw = F.fibaToRaw(d);
-    const live = d.game.isLive && !d.finished;
-    const header = { status: live ? 'STARTED' : d.finished ? 'FINALIZED' : 'SCHEDULED', period: F.periodNum(d.game.period || 'Q1'), clock: d.game.chrono };
-    return { raw, header, src: 'championsleague.basketball', sig: d.rows.length + '|' + (d.rows.length ? d.rows[d.rows.length - 1][0] : 0) + '|' + d.game.sa + '-' + d.game.sb + '|' + d.game.chrono };
+    // Si el canal en directo ya trae datos más recientes, no retroceder
+    const cur = BCLD.get(id);
+    if (cur && lastOrder(cur) > lastOrder(d)) { if (d.box) cur.box = d.box; return bclResult(cur); }
+    BCLD.set(id, d);
+    return bclResult(d);
   }
   const [raw, h] = await Promise.all([
     api('/matchdata/PlayByPlay/play-by-play?matchId=' + id),
@@ -1127,10 +1128,56 @@ async function fetchGame(comp, id) {
   return { raw, header, src: 'api2.acb.com', sig: raw.plays.length + '|' + last.order + '|' + last.scoreHome + '-' + last.scoreAway + '|' + (h && h.timeLeft) };
 }
 
+
+// ---------- BCL: datos en memoria y canal en tiempo real (WebPubSub de la web oficial) ----------
+const BCLD = new Map();
+const lastOrder = d => d.rows.length ? d.rows[d.rows.length - 1][0] : 0;
+function bclResult(d) {
+  const raw = F.fibaToRaw(JSON.parse(JSON.stringify(d)));
+  const live = !d.finished && (d.game.isLive || d.rows.length > 0);
+  const header = { status: live ? 'STARTED' : d.finished ? 'FINALIZED' : 'SCHEDULED', period: F.periodNum(d.game.period || 'Q1'), clock: d.game.chrono };
+  return { raw, header, src: 'championsleague.basketball', sig: d.rows.length + '|' + lastOrder(d) + '|' + d.game.sa + '-' + d.game.sb + '|' + d.game.chrono };
+}
+const und = v => (v === '$undefined' || v === undefined ? null : v);
+const rowOf = (q, i) => [i.order, q, i.Time, i.SA, i.SB, i.ac, i.txt, und(i.oId) || 0, und(i.pId) || 0, i.made === undefined ? null : (i.made ? 1 : 0), und(i.x), und(i.y), i.in === undefined ? null : (/in/i.test(String(i.in)) || i.in === true ? 1 : 0), und(i.p2Id)];
+async function gunzipB64(b64) { return new Response(new Blob([Uint8Array.from(atob(b64), c => c.charCodeAt(0))]).stream().pipeThrough(new DecompressionStream('gzip'))).text(); }
+const BWS = { id: null, ws: null, retry: null };
+function stopBclSocket() { clearTimeout(BWS.retry); const w = BWS.ws; BWS.ws = null; BWS.id = null; if (w) try { w.close(); } catch (e) { } }
+async function bclSocket(id) {
+  if (BWS.id === id && BWS.ws && BWS.ws.readyState < 2) return;
+  stopBclSocket(); BWS.id = id;
+  if (!('WebSocket' in window) || !('DecompressionStream' in window)) return;
+  try {
+    const t = await (await fetch((PROXY || '') + '/api/bcl?token=1', { cache: 'no-store' })).json();
+    if (!t.url || BWS.id !== id) return;
+    const ws = new WebSocket(t.url, 'json.webpubsub.azure.v1'); BWS.ws = ws;
+    ws.onopen = () => ws.send(JSON.stringify({ type: 'joinGroup', group: 'game-' + id, ackId: 1 }));
+    ws.onmessage = async e => {
+      try {
+        const o = JSON.parse(e.data); if (o.type !== 'message' || !o.data) return;
+        let m = o.data.message; if (typeof m === 'string') m = JSON.parse(await gunzipB64(m));
+        const d = BCLD.get(id); if (!d || !m) return;
+        if (o.data.fileType === 'periodactions' && m.items) {
+          for (const q of Object.keys(m.items)) { const its = (m.items[q] && m.items[q].items) || []; if (!its.length) continue; d.rows = d.rows.filter(r => r[1] !== q).concat(its.map(i => rowOf(q, i))); }
+          d.rows.sort((a, b) => a[0] - b[0]);
+          const l = d.rows[d.rows.length - 1]; if (l) { d.game.sa = l[3]; d.game.sb = l[4]; }
+          if (d.rows.some(r => r[5] === 'ENDG')) d.finished = true;
+        } else if (o.data.fileType === 'game' && (m.id === id || m.id == null)) {
+          if (m.RC) d.game.chrono = m.RC; if (m.CurrentPeriod) d.game.period = m.CurrentPeriod;
+        } else return;
+        S.wsAt = Date.now();
+        if (S.g && S.g.comp === 'bcl' && S.matchId === id) applyResult({ comp: 'bcl', id }, bclResult(d), { silent: true });
+      } catch (err) { }
+    };
+    ws.onclose = () => { if (BWS.ws === ws) { BWS.ws = null; if (S.g && !S.g.finished && S.matchId === id) BWS.retry = setTimeout(() => { BWS.id = null; bclSocket(id); }, 5000); } };
+  } catch (e) { }
+}
+
 // ---------- Carga de partido ----------
 async function loadMatch(link, opts = {}) {
   const st = $('#st-match');
   if (typeof link === 'number') link = { comp: S.compet, id: link };
+  if (!opts.silent) clearTimeout(S.waitTimer);
   if (!link || !link.id) { setPick(true); st.textContent = 'No encuentro el número de partido. Pega el enlace de live.acb.com o de championsleague.basketball, o escribe el número.'; st.className = 'status err'; return; }
   if (link.comp !== S.compet) setCompet(link.comp, true);
   st.className = 'status'; if (!opts.silent) st.textContent = 'Cargando partido ' + link.id + ' (' + COMPS[link.comp].short + ')…';
@@ -1138,28 +1185,48 @@ async function loadMatch(link, opts = {}) {
   try {
     const res = await fetchGame(link.comp, link.id);
     if (!res) { st.textContent = 'El partido ' + link.id + ' todavía no tiene jugadas publicadas.'; return; }
-    const same = opts.silent && S.g && S.g.comp === link.comp && S.matchId === link.id && S.sig === res.sig;
-    S.lastFetch = new Date();
-    if (!same) {
-      S.g = A.parseGame(res.raw, { id: link.id, header: res.header });
-      S.g.comp = link.comp; S.g.hasShots = S.g.events.some(e => e.x != null && e.x !== 0);
-      S.sample = false; S.matchId = link.id; S.sig = res.sig;
-      store.set('last', link.comp + '-' + link.id);
-      try { if (location.hash !== '#' + link.comp + '-' + link.id) history.replaceState(null, '', '#' + link.comp + '-' + link.id); } catch (e) { }
-    }
-    $('#fallback').hidden = true;
-    const when = S.lastFetch.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-    st.textContent = COMPS[link.comp].short + ' · ' + (S.g.finished ? 'Final' : 'En juego') + ' · ' + res.raw.plays.length + ' jugadas · actualizado ' + when;
-    st.title = 'Datos de ' + res.src;
-    $('#pk-title').textContent = pickTitle();
-    if (!opts.silent) { setupLive(); setPick(false); const at = gameKeyIndex(); if (at >= 0 && at !== S.cal.i) { S.cal.i = at; fillMatches().catch(() => { }); } else markCards(); }
-    if (!same) render(opts.silent);
+    clearTimeout(S.waitTimer);
+    applyResult(link, res, opts);
   } catch (e) {
+    if (e.notStarted) { waitForStart(link, opts); return; }
     if (opts.silent) { st.textContent = 'Sin respuesta en la última actualización (' + new Date().toLocaleTimeString('es-ES') + '). Se reintenta.'; return; }
     if (link.comp === 'acb' && isNet(e)) { showFallback(link.id); st.textContent = 'Sin conexión con la API de la ACB.'; }
     else st.textContent = e.message;
     st.className = 'status err'; setPick(true);
   } finally { if (!opts.silent) $('#b-load').disabled = false; }
+}
+
+
+// Aplica un resultado descargado (o recibido por el canal en directo) a la vista
+function applyResult(link, res, opts = {}) {
+  const st = $('#st-match');
+  const same = opts.silent && S.g && S.g.comp === link.comp && S.matchId === link.id && S.sig === res.sig;
+  S.lastFetch = new Date();
+  if (!same) {
+    S.g = A.parseGame(res.raw, { id: link.id, header: res.header });
+    S.g.comp = link.comp; S.g.hasShots = S.g.events.some(e => e.x != null && e.x !== 0);
+    S.sample = false; S.matchId = link.id; S.sig = res.sig;
+    store.set('last', link.comp + '-' + link.id);
+    try { if (location.hash !== '#' + link.comp + '-' + link.id) history.replaceState(null, '', '#' + link.comp + '-' + link.id); } catch (e) { }
+  }
+  $('#fallback').hidden = true;
+  const when = S.lastFetch.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  st.className = 'status';
+  st.textContent = COMPS[link.comp].short + ' · ' + (S.g.finished ? 'Final' : 'En juego') + ' · ' + res.raw.plays.length + ' jugadas · actualizado ' + when + (BWS.ws && BWS.ws.readyState === 1 && BWS.id === link.id && !S.g.finished ? ' · tiempo real' : '');
+  st.title = 'Datos de ' + res.src;
+  $('#pk-title').textContent = pickTitle();
+  if (!opts.silent) { setupLive(); setPick(false); const at = gameKeyIndex(); if (at >= 0 && at !== S.cal.i) { S.cal.i = at; fillMatches().catch(() => { }); } else markCards(); }
+  if (link.comp === 'bcl' && !S.g.finished) bclSocket(link.id); else if (BWS.id === link.id && S.g.finished) stopBclSocket();
+  if (!same) render(opts.silent);
+}
+// Partido aún sin empezar: se reintenta solo y se abre en cuanto haya jugadas
+function waitForStart(link, opts) {
+  const st = $('#st-match'); clearTimeout(S.waitTimer);
+  st.className = 'status';
+  st.textContent = COMPS[link.comp].short + ' · el partido ' + link.id + ' aún no ha empezado · se abrirá solo en cuanto haya jugadas (comprobando cada 15 s)';
+  $('#pk-title').textContent = 'Esperando el inicio';
+  if (!opts.silent) setPick(false);
+  S.waitTimer = setTimeout(() => { if (!S.g || S.sample || S.matchId !== link.id || S.g.comp !== link.comp) loadMatch(link, { silent: !!(S.g && !S.sample && S.matchId === link.id) }); }, 15000);
 }
 
 // Directo: actualización encadenada (no se solapan peticiones) cada S.every segundos
@@ -1168,7 +1235,9 @@ function setupLive() {
   const w = $('#live-wrap'); w.hidden = !(S.g && !S.g.finished && !S.sample);
   if (w.hidden || !$('#in-live').checked) return;
   const tick = async () => {
-    if (S.mode === 'match' && S.matchId && !document.hidden) await loadMatch({ comp: S.g.comp, id: S.matchId }, { silent: true });
+    const wsOk = S.g && S.g.comp === 'bcl' && BWS.ws && BWS.ws.readyState === 1 && S.wsAt && Date.now() - S.wsAt < 20000 && (S.lastPoll && Date.now() - S.lastPoll < 15000);
+    if (!wsOk) S.lastPoll = Date.now();
+    if (!wsOk && S.mode === 'match' && S.matchId && !document.hidden) await loadMatch({ comp: S.g.comp, id: S.matchId }, { silent: true });
     if (S.g && !S.g.finished && $('#in-live').checked) S.timer = setTimeout(tick, S.every * 1000);
     else { $('#live-wrap').hidden = true; }
   };
