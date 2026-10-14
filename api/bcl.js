@@ -1,9 +1,35 @@
 // Puente para la Basketball Champions League (Vercel Edge Function)
 // GET /api/bcl?id=136295  → jugada a jugada compacto de un partido, con CORS abierto.
+// GET /api/bcl?token=1     → credencial temporal del canal en directo (WebPubSub) de la BCL.
 export const config = { runtime: 'edge' };
 
 const SITE = 'https://www.championsleague.basketball';
-const UA = 'Mozilla/5.0 (compatible; LaboratorioACB/1.0)';
+const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0 Safari/537.36';
+const HAPI = 'https://digital-api.fiba.basketball/hapi/';
+const HAPI_KEY = '898cd5e7389140028ecb42943c47eb74';
+
+// Fuente principal: el mismo JSON que usa la web de la BCL en directo
+async function fromLive(id) {
+  const [r, meta] = await Promise.all([
+    fetch(`${SITE}/en/events/api/game-live-info/${id}/detail`, { headers: { 'User-Agent': UA, 'Accept': 'application/json', 'Referer': `${SITE}/en/games/${id}` }, cache: 'no-store' }),
+    fetch(`${HAPI}getgdapgamebyid?gdapGameId=${id}`, { headers: { 'Ocp-Apim-Subscription-Key': HAPI_KEY }, cache: 'no-store' }).then(x => x.ok ? x.json() : null).catch(() => null)
+  ]);
+  if (!r.ok) throw new Error('La web de la BCL respondió ' + r.status);
+  const j = await r.json();
+  const c = j.game && j.game.content, pa = j.periodActions && j.periodActions.content, comp = j.gameCompetitors && j.gameCompetitors.content;
+  if (!c || !pa || !pa.items || !Object.keys(pa.items).length || !meta) return null;
+  const o = {
+    game: { gameId: id, teamA: meta.teamA, teamB: meta.teamB, teamAScore: meta.teamAScore, teamBScore: meta.teamBScore, isLive: !!meta.isLive, currentPeriod: c.CurrentPeriod || meta.currentPeriod, chrono: c.RC || meta.chrono, liveGameStatus: meta.liveGameStatus, competition: { competitionId: 209123 }, round: { roundName: meta.roundName }, gameDateTimeUTC: meta.gameDateTimeUTC },
+    teamColors: { teamA: c.c && c.c[0] && c.c[0].Color, teamB: c.c && c.c[1] && c.c[1].Color },
+    playersTeamA: (comp && comp.playersTeamA) || [], playersTeamB: (comp && comp.playersTeamB) || [],
+    playByPlay: { items: pa.items }
+  };
+  const d = compact(o);
+  const last = d.rows[d.rows.length - 1];
+  if (last) { d.game.sa = last[3]; d.game.sb = last[4]; }
+  d.game.liveStatus = c.status; d.game.periodStatus = c.CurrentPeriodStatus;
+  return d;
+}
 
 // Extrae el estado del partido del HTML (payload RSC de Next.js)
 export function extract(html) {
@@ -50,11 +76,21 @@ export default async function handler(req) {
   const id = (url.searchParams.get('id') || '').replace(/\D/g, '');
   const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, OPTIONS' };
   if (req.method === 'OPTIONS') return new Response(null, { headers: cors });
+  if (url.searchParams.get('token')) {
+    try {
+      const t = await fetch(`${SITE}/en/events/api/websocket-token`, { headers: { 'User-Agent': UA, 'Accept': 'application/json' }, cache: 'no-store' });
+      const j = await t.json();
+      return new Response(JSON.stringify({ url: j.url }), { headers: { ...cors, 'Content-Type': 'application/json', 'Cache-Control': 'public, s-maxage=600' } });
+    } catch (e) { return new Response(JSON.stringify({ error: String(e.message || e) }), { status: 502, headers: { ...cors, 'Content-Type': 'application/json' } }); }
+  }
   if (!id) return new Response(JSON.stringify({ error: 'Falta el parámetro id' }), { status: 400, headers: { ...cors, 'Content-Type': 'application/json' } });
   try {
-    const r = await fetch(`${SITE}/en/games/${id}?t=${Date.now() >> 10}`, { headers: { 'User-Agent': UA, 'Accept': 'text/html' }, cache: 'no-store' });
-    if (!r.ok) throw new Error('La web de la BCL respondió ' + r.status);
-    const data = extract(await r.text());
+    let data = await fromLive(id).catch(() => null);
+    if (!data) {
+      const r = await fetch(`${SITE}/en/games/${id}?t=${Date.now() >> 10}`, { headers: { 'User-Agent': UA, 'Accept': 'text/html' }, cache: 'no-store' });
+      if (!r.ok) throw new Error('La web de la BCL respondió ' + r.status);
+      data = extract(await r.text());
+    }
     if (!data) return new Response(JSON.stringify({ error: 'El partido todavía no tiene jugadas publicadas', id }), { status: 404, headers: { ...cors, 'Content-Type': 'application/json' } });
     const live = data.game.isLive && !data.finished;
     return new Response(JSON.stringify(data), {
