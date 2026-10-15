@@ -1944,7 +1944,7 @@ function scoreboard(g) {
   const v = A.validate(g);
   const qs = g.quarterScores.map(q => `<span>${qLabel(q.q)} ${q.h}–${q.a}</span>`).join('');
   const allOk = v.ok === v.n && v.ptsOk && v.minOk === v.minN && v.pmOk === v.pmN;
-  const extraV = v.minN ? ` · minutos ${v.minOk}/${v.minN} · +/- ${v.pmOk}/${v.pmN}` : '';
+  const extraV = (v.minN ? ` · minutos ${v.minOk}/${v.minN}` : '') + (v.pmN ? ` · +/- ${v.pmOk}/${v.pmN}` : '');
   const val = v.n ? `<span class="pill ${allOk ? 'ok' : 'warn'}" data-tip="${esc(allOk ? 'Las estadísticas calculadas desde las jugadas coinciden con las oficiales de cada jugador' + (v.minN ? ', incluidos minutos en pista y +/-' : '') + '.' : 'Diferencias: ' + v.diffs.slice(0, 6).join(' · '))}">${allOk ? '✓' : '!'} Cuadre con la estadística oficial ${v.ok}/${v.n}${extraV}</span>` : '';
   const compTag = `<span class="pill">${esc(COMPS[g.comp || 'acb'].name)}</span>`;
   const warn = g.warnings.length ? `<span class="pill warn" data-tip="${esc(g.warnings.join(' '))}">! Aviso en los datos</span>` : '';
