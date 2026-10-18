@@ -89,6 +89,7 @@ button, select, input, textarea { font: inherit; color: inherit }
 .skin-opt[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent) }
 .skin-opt i { display: flex; width: 64px; height: 28px; border-radius: 6px; overflow: hidden; border: 1px solid rgba(128,128,128,.35) }
 .skin-opt i b { flex: 1 }
+.skin-tc { flex: none; display: flex; align-items: center; gap: 6px; font-size: .8rem; color: var(--ink-2); padding: 0 6px; cursor: pointer; white-space: nowrap }
 /* Selector de partido: carrusel + plegado */
 .picker { gap: 0; padding: 10px 12px }
 .pk-bar { display: flex; align-items: center; gap: 8px 12px; flex-wrap: wrap }
@@ -148,6 +149,7 @@ code { font-family: var(--f-data); font-size: .8rem; background: var(--surface-2
 .board { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 12px; align-items: center }
 .team { display: grid; gap: 2px; min-width: 0 }
 .team.r { text-align: right }
+.tc .team .nm { color: var(--home) } .tc .team.r .nm { color: var(--away) }
 .team .nm { font-family: var(--f-display); font-size: 1.5rem; font-weight: 600; line-height: 1.1; overflow-wrap: anywhere }
 .team .ab { display: inline-flex; gap: 6px; align-items: center; font-size: .8rem; color: var(--ink-3) }
 .team.r .ab { justify-content: flex-end }
@@ -1732,6 +1734,66 @@ function sPartidos(list) {
   return `<section class="panel">${tbl('sgm', cols, rows, { sort: { k: 'round', d: 1 } })}</section>`;
 }
 
+// ---------- Colores de los equipos ----------
+// Cada fuente da un color por equipo (ACB: primaryColorHex/textColorHex; BCL: color del partido; Liga U: color del club).
+// Se ajusta para que se vea sobre el fondo del estilo y para que los dos equipos no se confundan.
+const hexRgb = h => { const m = String(h || '').trim().match(/^#?([0-9a-f]{3}|[0-9a-f]{6})$/i); if (!m) return null; const x = m[1].length === 3 ? m[1].replace(/./g, '$&$&') : m[1]; return [0, 2, 4].map(i => parseInt(x.slice(i, i + 2), 16)); };
+const rgbHex = c => '#' + c.map(v => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, '0')).join('');
+const lin = v => { v /= 255; return v <= .04045 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4; };
+const relLum = c => .2126 * lin(c[0]) + .7152 * lin(c[1]) + .0722 * lin(c[2]);
+const contrastOf = (a, b) => { const x = relLum(a), y = relLum(b); return (Math.max(x, y) + .05) / (Math.min(x, y) + .05); };
+function labOf(c) {
+  const [r, g, b] = c.map(lin), k = t => t > .008856 ? Math.cbrt(t) : 7.787 * t + 16 / 116;
+  const x = k((r * .4124 + g * .3576 + b * .1805) / .95047), y = k(r * .2126 + g * .7152 + b * .0722), z = k((r * .0193 + g * .1192 + b * .9505) / 1.08883);
+  return [116 * y - 16, 500 * (x - y), 200 * (y - z)];
+}
+const colorDist = (a, b) => { const p = labOf(a), q = labOf(b); return Math.hypot(p[0] - q[0], p[1] - q[1], p[2] - q[2]); };
+const chromaOf = c => { const l = labOf(c); return Math.hypot(l[1], l[2]); };
+// Acerca el color a negro (fondo claro) o a blanco (fondo oscuro) lo justo para tener contraste 3:1 con el fondo
+function fitTo(c, bg) {
+  const to = relLum(bg) > .3 ? [0, 0, 0] : [255, 255, 255];
+  for (let t = 0; t <= 1; t += .05) { const x = c.map((v, i) => v + (to[i] - v) * t); if (contrastOf(x, bg) >= 3) return x; }
+  return to;
+}
+const inkFor = c => contrastOf(c, [255, 255, 255]) >= contrastOf(c, [17, 17, 17]) ? '#fff' : '#111';
+let probe = null;
+function cssRgb(v) { // color de una variable del estilo actual (las transparentes, sobre el fondo)
+  if (!probe) { probe = document.createElement('i'); probe.hidden = true; document.body.appendChild(probe); }
+  probe.style.color = ''; probe.style.color = v;
+  const m = (getComputedStyle(probe).color || '').match(/[\d.]+/g); if (!m || m.length < 3) return null;
+  return { c: m.slice(0, 3).map(Number), a: m[3] == null ? 1 : Number(m[3]) };
+}
+function teamPalette(cols) { // cols: [{color, text}] local y visitante (o solo el equipo propio en scouting)
+  const bg0 = cssRgb('var(--bg)'), sf = cssRgb('var(--surface)'), dh = cssRgb('var(--home)'), da = cssRgb('var(--away)');
+  if (!bg0 || !sf || !dh || !da) return null;
+  const bg = sf.c.map((v, i) => v * sf.a + bg0.c[i] * (1 - sf.a));
+  const pick = t => { // el principal, salvo que sea blanco/gris y el secundario tenga color
+    const p = hexRgb(t && t.color), q = hexRgb(t && t.text);
+    if (p && q && chromaOf(p) < 12 && chromaOf(q) >= 12 && labOf(p)[0] > 85) return [q, p];
+    return [p, q].filter(Boolean);
+  };
+  const home = pick(cols[0]), away = cols[1] ? pick(cols[1]) : [];
+  if (!home.length && !away.length) return null;
+  const h = home.length ? fitTo(home[0], bg) : dh.c;
+  // Visitante: su color, el secundario o los del estilo, el primero que no se confunda con el local
+  const cand = [...away, da.c, dh.c, [128, 128, 128]].map(c => fitTo(c, bg));
+  const a = cand.find(c => colorDist(c, h) >= 25) || cand[cand.length - 1];
+  return { '--home': rgbHex(h), '--away': rgbHex(a), '--home-ink': inkFor(h), '--away-ink': inkFor(a) };
+}
+function applyTeamColors(view) {
+  let cols = null;
+  if (store.get('teamcolors', true)) {
+    if (S.mode === 'match' && S.g) cols = S.g.teams;
+    else if (S.mode === 'scout' && S.scout.list.length) { const x = S.scout.list[0]; cols = [x.g.teams[x.side]]; }
+  }
+  const key = cols ? JSON.stringify([document.documentElement.getAttribute('data-skin'), !!window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches, cols.map(t => [t.color, t.text])]) : '';
+  if (key === S.palKey) return;
+  S.palKey = key;
+  const pal = cols && teamPalette(cols);
+  for (const k of ['--home', '--away', '--home-ink', '--away-ink']) if (pal) view.style.setProperty(k, pal[k]); else view.style.removeProperty(k);
+  view.classList.toggle('tc', !!pal);
+}
+
 // ---------- Render ----------
 // Actualizaciones en segundo plano (directo): como mucho un redibujado por fotograma y ninguno con la pestaña oculta
 function scheduleRender() {
@@ -1767,6 +1829,7 @@ function render(silent) {
     const V = { resumen: sResumen, jugadores: sJugadores, quintetos: sQuintetos, posesiones: sPosesiones, cierres: sCierres, partidos: sPartidos }[S.stab] || sResumen;
     html = `<section class="panel"><div class="sec-h" style="margin:0"><h2><i class="sw t0"></i> ${esc(t.name)}</h2><span class="note">${list.length} partidos · jornadas ${list.map(x => x.round).join(', ')}</span></div></section>` + tabsBar(STABS, S.stab, 'data-stab') + `<div class="stack" style="margin-top:14px">${V(list)}</div>`;
   }
+  applyTeamColors(view);
   view.innerHTML = html;
   const tb = view.querySelector('.tabs'); if (tb && tabsX) tb.scrollLeft = tabsX;
   if (scrollX.some(Boolean)) view.querySelectorAll('.scroll').forEach((x, i) => { if (scrollX[i]) x.scrollLeft = scrollX[i]; });
@@ -1835,6 +1898,7 @@ document.addEventListener('change', e => {
   if (t.dataset && t.dataset.cblock) { const c = coachCfg(); const id = t.dataset.cblock; c.blocks = t.checked ? [...c.blocks.filter(x => x !== id), id] : c.blocks.filter(x => x !== id); saveCoach(c); }
   else if (t.id === 'in-mine') { const c = coachCfg(); c.mine = t.value.trim().toUpperCase(); saveCoach(c); }
   else if (t.id === 'sel-shotp') { S.shotPlayer = t.value; render(); }
+  else if (t.id === 'in-tcolors') { store.set('teamcolors', t.checked); render(true); }
 });
 document.addEventListener('focusout', () => { if (S.pendingRender) setTimeout(() => { if (S.pendingRender) render(true); }, 0); });
 $('#m-match').onclick = () => setMode('match');
@@ -1901,7 +1965,8 @@ function applySkin(id) {
   document.querySelectorAll('.skin-opt').forEach(b => b.setAttribute('aria-pressed', b.dataset.skin === sk.id));
   if (S.g || S.scout.list.length) requestAnimationFrame(() => render(true));
 }
-$('#skin-menu').innerHTML = SKINS.map(k => `<button class="skin-opt" data-skin="${k.id}" aria-pressed="false"><i>${k.sw.map(c => `<b style="background:${c}"></b>`).join('')}</i>${k.name}</button>`).join('');
+$('#skin-menu').innerHTML = SKINS.map(k => `<button class="skin-opt" data-skin="${k.id}" aria-pressed="false"><i>${k.sw.map(c => `<b style="background:${c}"></b>`).join('')}</i>${k.name}</button>`).join('')
+  + `<label class="skin-tc"><input type="checkbox" id="in-tcolors" ${store.get('teamcolors', true) ? 'checked' : ''}> Colores de cada equipo</label>`;
 $('#b-skin').onclick = () => { const m = $('#skin-menu'); m.hidden = !m.hidden; $('#b-skin').setAttribute('aria-expanded', !m.hidden); };
 applySkin(store.get('skin', ''));
 
