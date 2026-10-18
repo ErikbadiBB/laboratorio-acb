@@ -29,7 +29,7 @@ No editar `site/index.html` a mano: se regenera con `npm run build`.
 ```bash
 npm install          # jsdom + playwright (para las pruebas)
 npm run build        # genera site/index.html y dist/statslab.html
-npm test             # motor ACB, BCL, interfaz sin navegador, directo
+npm test             # motor ACB, BCL, interfaz sin navegador, directo (BCL y Liga U)
 npm run test:visual  # capturas con Playwright (desbordes en 1200/800/400 px, mapa de tiro)
 ```
 
@@ -66,7 +66,7 @@ Todas son públicas (las mismas que usan las webs oficiales). Las claves están 
 - Cabecera: competición (`ACB | BCL | U22`), modo (`Partido | Scouting`), botón 🎨 de estilos.
 - Selector de partido: carrusel por jornada/semana con tarjetas; se pliega en una franja al cargar un partido.
 - Pestañas: Entrenador (bloques configurables, guardados en `localStorage` y exportables con un código), Resumen, Factores, Jugadores, Quintetos, Rotaciones, Dinámica, Posesiones, Tiro, Clutch, Jugadas.
-- Directo: refresco configurable (1 s por defecto); en BCL además canal en tiempo real; si el partido no ha empezado, reintenta cada 15 s.
+- Directo: refresco configurable (1 s por defecto en ordenador, 3 s en móvil/tableta). Si solo cambia el reloj se actualiza el marcador sin redibujar. Sin novedades 30 s → cada 5 s; 3 min (descanso) → cada 15 s. En BCL además canal en tiempo real; en Liga U solo se piden las jugadas nuevas (lista completa cada 30 s). Si el partido no ha empezado, reintenta cada 15 s.
 - Estilos (`data-skin` en `<html>`): Original, Noche de partido, Informe de scouting, Retransmisión TV, Parqué, Bilbao Negro. Se guardan por dispositivo.
 - Hash de la URL: `#acb-ID`, `#bcl-ID`, `#lu-ID`.
 - `localStorage` usa el prefijo `lab-acb:` (no cambiarlo, perdería la configuración guardada de los usuarios).

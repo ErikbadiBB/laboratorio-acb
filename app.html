@@ -339,7 +339,7 @@ const S = {
   mode: 'match', tab: store.get('tab', 'resumen'), stab: 'resumen', g: null, sample: false, filt: 'all', sort: {},
   lineSize: 5, lineMin: 2, pcols: 'basic', closeMode: 'clutch', pbpSide: 'all', pbpKind: 'all', pbpMax: 200, perGame: true,
   timer: null, comp: null, scout: { team: null, list: [], loading: false },
-  compet: store.get('compet', 'acb'), every: store.get('every', 1), coachEdit: false, shotQ: 'all', shotPlayer: 'all'
+  compet: store.get('compet', 'acb'), every: store.get('every', window.matchMedia && matchMedia('(pointer: coarse)').matches ? 3 : 1), coachEdit: false, shotQ: 'all', shotPlayer: 'all'
 };
 
 // ---------- Formato ----------
@@ -376,19 +376,19 @@ const LU_COMP = 155, LU_SEASON = '2026-27';
 const LU = globalThis.ACB_LU;
 
 async function api(path) {
-  const r = await fetch(API + path, { headers: { 'X-APIKEY': KEY }, cache: 'no-store' });
+  const r = await fetch(API + path, { headers: { 'X-APIKEY': KEY }, cache: 'no-cache' });
   if (r.status === 204) return null;
   if (r.status === 401 || r.status === 403) throw Object.assign(new Error('La API ha rechazado la clave (HTTP ' + r.status + '). Revisa «Ajustes de conexión».'), { auth: true });
   if (!r.ok) throw new Error('La API respondió HTTP ' + r.status + '.');
   return r.json();
 }
 async function hapi(path) {
-  const r = await fetch(HAPI + path, { headers: { 'Ocp-Apim-Subscription-Key': HAPI_KEY }, cache: 'no-store' });
+  const r = await fetch(HAPI + path, { headers: { 'Ocp-Apim-Subscription-Key': HAPI_KEY }, cache: 'no-cache' });
   if (!r.ok) throw new Error('La API de la FIBA respondió HTTP ' + r.status + '.');
   return r.json();
 }
 async function lu(path) {
-  const r = await fetch(LU_API + path, { headers: { apikey: LU_KEY, Authorization: 'Bearer ' + LU_KEY }, cache: 'no-store' });
+  const r = await fetch(LU_API + path, { headers: { apikey: LU_KEY, Authorization: 'Bearer ' + LU_KEY }, cache: 'no-cache' });
   if (!r.ok) throw new Error('La web de la Liga U respondió HTTP ' + r.status + '.');
   return r.json();
 }
@@ -413,7 +413,7 @@ async function luGames() {
 }
 async function bclPbp(id) {
   let r;
-  try { r = await fetch((PROXY || '') + '/api/bcl?id=' + id, { cache: 'no-store' }); }
+  try { r = await fetch((PROXY || '') + '/api/bcl?id=' + id, { cache: 'no-cache' }); }
   catch (e) { throw Object.assign(new Error('No se puede conectar con el puente de la BCL (' + (PROXY || location.host) + '). Revisa «Ajustes de conexión».'), { proxy: true }); }
   const j = await r.json().catch(() => null);
   if (!r.ok) throw Object.assign(new Error((j && j.error) || ('El puente de la BCL respondió HTTP ' + r.status + '.')), { notStarted: r.status === 404 });
@@ -449,8 +449,10 @@ function sampleRaw() {
 // Descarga un partido y lo deja en el formato del motor
 async function fetchGame(comp, id) {
   if (comp === 'lu') {
-    const [pbp, md, teams] = await Promise.all([
-      lu(`pbp_player_name_ligau_view?select=*&match_id=eq.${id}&order=num.asc`), lu(`all_matches_data_lf_endesa?select=*&match_id=eq.${id}`), luTeams()]);
+    const P = LUP.get(id), incr = P && Date.now() - P.full < 30000;
+    const q = `pbp_player_name_ligau_view?select=*&match_id=eq.${id}&order=num.asc`;
+    const [got, md, teams] = await Promise.all([lu(incr ? q + '&num=gte.' + P.max : q), lu(`all_matches_data_lf_endesa?select=*&match_id=eq.${id}`), luTeams()]);
+    const pbp = incr ? P.rows.filter(r => r.num < P.max).concat(got) : got;
     if (!md || !md.length) throw new Error('No encuentro el partido ' + id + ' en la Liga U.');
     if (!pbp || !pbp.length) throw Object.assign(new Error('El partido todavía no tiene jugadas publicadas'), { notStarted: true });
     // Acta y tiros solo se vuelven a pedir cuando hay jugadas nuevas (en directo ahorra 2 peticiones por segundo)
@@ -461,6 +463,9 @@ async function fetchGame(comp, id) {
       c = { k, box, shots }; LUC.set(id, c);
     }
     const { box, shots } = c;
+    // La descarga parcial solo es fiable si «num» es numérico (si fuese texto, el filtro compararía como texto)
+    if (md[0].status_code !== 3 && typeof pbp[0].num === 'number') LUP.set(id, { rows: pbp, max: pbp.reduce((m, r) => Math.max(m, r.num), 0), full: incr ? P.full : Date.now() });
+    else LUP.delete(id);
     const d = LU.luToFiba(pbp, md[0], box, shots, teams);
     const raw = F.fibaToRaw(d); raw.competition = 'U22';
     const live = !d.finished;
@@ -495,6 +500,7 @@ async function fetchGame(comp, id) {
 // ---------- BCL: datos en memoria y canal en tiempo real (WebPubSub de la web oficial) ----------
 const BCLD = new Map();
 const LUC = new Map(); // Liga U: acta y tiros del último estado visto de cada partido
+const LUP = new Map(); // Liga U en directo: jugadas ya descargadas, para pedir solo las nuevas
 const lastOrder = d => d.rows.length ? d.rows[d.rows.length - 1][0] : 0;
 function bclResult(d) {
   const raw = F.fibaToRaw(JSON.parse(JSON.stringify(d)));
@@ -571,6 +577,7 @@ function applyResult(link, res, opts = {}) {
   const clockOnly = sameGame && !same && res.dsig && S.dsig === res.dsig;
   S.lastFetch = new Date(); S.waiting = null;
   if (clockOnly) { S.sig = res.sig; S.g.meta.header = res.header; const el = $('#sb-st'); if (el) el.textContent = boardStatus(S.g); }
+  if (!same) S.changedAt = Date.now();
   if (!same && !clockOnly) {
     S.g = A.parseGame(res.raw, { id: link.id, header: res.header });
     S.g.comp = link.comp; S.g.hasShots = S.g.events.some(e => e.x != null && e.x !== 0);
@@ -581,7 +588,8 @@ function applyResult(link, res, opts = {}) {
   $('#fallback').hidden = true;
   const when = S.lastFetch.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   st.className = 'status';
-  st.textContent = COMPS[link.comp].short + ' · ' + (S.g.finished ? 'Final' : 'En juego') + ' · ' + res.raw.plays.length + ' jugadas · actualizado ' + when + (BWS.ws && BWS.ws.readyState === 1 && BWS.id === link.id && !S.g.finished ? ' · tiempo real' : '');
+  const slow = !S.g.finished && liveDelay() > S.every ? ' · sin cambios: se comprueba cada ' + liveDelay() + ' s' : '';
+  st.textContent = COMPS[link.comp].short + ' · ' + (S.g.finished ? 'Final' : 'En juego') + ' · ' + res.raw.plays.length + ' jugadas · actualizado ' + when + (BWS.ws && BWS.ws.readyState === 1 && BWS.id === link.id && !S.g.finished ? ' · tiempo real' : '') + slow;
   st.title = 'Datos de ' + res.src;
   $('#pk-title').textContent = pickTitle();
   if (!opts.silent) { setupLive(); setPick(false); const at = gameKeyIndex(); if (at >= 0 && at !== S.cal.i) { S.cal.i = at; fillMatches().catch(() => { }); } else markCards(); }
@@ -598,7 +606,12 @@ function waitForStart(link, opts) {
   S.waitTimer = setTimeout(() => { if (!S.g || S.sample || S.matchId !== link.id || S.g.comp !== link.comp) loadMatch(link, { silent: !!(S.g && !S.sample && S.matchId === link.id) }); }, 15000);
 }
 
-// Directo: actualización encadenada (no se solapan peticiones) cada S.every segundos
+// Directo: actualización encadenada (no se solapan peticiones) cada S.every segundos.
+// Sin novedades durante 30 s (tiempo muerto, revisión) pasa a 5 s; durante 3 min (descanso), a 15 s.
+function liveDelay() {
+  const idle = Date.now() - (S.changedAt || Date.now());
+  return idle > 180000 ? Math.max(S.every, 15) : idle > 30000 ? Math.max(S.every, 5) : S.every;
+}
 function setupLive() {
   clearTimeout(S.timer); S.timer = null;
   const w = $('#live-wrap'); w.hidden = !(S.g && !S.g.finished && !S.sample);
@@ -607,7 +620,7 @@ function setupLive() {
     const wsOk = S.g && S.g.comp === 'bcl' && BWS.ws && BWS.ws.readyState === 1 && S.wsAt && Date.now() - S.wsAt < 20000 && (S.lastPoll && Date.now() - S.lastPoll < 15000);
     if (!wsOk) S.lastPoll = Date.now();
     if (!wsOk && S.mode === 'match' && S.matchId && !document.hidden) await loadMatch({ comp: S.g.comp, id: S.matchId }, { silent: true });
-    if (S.g && !S.g.finished && $('#in-live').checked) S.timer = setTimeout(tick, S.every * 1000);
+    if (S.g && !S.g.finished && $('#in-live').checked) S.timer = setTimeout(tick, liveDelay() * 1000);
     else { $('#live-wrap').hidden = true; }
   };
   S.timer = setTimeout(tick, S.every * 1000);
