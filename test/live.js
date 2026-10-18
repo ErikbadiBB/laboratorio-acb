@@ -1,4 +1,5 @@
 const { JSDOM } = require('jsdom');
+const { check, done } = require('./check');
 const fs = require('fs');
 const html = fs.readFileSync(__dirname + '/../site/index.html', 'utf8');
 const fx = require('./bcl136295.json');
@@ -19,11 +20,12 @@ let renders = 0; const obs = new w.MutationObserver(m => { if (m.some(x => x.tar
   await wait(600);
   obs.observe(d.querySelector('#view'), { childList: true });
   console.log('board', d.querySelector('.score').textContent.replace(/\s+/g, ' '), '| live-wrap hidden:', d.querySelector('#live-wrap').hidden, '| every', d.querySelector('#sel-every').value);
-  const c0 = calls; await wait(3200); console.log('calls in ~3s (sin cambios):', calls - c0, 'renders:', renders);
-  clock = '1:23'; await wait(1300); console.log('solo cambia el reloj -> renders:', renders, '| estado', d.querySelector('#sb-st').textContent); clock = null;
-  n = 300; renders = 0; await wait(1300); console.log('tras nuevas jugadas -> renders:', renders, '| marcador', d.querySelector('.score .big').textContent);
+  const c0 = calls; await wait(3200); console.log('calls in ~3s (sin cambios):', calls - c0, 'renders:', renders); check(calls - c0 >= 2 && renders === 0, 'directo: sin cambios no debe redibujar');
+  clock = '1:23'; await wait(1300); console.log('solo cambia el reloj -> renders:', renders, '| estado', d.querySelector('#sb-st').textContent); check(renders === 0 && /1:23/.test(d.querySelector('#sb-st').textContent), 'directo: el reloj no se actualiza sin redibujar'); clock = null;
+  n = 300; renders = 0; await wait(1300); console.log('tras nuevas jugadas -> renders:', renders, '| marcador', d.querySelector('.score .big').textContent); check(renders >= 1, 'directo: las jugadas nuevas no se pintan');
   n = fx.rows.length; await wait(1300);
   console.log('final -> live-wrap hidden:', d.querySelector('#live-wrap').hidden, '| st', d.querySelector('.score .st').textContent);
   const c1 = calls; await wait(2200); console.log('calls tras final (debe ser 0):', calls - c1, 'errs', errs);
-  process.exit(0);
+  check(d.querySelector('#live-wrap').hidden && calls - c1 === 0, 'directo: sigue consultando tras el final'); check(!errs.length, 'directo: errores de JavaScript');
+  done('directo BCL');
 })();

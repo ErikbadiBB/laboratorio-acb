@@ -25,6 +25,14 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: npm
+      - name: Instalar dependencias de las pruebas
+        run: npm ci
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
+      # Si alguna prueba falla, el paso falla y la web publicada se queda como estaba
+      - name: Pruebas (motor, interfaz y directo)
+        run: npm test
       - name: Generar la web
         run: node build.js
       - uses: actions/configure-pages@v5

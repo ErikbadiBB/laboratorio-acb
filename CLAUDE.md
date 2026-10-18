@@ -20,7 +20,7 @@ Usuario: Erik (Bilbao Basket). Responde siempre en castellano.
 | `site/` | **Lo que se publica**: `index.html` (generado), `manifest.webmanifest`, iconos, `api/bcl.js`. |
 | `site/sw.js` | Service worker: la web se abre sin conexión (red primero; copia de la web y de las tipografías). No toca `/api/`. |
 | `site/api/bcl.js` | Puente BCL (función Edge de Vercel). Se edita directamente aquí. |
-| `.github/workflows/pages.yml` | Al hacer push a `main`: ejecuta `node build.js` y publica `site/` en GitHub Pages. |
+| `.github/workflows/pages.yml` | Al hacer push a `main`: `npm ci` + `npm test` (si falla alguna prueba **no se publica**), `node build.js` y publica `site/` en GitHub Pages. |
 | `test/` | Pruebas con datos reales (`m105375.json` ACB, `bcl136295.json` BCL) y Liga U sintética (`lu.js`). `browser.js` arranca Chromium para las pruebas con navegador (usa `CHROMIUM_PATH` o `/opt/pw-browsers/chromium` si falta el de Playwright). |
 
 No editar `site/index.html` a mano: se regenera con `npm run build`.
@@ -35,7 +35,7 @@ npm run test:visual  # con Playwright: capturas, desbordes en 1200/800/400 px, u
 npm run test:perf    # tiempos de cada pestaña, ordenar/filtrar y scouting (referencia: ~160 ms todas las pestañas)
 ```
 
-Antes de publicar: `npm run build && npm test` sin errores (las pruebas imprimen `ERRORS []`).
+Antes de publicar: `npm run build && npm test` sin errores. Cada prueba termina con «OK …» o con «FALLOS …» y código de salida 1 (comprobaciones en `test/check.js`); GitHub ejecuta lo mismo y no publica si falla.
 
 ## Publicar
 

@@ -1,4 +1,5 @@
 const { JSDOM } = require('jsdom');
+const { check, done } = require('./check');
 const fs = require('fs');
 const html = fs.readFileSync(__dirname + '/../dist/statslab.html', 'utf8');
 const errors = [];
@@ -33,10 +34,11 @@ setTimeout(async () => {
   console.log('INS:\n - ' + [...d.querySelectorAll('.ins li')].map(l => l.textContent).join('\n - '));
   console.log('status:', d.querySelector('#st-match').textContent);
   console.log('fallback hidden:', d.querySelector('#fallback').hidden);
-  console.log('board:', d.querySelector('.boardfoot').textContent);
+  const boardTxt = d.querySelector('.boardfoot').textContent; console.log('board:', boardTxt);
   // scout mode empty
   d.querySelector('#m-scout').click(); await new Promise(r => setTimeout(r, 30));
   console.log('scout view:', d.querySelector('#view').textContent.slice(0, 80));
   console.log('ERRORS', errors);
-  process.exit(0);
+  check(!errors.length, 'interfaz: errores de JavaScript'); check(tabs.length === 11, 'interfaz: faltan pestañas'); check(/✓ Cuadre/.test(boardTxt), 'interfaz: el ejemplo no cuadra con el acta');
+  done('interfaz (ejemplo ACB)');
 }, 400);

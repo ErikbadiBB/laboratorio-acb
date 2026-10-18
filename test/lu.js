@@ -1,6 +1,7 @@
 // Liga U en directo con datos sintéticos: primera descarga completa, después solo jugadas nuevas,
 // lista completa cada 30 s y fin del partido
 const { JSDOM } = require('jsdom');
+const { check, done } = require('./check');
 const fs = require('fs');
 const html = fs.readFileSync(__dirname + '/../site/index.html', 'utf8');
 const P = { 1: [11, 12, 13, 14, 15], 2: [21, 22, 23, 24, 25] };
@@ -42,6 +43,7 @@ const inc = () => urls.filter(u => /num=gte/.test(u)).length, full = () => urls.
   n = 60; await wait(2300);
   const ref = all.slice(0, 60).reverse().find(r => r.scoreA);
   console.log('tras jugadas nuevas', score(), '(esperado ' + ref.scoreA + '–' + ref.scoreB + ') | completas', full(), 'parciales', inc());
+  check(score() === ref.scoreA + '–' + ref.scoreB && inc() >= 1, 'Liga U: las jugadas nuevas no llegan por descarga parcial');
   offset = 31000; const f0 = full(); await wait(1300);
   console.log('a los 30 s vuelve a pedir la lista completa:', full() > f0);
   // El salto de reloj deja 31 s sin novedades: el directo pasa a comprobar cada 5 s
@@ -49,5 +51,7 @@ const inc = () => urls.filter(u => /num=gte/.test(u)).length, full = () => urls.
   n = all.length; status = 3; await wait(5600);
   const c = urls.length; await wait(1300);
   console.log('final:', d.querySelector('#sb-st').textContent, score(), '(esperado ' + sa + '–' + sb + ')', '| consultas tras el final', urls.length - c, '| errores', errs);
-  process.exit(0);
+  check(score() === sa + '–' + sb && /Final/.test(d.querySelector('#sb-st').textContent), 'Liga U: el final no se refleja');
+  check(urls.length - c === 0 && !errs.length, 'Liga U: consultas tras el final o errores');
+  done('directo Liga U');
 })();

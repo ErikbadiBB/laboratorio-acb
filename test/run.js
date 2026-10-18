@@ -1,4 +1,5 @@
 require('../engine.js');
+const { check, done } = require('./check');
 const fx = require('./m105375.json');
 const A = globalThis.ACB;
 const keys = ['points','twoPointersMade','twoPointersAttempted','threePointersMade','threePointersAttempted','freeThrowsMade','freeThrowsAttempted','offRebounds','defRebounds','assists','steals','turnovers','blocks','personalFouls','foulsDrawn'];
@@ -18,7 +19,7 @@ const g = A.parseGame(raw, { id: 105375 });
 console.log('warnings', g.warnings);
 console.log('final', g.final, 'quarters', JSON.stringify(g.quarterScores));
 const v = A.validate(g);
-console.log('validation', v.ok + '/' + v.n, 'ptsOk', v.ptsOk); v.diffs.forEach(d => console.log('  ', d));
+console.log('validation', v.ok + '/' + v.n, 'ptsOk', v.ptsOk); check(v.n > 0 && v.ok === v.n, 'ACB: el cuadre con el acta no es completo'); check(v.ptsOk, 'ACB: los puntos no cuadran'); v.diffs.forEach(d => console.log('  ', d));
 const tb = A.teamBoxes(g);
 const m0 = A.teamMetrics(tb[0], tb[1]), m1 = A.teamMetrics(tb[1], tb[0]);
 const f = x => x == null ? '-' : (Math.round(x * 1000) / 1000);
@@ -34,7 +35,7 @@ adv.sort((a, b) => a.side - b.side || b.min - a.min).forEach(p => console.log(p.
 console.log('sum +/- /5', adv.filter(p => p.side === 0).reduce((a, p) => a + p.pm, 0) / 5, g.final[0] - g.final[1]);
 // posesiones: suma puntos
 const pp = [0, 0]; g.poss.forEach(p => pp[p.side] += p.pts);
-console.log('pts in poss', pp, 'final', g.final);
+console.log('pts in poss', pp, 'final', g.final); check(pp[0] === g.final[0] && pp[1] === g.final[1], 'ACB: los puntos de las posesiones no suman el marcador');
 // check alternancia
 let same = 0; for (let i = 1; i < g.poss.length; i++) if (g.poss[i].side === g.poss[i - 1].side) same++;
 console.log('consecutive same-side possessions', same);
@@ -51,8 +52,9 @@ console.log('clutch box', JSON.stringify(A.teamBoxes(g, x => x.clutch).map(b => 
 // stint +/- consistency
 const pmS = {}; g.stints.forEach(s => pmS[s.pid] = (pmS[s.pid] || 0) + s.pm);
 const bad = adv.filter(p => (pmS[p.pid] || 0) !== p.pm).map(p => p.name + ' ' + pmS[p.pid] + ' vs ' + p.pm);
-console.log('stint pm mismatches', bad);
+console.log('stint pm mismatches', bad); check(!bad.length, 'ACB: +/- de los tramos en pista no cuadra');
 // merge test: two copies = double
 const acc = new Map(); for (const r of A.playerRaw(g).values()) { A.mergeRaw(acc, r); A.mergeRaw(acc, r); }
 const m2 = [...acc.values()].map(A.playerMetrics).find(p => p.name === 'Darrun Hilliard');
 console.log('merged Hilliard gp', m2.gp, 'min', m2.min.toFixed(1), 'pts', m2.box.pts, 'usg', m2.usg.toFixed(3), 'onoff', m2.onOff.toFixed(2));
+done('motor ACB');
