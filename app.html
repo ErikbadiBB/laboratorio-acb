@@ -546,6 +546,43 @@ async function bclSocket(id) {
   } catch (e) { }
 }
 
+// ---------- Partidos guardados (sin conexión) ----------
+// Los datos de los últimos partidos abiertos se guardan en el dispositivo; el índice va en localStorage.
+const SAVED = { cache: 'statslab-partidos', max: 12, at: {} };
+const canSave = () => { try { return !!window.isSecureContext && 'caches' in window; } catch (e) { return false; } };
+const savedUrl = k => new URL('partido/' + k, location.href).href;
+async function saveGame(link, res, g) {
+  if (!canSave()) return;
+  const k = link.comp + '-' + link.id, now = Date.now();
+  if (!g.finished && now - (SAVED.at[k] || 0) < 30000) return; // en directo, como mucho cada 30 s
+  SAVED.at[k] = now;
+  try {
+    const c = await caches.open(SAVED.cache);
+    await c.put(savedUrl(k), new Response(JSON.stringify(res), { headers: { 'Content-Type': 'application/json' } }));
+    const idx = [{ k, t: now, h: g.teams[0].abbr, a: g.teams[1].abbr, hn: g.teams[0].name, an: g.teams[1].name, hs: g.final[0], as: g.final[1], fin: g.finished }]
+      .concat(store.get('saved', []).filter(x => x.k !== k));
+    for (const x of idx.splice(SAVED.max)) await c.delete(savedUrl(x.k));
+    store.set('saved', idx);
+  } catch (e) { }
+}
+async function loadSaved(link) {
+  if (!canSave()) return null;
+  const k = link.comp + '-' + link.id, info = store.get('saved', []).find(x => x.k === k);
+  if (!info) return null;
+  const r = await (await caches.open(SAVED.cache)).match(savedUrl(k));
+  return r ? { res: await r.json(), info } : null;
+}
+// Sin calendario (sin conexión): tarjetas de los partidos guardados
+function savedCards() {
+  const idx = canSave() ? store.get('saved', []) : [];
+  if (!idx.length) return false;
+  $('#pk-round').textContent = 'Sin conexión · partidos guardados'; $('#b-prev').disabled = $('#b-next').disabled = true;
+  $('#pk-cards').innerHTML = idx.map(x => { const [comp, id] = x.k.split('-');
+    return cardHtml({ comp, id, home: { abbr: x.h, name: x.hn }, away: { abbr: x.a, name: x.an }, hs: x.hs, as: x.as, status: x.fin ? 'FIN' : 'LIVE' },
+      COMPS[comp].short + ' · ' + (x.fin ? 'Final' : 'guardado ' + new Date(x.t).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }))); }).join('');
+  markCards(); return true;
+}
+
 // ---------- Carga de partido ----------
 async function loadMatch(link, opts = {}) {
   const st = $('#st-match');
@@ -563,6 +600,13 @@ async function loadMatch(link, opts = {}) {
   } catch (e) {
     if (e.notStarted) { waitForStart(link, opts); return; }
     if (opts.silent) { st.textContent = 'Sin respuesta en la última actualización (' + new Date().toLocaleTimeString('es-ES') + '). Se reintenta.'; return; }
+    const saved = await loadSaved(link).catch(() => null);
+    if (saved) {
+      applyResult(link, saved.res, Object.assign({}, opts, { saved: true }));
+      const d = new Date(saved.info.t);
+      st.textContent = 'Sin conexión · ' + COMPS[link.comp].short + ' · datos guardados el ' + d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }) + ' a las ' + d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+      st.className = 'status'; return;
+    }
     if (link.comp === 'acb' && isNet(e)) { showFallback(link.id); st.textContent = 'Sin conexión con la API de la ACB.'; }
     else st.textContent = e.message;
     st.className = 'status err'; setPick(true);
@@ -584,6 +628,7 @@ function applyResult(link, res, opts = {}) {
     S.g = A.parseGame(res.raw, { id: link.id, header: res.header });
     S.g.comp = link.comp; S.g.hasShots = S.g.events.some(e => e.x != null && e.x !== 0);
     S.sample = false; S.matchId = link.id; S.sig = res.sig; S.dsig = res.dsig;
+    if (!opts.saved) saveGame(link, res, S.g);
     store.set('last', link.comp + '-' + link.id);
     try { if (location.hash !== '#' + link.comp + '-' + link.id) history.replaceState(null, '', '#' + link.comp + '-' + link.id); } catch (e) { }
   }
@@ -699,7 +744,7 @@ async function initRounds() {
     await fillMatches();
     fillTeams();
   } catch (e) {
-    $('#pk-round').textContent = 'Calendario no disponible';
+    if (!savedCards()) $('#pk-round').textContent = 'Calendario no disponible';
     $('#sel-team').innerHTML = '<option value="">Equipos no disponibles</option>';
     if (isNet(e) && S.compet === 'acb') { $('#st-scout').textContent = 'Sin conexión con la API de la ACB desde este visor.'; showFallback(null); }
   }
@@ -721,15 +766,16 @@ async function fillMatches() {
   const list = S.compet === 'lu' ? (await luGames()).filter(m => m.jornada === k.key) : S.compet === 'bcl' ? (await bclGames()).filter(m => weekKey(m.when) === k.key) : (await roundMatches(k.key)).map(acbGame);
   if (S.cal !== c || c.keys[c.i] !== k) return;
   if (!list.length) { box.innerHTML = '<div class="pk-empty">No hay partidos.</div>'; return; }
-  box.innerHTML = list.map(m => {
-    const done = m.status !== 'SCH', hw = done && m.hs > m.as, aw = done && m.as > m.hs;
-    const sub = m.status === 'FIN' ? 'Final' : m.status === 'LIVE' ? '● En directo' : fmtWhen(m.when);
-    return `<button class="pk-card" role="listitem" data-pk="${m.comp}-${m.id}" title="${esc(m.home.name)} – ${esc(m.away.name)}${m.round ? ' · ' + esc(m.round) : ''}">
+  box.innerHTML = list.map(m => cardHtml(m)).join('');
+  markCards();
+}
+function cardHtml(m, sub) {
+  const done = m.status !== 'SCH', hw = done && m.hs > m.as, aw = done && m.as > m.hs;
+  sub = sub || (m.status === 'FIN' ? 'Final' : m.status === 'LIVE' ? '● En directo' : fmtWhen(m.when));
+  return `<button class="pk-card" role="listitem" data-pk="${m.comp}-${m.id}" title="${esc(m.home.name)} – ${esc(m.away.name)}${m.round ? ' · ' + esc(m.round) : ''}">
       <span class="r ${done ? (hw ? 'win' : 'lose') : ''}">${esc(m.home.abbr)}<b>${done ? m.hs : '–'}</b></span>
       <span class="r ${done ? (aw ? 'win' : 'lose') : ''}">${esc(m.away.abbr)}<b>${done ? m.as : '–'}</b></span>
       <span class="s ${m.status === 'LIVE' ? 'live' : ''}">${sub}</span></button>`;
-  }).join('');
-  markCards();
 }
 function markCards() {
   let on = null;
@@ -1861,6 +1907,8 @@ applySkin(store.get('skin', ''));
 
 // ---------- Arranque ----------
 (async function boot() {
+  // Web publicada: service worker para abrirla sin conexión (no aplica al archivo suelto ni al visor de Claude)
+  try { if ('serviceWorker' in navigator && (location.protocol === 'https:' || /^(localhost|127\.)/.test(location.hostname))) navigator.serviceWorker.register('sw.js').catch(() => { }); } catch (e) { }
   const h = (location.hash || '').replace('#', '');
   let link = /^(acb|bcl|lu)-\d{5,8}$/.test(h) ? parseLink(h) : /^\d{5,7}$/.test(h) ? { comp: 'acb', id: +h } : null;
   if (!link) { const l = store.get('last', null); link = l == null ? null : typeof l === 'number' ? { comp: 'acb', id: l } : parseLink(String(l)); }

@@ -18,6 +18,7 @@ Usuario: Erik (Bilbao Basket). Responde siempre en castellano.
 | `ligau.js` | Adaptador Liga U → formato compacto FIBA (`globalThis.ACB_LU.luToFiba`), que luego pasa por `fibaToRaw`. |
 | `build.js` | Une `engine.js + fiba.js + ligau.js` y un partido de ejemplo dentro de `app.html` → genera `site/index.html` (web) y `dist/statslab.html`. |
 | `site/` | **Lo que se publica**: `index.html` (generado), `manifest.webmanifest`, iconos, `api/bcl.js`. |
+| `site/sw.js` | Service worker: la web se abre sin conexión (red primero; copia de la web y de las tipografías). No toca `/api/`. |
 | `site/api/bcl.js` | Puente BCL (función Edge de Vercel). Se edita directamente aquí. |
 | `.github/workflows/pages.yml` | Al hacer push a `main`: ejecuta `node build.js` y publica `site/` en GitHub Pages. |
 | `test/` | Pruebas con datos reales (`m105375.json` ACB, `bcl136295.json` BCL) y Liga U sintética (`lu.js`). `browser.js` arranca Chromium para las pruebas con navegador (usa `CHROMIUM_PATH` o `/opt/pw-browsers/chromium` si falta el de Playwright). |
@@ -30,7 +31,7 @@ No editar `site/index.html` a mano: se regenera con `npm run build`.
 npm install          # jsdom + playwright (para las pruebas)
 npm run build        # genera site/index.html y dist/statslab.html
 npm test             # motor ACB, BCL, interfaz sin navegador, directo (BCL y Liga U)
-npm run test:visual  # capturas con Playwright (desbordes en 1200/800/400 px, mapa de tiro)
+npm run test:visual  # con Playwright: capturas, desbordes en 1200/800/400 px y uso sin conexión
 npm run test:perf    # tiempos de cada pestaña, ordenar/filtrar y scouting (referencia: ~160 ms todas las pestañas)
 ```
 
@@ -70,6 +71,7 @@ Todas son públicas (las mismas que usan las webs oficiales). Las claves están 
 - Directo: refresco configurable (1 s por defecto en ordenador, 3 s en móvil/tableta). Si solo cambia el reloj se actualiza el marcador sin redibujar. Sin novedades 30 s → cada 5 s; 3 min (descanso) → cada 15 s. En BCL además canal en tiempo real; en Liga U solo se piden las jugadas nuevas (lista completa cada 30 s). Si el partido no ha empezado, reintenta cada 15 s.
 - Estilos (`data-skin` en `<html>`): Original, Noche de partido, Informe de scouting, Retransmisión TV, Parqué, Bilbao Negro. Se guardan por dispositivo.
 - Hash de la URL: `#acb-ID`, `#bcl-ID`, `#lu-ID`.
+- Sin conexión: los 12 últimos partidos abiertos se guardan en el dispositivo (Cache API `statslab-partidos`, índice en `lab-acb:saved`; en directo como mucho cada 30 s). Si falla la red al abrir uno guardado, se muestra con «Sin conexión · datos guardados…» y el selector ofrece las tarjetas guardadas.
 - `localStorage` usa el prefijo `lab-acb:` (no cambiarlo, perdería la configuración guardada de los usuarios).
 
 ## Convenciones
