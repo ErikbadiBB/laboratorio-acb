@@ -357,6 +357,7 @@ th[data-sort]:focus-visible { outline-offset: -2px }
     <div class="pk-bar" id="pk-bar">
       <div class="pk-sum"><b id="pk-title">Elige un partido</b><div class="status" id="st-match"></div></div>
       <div class="row status" id="live-wrap" hidden><span class="live-dot"></span><label class="row"><input type="checkbox" id="in-live" checked> Directo cada</label><select id="sel-every" style="width:auto;padding:2px 4px" aria-label="Intervalo de actualización"><option value="1">1 s</option><option value="3">3 s</option><option value="5">5 s</option><option value="15">15 s</option><option value="30">30 s</option></select></div>
+      <button class="btn ghost pk-toggle" id="b-favgo" hidden title="Abrir el partido de tu equipo favorito">★ <span id="favgo-abbr"></span></button>
       <button class="btn pk-toggle" id="b-pick" aria-expanded="true">Cambiar <span aria-hidden="true">▾</span></button>
     </div>
     <div class="pk-body" id="pk-body">
@@ -367,6 +368,7 @@ th[data-sort]:focus-visible { outline-offset: -2px }
       </div>
       <div class="pk-cards" id="pk-cards" role="list"></div>
       <div class="pk-tools">
+        <div class="row"><label class="lbl" for="sel-fav">★ Equipo favorito</label><select id="sel-fav" style="flex:1 1 200px;width:auto"><option value="">Ninguno</option></select></div>
         <div class="pk-link"><input type="text" id="in-url" placeholder="🔗 Pega un enlace de live.acb.com o championsleague.basketball" autocomplete="off" aria-label="Enlace del partido"><button class="btn ghost" id="b-load">Abrir</button></div>
         <details><summary>⚙ Ajustes de conexión</summary>
           <div class="row" style="margin-top:8px"><div class="field"><label for="in-key">Clave pública de la API (la que usa live.acb.com)</label><input type="text" id="in-key"></div><button class="btn ghost" id="b-key">Guardar</button></div>
@@ -794,10 +796,10 @@ async function bclGames() {
 }
 const weekKey = d => { const x = new Date(d); x.setHours(12, 0, 0, 0); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') + '-' + String(x.getDate()).padStart(2, '0'); };
 const fmtWhen = d => d.toLocaleString('es-ES', { weekday: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }).replace(',', ' ·');
-const acbGame = m => ({ id: m.id, comp: 'acb', when: new Date(m.startDateTime), home: { abbr: m.homeTeam.abbreviatedName, name: m.homeTeam.shortName }, away: { abbr: m.awayTeam.abbreviatedName, name: m.awayTeam.shortName },
+const acbGame = m => ({ id: m.id, comp: 'acb', when: new Date(m.startDateTime), home: { id: m.homeTeam.id, abbr: m.homeTeam.abbreviatedName, name: m.homeTeam.shortName }, away: { id: m.awayTeam.id, abbr: m.awayTeam.abbreviatedName, name: m.awayTeam.shortName },
   hs: m.homeScore, as: m.awayScore, status: m.matchStatus === 'FINALIZED' ? 'FIN' : m.matchStatus === 'STARTED' ? 'LIVE' : 'SCH' });
 async function initRounds() {
-  S.cal = { keys: [], i: 0 };
+  S.cal = { keys: [], i: 0, comp: S.compet };
   $('#pk-round').textContent = 'Cargando…'; $('#pk-cards').innerHTML = '';
   try {
     if (S.compet === 'lu') {
@@ -850,11 +852,12 @@ async function fillMatches() {
   markCards();
 }
 function cardHtml(m, sub) {
+  const f = favOf(m.comp), st = t => (isFav(f, t) ? '★ ' : '') + esc(t.abbr);
   const done = m.status !== 'SCH', hw = done && m.hs > m.as, aw = done && m.as > m.hs;
   sub = sub || (m.status === 'FIN' ? 'Final' : m.status === 'LIVE' ? '● En directo' : fmtWhen(m.when));
   return `<button class="pk-card" role="listitem" data-pk="${m.comp}-${m.id}" title="${esc(m.home.name)} – ${esc(m.away.name)}${m.round ? ' · ' + esc(m.round) : ''}">
-      <span class="r ${done ? (hw ? 'win' : 'lose') : ''}">${esc(m.home.abbr)}<b>${done ? m.hs : '–'}</b></span>
-      <span class="r ${done ? (aw ? 'win' : 'lose') : ''}">${esc(m.away.abbr)}<b>${done ? m.as : '–'}</b></span>
+      <span class="r ${done ? (hw ? 'win' : 'lose') : ''}">${st(m.home)}<b>${done ? m.hs : '–'}</b></span>
+      <span class="r ${done ? (aw ? 'win' : 'lose') : ''}">${st(m.away)}<b>${done ? m.as : '–'}</b></span>
       <span class="s ${m.status === 'LIVE' ? 'live' : ''}">${sub}</span></button>`;
 }
 function markCards() {
@@ -883,13 +886,45 @@ async function fillTeams() {
     list.forEach(m => { teams.push({ id: m.homeTeam.id, name: m.homeTeam.fullName, abbr: m.homeTeam.abbreviatedName }, { id: m.awayTeam.id, name: m.awayTeam.fullName, abbr: m.awayTeam.abbreviatedName }); });
   }
   teams.sort((a, b) => a.name.localeCompare(b.name, 'es'));
-  const pref = store.get('team-' + S.compet, null);
-  const def = pref || (teams.find(t => t.abbr === 'SBB' || t.abbr === 'BB') || {}).id;
+  const pref = store.get('team-' + S.compet, null), fav = favOf(S.compet);
+  const def = pref || (fav && fav.id) || (teams.find(t => t.abbr === 'SBB' || t.abbr === 'BB') || {}).id;
+  $('#sel-fav').innerHTML = '<option value="">Ninguno</option>' + teams.map(t => `<option value="${t.id}" ${fav && t.id === fav.id ? 'selected' : ''}>${esc(t.name)}</option>`).join('');
+  S.teamList = teams;
   $('#sel-team').innerHTML = teams.map(t => `<option value="${t.id}" ${t.id === def ? 'selected' : ''}>${esc(t.name)}</option>`).join('');
+}
+// ---------- Equipo favorito (uno por competición) ----------
+const favOf = c => store.get('fav-' + (c || S.compet), null);
+const isFav = (f, t) => !!(f && t && (t.id === f.id || (f.abbr && t.abbr === f.abbr)));
+function updateFavBtn() {
+  const f = favOf(S.compet), b = $('#b-favgo');
+  b.hidden = !f; if (f) { $('#favgo-abbr').textContent = f.abbr; b.title = 'Abrir el partido de ' + f.name; }
+}
+// Partido a abrir: el que está en directo, el que empieza en menos de 2 horas o el último terminado
+async function favGame(comp) {
+  const f = favOf(comp); if (!f) return null;
+  let list;
+  if (comp === 'bcl') list = await bclGames();
+  else if (comp === 'lu') list = await luGames();
+  else { const c = await loadComp(); const i = Math.max(0, c.rounds.findIndex(r => r.id === c.cur.id)); list = (await Promise.all(c.rounds.slice(Math.max(0, i - 2), i + 2).map(r => roundMatches(r.id)))).flat().map(acbGame); }
+  const mine = list.filter(m => isFav(f, m.home) || isFav(f, m.away)).sort((a, b) => a.when - b.when), now = Date.now();
+  const live = mine.find(m => m.status === 'LIVE');
+  const next = mine.find(m => m.status === 'SCH' && m.when.getTime() > now - 3 * 3600e3);
+  const last = mine.filter(m => m.status === 'FIN').pop();
+  const soon = next && next.when.getTime() - now < 2 * 3600e3;
+  return { f, pick: live || (soon ? next : last) || next, next: live || soon ? null : next };
+}
+async function openFav(auto) {
+  const st = $('#st-match');
+  let r = null; try { r = await favGame(S.compet); } catch (e) { }
+  if (!r || !r.pick) { if (!auto) { st.textContent = 'No encuentro partidos de tu equipo favorito en esta competición.'; st.className = 'status err'; } return false; }
+  setMode('match');
+  await loadMatch({ comp: S.compet, id: r.pick.id });
+  if (r.next && S.g && S.matchId === r.pick.id) { const rival = isFav(r.f, r.next.home) ? r.next.away : r.next.home; st.textContent += ' · Próximo de ' + r.f.abbr + ': ' + fmtWhen(r.next.when) + ' contra ' + rival.name; }
+  return true;
 }
 function setCompet(c, keepView) {
   if (S.compet === c) return;
-  S.compet = c; store.set('compet', c);
+  S.compet = c; store.set('compet', c); updateFavBtn();
   document.querySelectorAll('[data-compet]').forEach(b => b.setAttribute('aria-pressed', b.dataset.compet === c));
   $('#st-scout').textContent = 'Se cargan todos los partidos terminados del equipo en la ' + COMPS[c].name + ' y se acumulan jugada a jugada.';
   S.scout.list = [];
@@ -1580,7 +1615,7 @@ const curPanel = c => c.panels[c.cur];
 function saveCoach(c, undoable = true) { if (undoable) S.coachUndo = JSON.stringify(coachCfg()); store.set('coach', c); if (S.g) delete S.g._ctx; render(); }
 function coachSides(g, cfg) {
   if (cfg.focus === '0') return [0]; if (cfg.focus === '1') return [1];
-  if (cfg.focus === 'mine') { const i = g.teams.findIndex(t => String(t.abbr).toUpperCase() === String(cfg.mine || '').toUpperCase()); return i >= 0 ? [i] : [0, 1]; }
+  if (cfg.focus === 'mine') { const f = favOf(g.comp), fi = f ? g.teams.findIndex(t => isFav(f, t)) : -1; if (fi >= 0) return [fi]; const i = g.teams.findIndex(t => String(t.abbr).toUpperCase() === String(cfg.mine || '').toUpperCase()); return i >= 0 ? [i] : [0, 1]; }
   return [0, 1];
 }
 function coachPlayers(g, sides, set) {
@@ -2101,6 +2136,12 @@ $('#in-url').addEventListener('paste', e => { setTimeout(() => { const l = parse
 $('#b-prev').onclick = () => { if (S.cal && S.cal.i > 0) { S.cal.i--; fillMatches().catch(() => { }); } };
 $('#b-next').onclick = () => { if (S.cal && S.cal.i < S.cal.keys.length - 1) { S.cal.i++; fillMatches().catch(() => { }); } };
 $('#b-pick').onclick = () => setPick(!S.pick);
+$('#b-favgo').onclick = () => openFav(false);
+$('#sel-fav').onchange = e => {
+  const t = (S.teamList || []).find(x => String(x.id) === e.target.value);
+  store.set('fav-' + S.compet, t ? { id: t.id, abbr: t.abbr, name: t.name } : null);
+  updateFavBtn(); fillMatches().catch(() => { }); if (S.mode === 'match' && S.g && S.tab === 'entrenador') render(true);
+};
 $('#in-live').onchange = setupLive;
 $('#sel-every').value = String(S.every);
 $('#sel-every').onchange = e => { S.every = Number(e.target.value); store.set('every', S.every); setupLive(); };
@@ -2173,9 +2214,15 @@ applySkin(store.get('skin', ''));
   try { if ('serviceWorker' in navigator && (location.protocol === 'https:' || /^(localhost|127\.)/.test(location.hostname))) navigator.serviceWorker.register('sw.js').catch(() => { }); } catch (e) { }
   const h = (location.hash || '').replace('#', '');
   let link = /^(acb|bcl|lu)-\d{5,8}$/.test(h) ? parseLink(h) : /^\d{5,7}$/.test(h) ? { comp: 'acb', id: +h } : null;
+  if (!link && favOf(S.compet)) {
+    updateFavBtn(); initRounds(); S.booting = true; render();
+    const ok = await openFav(true); S.booting = false;
+    if (ok) return;
+  }
   if (!link) { const l = store.get('last', null); link = l == null ? null : typeof l === 'number' ? { comp: 'acb', id: l } : parseLink(String(l)); }
   if (link && link.comp !== S.compet) { S.compet = link.comp; store.set('compet', link.comp); document.querySelectorAll('[data-compet]').forEach(b => b.setAttribute('aria-pressed', b.dataset.compet === S.compet)); }
-  initRounds();
+  updateFavBtn();
+  if (!S.cal || S.cal.comp !== S.compet) initRounds();
   if (!link) { loadSample(); return; }
   S.booting = true; render();
   await loadMatch(link);
