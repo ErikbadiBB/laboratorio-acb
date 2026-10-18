@@ -23,8 +23,8 @@
   --home: #3987e5; --away: #d95926; --home-ink: #0f1316; --away-ink: #0f1316; --good: #4cb882; --bad: #e46b62; --warn: #d9a03a; color-scheme: dark }
 * { box-sizing: border-box }
 body { background: var(--bg); color: var(--ink); font: 14px/1.5 var(--f-body); }
-.wrap { max-width: 1240px; margin: 0 auto; padding-inline: 16px; padding-block: 12px 48px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px }
-.wrap > * { min-width: 0 }
+div.wrap { max-width: 1240px; margin: 0 auto; padding-inline: 16px; padding-block: 12px 48px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px }
+div.wrap > * { min-width: 0 }
 h1, h2, h3 { font-family: var(--f-display); font-weight: 600; letter-spacing: .01em; margin: 0; text-wrap: balance }
 h2 { font-size: 1.35rem } h3 { font-size: 1.1rem }
 .muted { color: var(--ink-2) } .faint { color: var(--ink-3) }
@@ -100,7 +100,7 @@ button, select, input, textarea { font: inherit; color: inherit }
   --bg: #ffffff; --surface: #ffffff; --surface-2: #f4f4f2; --ink: #111; --ink-2: #3a3a3a; --ink-3: #616161; --line: #d6d6d2; --line-2: #e8e8e5;
   --accent: #111; --accent-ink: #fff; --home: #1f4e79; --away: #b4441e; --away-ink: #fff; --good: #1d6b3a; --bad: #b02a1f; --warn: #835500;
   --f-display: "Source Serif 4", Georgia, serif; --f-body: "Source Sans 3", "Segoe UI", system-ui, sans-serif; --f-data: "IBM Plex Mono", ui-monospace, monospace; --r: 0px }
-:root[data-skin="papel"] .wrap { max-width: 1060px }
+:root[data-skin="papel"] div.wrap { max-width: 1060px }
 :root[data-skin="papel"] .panel { border-width: 0 0 1px; padding-inline: 0 }
 :root[data-skin="papel"] .loader.panel, :root[data-skin="papel"] .loader { padding-inline: 0 }
 :root[data-skin="papel"] .top { border-bottom: 2px solid var(--ink); padding-bottom: 8px }
@@ -325,7 +325,7 @@ td.wrap { white-space: normal; min-width: 180px }
   body { background: #fff } body::before { display: none !important }
   .top, #skin-menu, .loader, .tabs, .filters, .tbtns, .lnk, .cb-share, #tip, #toasts, [data-alerts], .alerts-panel, .coach-ed, .coach-head, .cb-bar, .cb-gal-sec, [data-pmore], .skip { display: none !important }
   .cb.editing { outline: 0 }
-  .wrap { max-width: none; padding: 0 } .panel { box-shadow: none !important; break-inside: avoid } .scroll { overflow: visible; border: 0 }
+  div.wrap { max-width: none; padding: 0 } .panel { box-shadow: none !important; break-inside: avoid } .scroll { overflow: visible; border: 0 }
 }
 .skip { position: absolute; left: -9999px; top: 8px; z-index: 60; background: var(--accent); color: var(--accent-ink); padding: 8px 12px; border-radius: var(--r); font-weight: 600 }
 .skip:focus { left: 16px }
@@ -434,7 +434,7 @@ const store = {
 let KEY = store.get('key', DEFAULT_KEY);
 
 const S = {
-  mode: 'match', tab: store.get('tab', 'resumen'), stab: 'resumen', g: null, sample: false, filt: 'all', sort: {},
+  mode: 'match', tab: store.get('tab', 'resumen'), stab: 'informe', g: null, sample: false, filt: 'all', sort: {},
   lineSize: 5, lineMin: 2, pcols: 'basic', closeMode: 'clutch', pbpSide: 'all', pbpKind: 'all', pbpMax: 200, perGame: true,
   timer: null, comp: null, scout: { team: null, list: [], loading: false },
   compet: store.get('compet', 'acb'), every: store.get('every', window.matchMedia && matchMedia('(pointer: coarse)').matches ? 3 : 1), coachEdit: false, shotQ: 'all', shotPlayer: 'all'
@@ -1368,7 +1368,7 @@ function scoreboard(g) {
   </div><div class="boardfoot">${sm}${compTag}${val}${warn}<button class="pill pill-btn" data-alerts="1" aria-expanded="${!!S.alertsOpen}" title="Elegir avisos y ver el historial">🔔 Avisos${AL.list.length ? ' · ' + AL.list.length : ''}</button><span>${g.poss.filter(p => p.side === 0).length} posesiones por equipo</span><span>${g.events.length} jugadas</span></div></section>`;
 }
 const TABS = [['entrenador', 'Entrenador'], ['resumen', 'Resumen'], ['factores', 'Factores'], ['jugadores', 'Jugadores'], ['quintetos', 'Quintetos'], ['rotaciones', 'Rotaciones'], ['dinamica', 'Dinámica'], ['posesiones', 'Posesiones'], ['tiro', 'Tiro'], ['clutch', 'Clutch'], ['jugadas', 'Jugadas']];
-const STABS = [['resumen', 'Resumen'], ['jugadores', 'Jugadores'], ['quintetos', 'Quintetos'], ['posesiones', 'Posesiones'], ['cierres', 'Clutch y cierres'], ['partidos', 'Partidos']];
+const STABS = [['informe', 'Informe del rival'], ['resumen', 'Resumen'], ['jugadores', 'Jugadores'], ['quintetos', 'Quintetos'], ['posesiones', 'Posesiones'], ['cierres', 'Clutch y cierres'], ['partidos', 'Partidos']];
 function tabsBar(list, cur, attr) { return `<nav class="tabs" role="tablist" aria-label="Secciones del análisis">${list.map(([k, l]) => `<button role="tab" id="tab-${k}" ${attr}="${k}" aria-selected="${cur === k}" aria-controls="tabpanel" tabindex="${cur === k ? 0 : -1}">${l}</button>`).join('')}</nav>`; }
 
 // ---------- Resumen (piezas reutilizables) ----------
@@ -1498,8 +1498,8 @@ function courtSVG(shots, side, opts = {}) {
     </g>`;
   const col = side ? 'var(--away)' : 'var(--home)';
   shots.forEach(e => {
-    const made = MADE_T.has(e.type), p = e.pid && S.g && S.g.players.get(e.pid);
-    const tipTxt = `<b>${esc(p ? p.name : '')}</b><br>${qLabel(e.q)} ${e.clock} · ${made ? 'Anotado' : 'Fallado'}${e.txt ? '<br>' + esc(e.txt) : ''}`;
+    const made = MADE_T.has(e.type), p = e.pid && (opts.player ? opts.player(e) : S.g && S.g.players.get(e.pid));
+    const tipTxt = `<b>${esc(p ? p.name : '')}</b><br>${opts.label ? esc(opts.label(e)) + ' · ' : ''}${qLabel(e.q)} ${e.clock} · ${made ? 'Anotado' : 'Fallado'}${e.txt ? '<br>' + esc(e.txt) : ''}`;
     s += made
       ? `<circle cx="${e.x}" cy="${Y(e.y)}" r="5" fill="${col}" stroke="var(--surface)" stroke-width="1.5" data-tip="${esc(tipTxt)}"/>`
       : `<g data-tip="${esc(tipTxt)}"><circle cx="${e.x}" cy="${Y(e.y)}" r="7" fill="transparent"/><path d="M ${e.x - 3.5} ${Y(e.y) - 3.5} L ${e.x + 3.5} ${Y(e.y) + 3.5} M ${e.x + 3.5} ${Y(e.y) - 3.5} L ${e.x - 3.5} ${Y(e.y) + 3.5}" stroke="var(--ink-3)" stroke-width="1.8"/></g>`;
@@ -1889,6 +1889,56 @@ function scoutAgg(list, f) {
   return { us, them, players: [...raw.values()].map(A.playerMetrics), lineups: [...lin.values()], possO, possD };
 }
 function scoutNames(list) { const m = new Map(); list.forEach(({ g }) => g.players.forEach((p, pid) => m.set(pid, p))); return pid => short((m.get(pid) || { name: '?' }).name); }
+// Informe del rival: lo esencial para preparar el partido, en una página imprimible
+function sInforme(list) {
+  const t = list[0].g.teams[list[0].side], n = list.length, ab = esc(t.abbr);
+  const agg = scoutAgg(list), m = A.teamMetrics(agg.us, agg.them), o = A.teamMetrics(agg.them, agg.us);
+  const PO = A.possessionProfile(agg.possO), PD = A.possessionProfile(agg.possD);
+  const W = list.filter(x => x.g.final[x.side] > x.g.final[1 - x.side]).length;
+  const nameOf = scoutNames(list);
+  // Jugadores clave y su papel
+  const ps = agg.players.filter(p => p.gp && p.min / p.gp >= 10).sort((a, b) => b.min / b.gp - a.min / a.gp);
+  const role = new Map(), tag = (k, f) => { const b = ps.slice().sort((x, y) => (f(y) ?? -1) - (f(x) ?? -1))[0]; if (b && f(b) != null) role.set(b.pid, [...(role.get(b.pid) || []), k]); };
+  tag('Primera opción', p => p.usg); tag('Tirador', p => div0(p.box.fg3a, p.min)); tag('Generador', p => p.astp); tag('Rebote', p => (p.orbp || 0) + (p.drbp || 0)); tag('Defensa', p => div0(p.box.stl + p.box.blk, p.min));
+  const pg = (p, x) => x / p.gp;
+  const keyCols = [nameCol(list[0].g), { k: 'gp', label: 'PJ', num: true, f: r => r.gp }, { k: 'mpg', label: 'Min', num: true, v: r => pg(r, r.min), f: r => mmss(pg(r, r.min) * 60) },
+    { k: 'ppg', label: 'Pts', num: true, v: r => pg(r, r.box.pts), f: r => nf(pg(r, r.box.pts), 1) }, { k: 'ts', label: 'TS%', num: true, f: r => pct(r.ts, 0) }, { k: 'usg', label: 'USG%', num: true, f: r => pct(r.usg, 0) },
+    { k: 't3', label: 'T3/p', num: true, v: r => div0(r.box.fg3m, r.box.fg3a), f: r => `${nf(pg(r, r.box.fg3m), 1)}/${nf(pg(r, r.box.fg3a), 1)} <span class="faint">${pct(div0(r.box.fg3m, r.box.fg3a), 0)}</span>` },
+    { k: 'rpg', label: 'Reb', num: true, v: r => pg(r, r.box.orb + r.box.drb), f: r => nf(pg(r, r.box.orb + r.box.drb), 1) }, { k: 'apg', label: 'Ast', num: true, v: r => pg(r, r.box.ast), f: r => nf(pg(r, r.box.ast), 1) },
+    { k: 'tpg', label: 'Pér', num: true, v: r => pg(r, r.box.tov), f: r => nf(pg(r, r.box.tov), 1) }, { k: 'onOff', label: 'On/Off', num: true, f: r => sgc(r.onOff, 1) },
+    { k: 'role', label: 'Papel', cls: 'wrap', v: r => (role.get(r.pid) || []).join(' · ') }];
+  // Por cuartos
+  const qs = [1, 2, 3, 4].map(q => { const a = scoutAgg(list, x => x.q === q), mm = A.teamMetrics(a.us, a.them); return { q, pf: a.us.pts / n, pa: a.them.pts / n, net: mm.net }; });
+  const best = qs.slice().sort((a, b) => (b.net ?? -999) - (a.net ?? -999))[0], worst = qs.slice().sort((a, b) => (a.net ?? 999) - (b.net ?? 999))[0];
+  // Cierres y tiempos muertos
+  const l5 = scoutAgg(list, x => x.q >= 4 && remIn(x) <= 300);
+  const closing = lineupRows(l5.lineups, 5, nameOf).sort((a, b) => b.sec - a.sec).slice(0, 3);
+  const close = list.filter(({ g }) => g.events.some(e => e.clutch)), closeW = close.filter(x => x.g.final[x.side] > x.g.final[1 - x.side]).length;
+  const tos = list.flatMap(({ g, side }) => A.timeouts(g, 4).filter(x => x.side === side));
+  const ato = div0(tos.reduce((a, x) => a + x.afterO[0], 0), tos.reduce((a, x) => a + x.afterO[1], 0));
+  // Dependencia del máximo anotador
+  const top = agg.players.slice().sort((a, b) => b.box.pts - a.box.pts)[0];
+  const ins = [
+    `<b>${esc(t.name)}</b>: ${W}-${n - W}, ${nf(agg.us.pts / n, 1)} puntos a favor y ${nf(agg.them.pts / n, 1)} en contra por partido. Rating ${nf(m.ortg, 1)} en ataque y ${nf(m.drtg, 1)} en defensa (${sg(m.net, 1)}); ritmo ${nf(m.pace, 1)} posesiones por 40 min.`,
+    `Tiro: el ${pct(m.r3, 0)} de sus tiros de campo son triples (acierto ${pct(m.fg3, 0)}); T2 ${pct(m.fg2, 0)}; ${nf(m.ftr, 2)} tiros libres por tiro de campo. Sus rivales: ${pct(o.r3, 0)} de triples con ${pct(o.fg3, 0)}.`,
+    `Rebote: capturan el ${pct(m.orbp, 0)} de sus rebotes ofensivos (${nf(PO.second / n, 1)} pts de segunda oportunidad por partido) y conceden el ${pct(o.orbp, 0)}.`,
+    `Balón: pierden en el ${pct(m.tovp, 0)} de sus posesiones y fuerzan pérdidas en el ${pct(o.tovp, 0)}; anotan ${nf(PO.offTO / n, 1)} pts por partido tras pérdida rival y ${nf(PO.fastPts / n, 1)} en transición (conceden ${nf(PD.fastPts / n, 1)}).`,
+    top ? `Dependencia: ${esc(top.name)} anota el ${pct(div0(top.box.pts, agg.us.pts), 0)} de sus puntos (${nf(top.box.pts / top.gp, 1)} por partido).` : '',
+    best && worst && best.q !== worst.q ? `Por cuartos: su mejor cuarto es el ${qLabel(best.q)} (${sg(best.net, 1)} por 100 posesiones) y el peor el ${qLabel(worst.q)} (${sg(worst.net, 1)}).` : '',
+    close.length ? `Finales igualados: ${closeW}-${close.length - closeW} en partidos con minutos clutch.` : 'No han tenido finales igualados (clutch) en los partidos cargados.',
+    tos.length ? `Tras sus tiempos muertos: ${nf(ato, 2)} puntos por posesión en las 4 siguientes (su media es ${nf(m.ppp, 2)}).` : ''
+  ].filter(Boolean);
+  const shots = list.flatMap(({ g, side }) => shotList(g, e => e.side === side).map(e => Object.assign({}, e, { _g: g })));
+  const qcols = [{ k: 'q', label: 'Cuarto', v: r => qLabel(r.q) }, { k: 'pf', label: 'A favor', num: true, f: r => nf(r.pf, 1) }, { k: 'pa', label: 'En contra', num: true, f: r => nf(r.pa, 1) }, { k: 'net', label: 'Net', num: true, f: r => sgc(r.net, 1) }];
+  return `<section class="panel"><div class="sec-h"><h2>Informe: ${esc(t.name)}</h2><button class="btn ghost" data-print="1">🖨 Imprimir / PDF</button></div>
+      <p class="note" style="margin:0">${n} partido${n > 1 ? 's' : ''} analizado${n > 1 ? 's' : ''} jugada a jugada · ${esc(COMPS[list[0].g.comp].name)}</p></section>
+    <section class="panel"><div class="sec-h"><h2>Claves del rival</h2></div><ul class="ins">${ins.map(i => `<li>${i}</li>`).join('')}</ul></section>
+    <section class="panel"><div class="sec-h"><h2>Jugadores clave</h2><span class="note">Valores por partido · 10 minutos o más por partido</span></div>${tbl('sik', keyCols, ps, { sort: { k: 'mpg', d: -1 }, empty: 'Ningún jugador promedia 10 minutos.' })}</section>
+    <div class="grid2"><section class="panel"><div class="sec-h"><h2>Por cuartos</h2><span class="note">Puntos por partido</span></div>${tbl('siq', qcols, qs)}</section>
+      <section class="panel"><div class="sec-h"><h2>Cómo cierran</h2><span class="note">Quintetos con más minutos en los últimos 5 min</span></div>${closing.length ? `<ol class="ins">${closing.map(r => `<li>${esc(r.names)} <span class="faint">· ${mmss(r.sec)} · ${sg(r.pm)}</span></li>`).join('')}</ol>` : '<p class="empty">Sin datos de cierres.</p>'}</section></div>
+    ${shots.length ? `<section class="panel"><div class="sec-h"><h2>${ab} Mapa de tiro acumulado</h2><span class="note">${shots.filter(e => MADE_T.has(e.type)).length}/${shots.length} · punto: anotado · aspa: fallado</span></div>
+      <div class="grid2">${courtSVG(shots, 0, { player: e => e._g.players.get(e.pid), label: e => 'vs ' + e._g.teams[1 - e.side].abbr })}${tbl('siz', zoneCols, zoneRows(shots))}</div></section>` : ''}`;
+}
 function sResumen(list) {
   const t = list[0].g.teams[list[0].side];
   const agg = scoutAgg(list);
@@ -2235,7 +2285,7 @@ function render(silent) {
     const list = S.scout.list;
     if (!list.length) { view.innerHTML = `<div class="panel empty">Elige un equipo y pulsa «Cargar partidos». Se analizarán jugada a jugada todos sus partidos terminados.</div>`; return; }
     const t = list[0].g.teams[list[0].side];
-    const V = { resumen: sResumen, jugadores: sJugadores, quintetos: sQuintetos, posesiones: sPosesiones, cierres: sCierres, partidos: sPartidos }[S.stab] || sResumen;
+    const V = { informe: sInforme, resumen: sResumen, jugadores: sJugadores, quintetos: sQuintetos, posesiones: sPosesiones, cierres: sCierres, partidos: sPartidos }[S.stab] || sResumen;
     html = `<section class="panel"><div class="sec-h" style="margin:0"><h2><i class="sw t0"></i> ${esc(t.name)}</h2><span class="note">${list.length} partidos · jornadas ${list.map(x => x.round).join(', ')}</span></div></section>` + tabsBar(STABS, S.stab, 'data-stab') + `<div class="stack" id="tabpanel" role="tabpanel" aria-labelledby="tab-${S.stab}" style="margin-top:14px">${V(list)}</div>`;
   }
   applyTeamColors(view);
@@ -2299,6 +2349,7 @@ document.addEventListener('click', async e => {
   }
   else if (d.shotq) { S.shotQ = d.shotq; render(); }
   else if (d.share) { shareBlock(d.share, b); }
+  else if (d.print) { window.print(); }
   else if (d.alerts) { S.alertsOpen = !S.alertsOpen; render(); }
   else if (d.adefault) { store.set('alerts', alertCfg()); const st = $('#st-alerts'); if (st) st.textContent = 'Guardado: los próximos partidos empezarán con estos avisos.'; }
   else if (d.copy) {
