@@ -320,26 +320,38 @@ td.wrap { white-space: normal; min-width: 180px }
 .kv span { font-size: .72rem; color: var(--ink-3); text-transform: uppercase; letter-spacing: .06em }
 .warnc { color: var(--warn) }
 .coach-ed { display: grid; gap: 10px; border-top: 1px solid var(--line-2); padding-top: 10px }
-.ced-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 330px), 1fr)); gap: 4px 14px }
-.ced-list li { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 4px 6px; border-radius: 4px; background: var(--surface-2) }
-.ced-list li.off { background: none; color: var(--ink-3) }
-.ced-list label { display: flex; gap: 6px; align-items: center; cursor: pointer; min-width: 0 }
-.ced-act { display: flex; gap: 2px; flex: none }
-@media (pointer: coarse) {
-  .chipbtn { padding: 7px 13px } .lnk { padding: 8px 8px } .tabs button { padding: 10px 12px }
-  .seg button { padding: 8px 12px } .skin-btn { width: 38px; height: 38px } .pk-arrow { width: 40px; height: 40px }
-}
-.tabs { padding-right: 28px; -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent) }
+.coach-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 14px; align-items: start }
+.coach-grid > .cb { grid-column: span 6; display: grid; gap: 8px; min-width: 0 }
+.coach-grid > .cb.w-half { grid-column: span 3 } .coach-grid > .cb.w-third { grid-column: span 2 }
+@media (max-width: 980px) { .coach-grid > .cb.w-third { grid-column: span 3 } }
+@media (max-width: 700px) { .coach-grid > .cb.w-half, .coach-grid > .cb.w-third { grid-column: span 6 } }
+.coach-grid.compact { gap: 8px } .coach-grid.compact .panel { padding: 9px 10px } .coach-grid.compact th, .coach-grid.compact td { padding: 3px 6px }
+.coach-grid.compact .sec-h { margin-bottom: 4px } .coach-grid.compact h2 { font-size: 1.12rem } .coach-grid.compact .kv b { font-size: 1.2rem }
+.cb.editing { outline: 2px dashed var(--line); outline-offset: 3px; border-radius: var(--r) }
+.cb-bar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 6px; background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r); padding: 4px 6px 4px 10px; font-size: .82rem }
+.cb-act { display: flex; gap: 4px; align-items: center }
+.cb-btn { width: 32px; height: 32px; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); color: var(--ink); cursor: pointer; line-height: 1 }
+.cb-btn:disabled { opacity: .35; cursor: default }
+.cb-w button { padding: 6px 9px; font-size: .78rem }
+.cb-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr)); gap: 8px }
+.cb-add { display: grid; gap: 2px; text-align: left; border: 1px dashed var(--line); border-radius: var(--r); background: var(--surface-2); color: var(--ink); padding: 8px 10px; cursor: pointer; font-size: .85rem }
+.cb-add small { color: var(--ink-2); font-size: .74rem } .cb-add:hover { border-color: var(--accent) }
 @media print {
   :root, :root[data-skin] { --bg: #fff; --surface: #fff; --surface-2: #f3f3f3; --ink: #000; --ink-2: #333; --ink-3: #555; --line: #c8c8c8; --line-2: #e2e2e2; color-scheme: light }
   body { background: #fff } body::before { display: none !important }
-  .top, #skin-menu, .loader, .tabs, .filters, .tbtns, .lnk, #tip, .coach-ed, [data-cedit], [data-pmore] { display: none !important }
+  .top, #skin-menu, .loader, .tabs, .filters, .tbtns, .lnk, #tip, .coach-ed, .coach-head, .cb-bar, .cb-gal-sec, [data-pmore], .skip { display: none !important }
+  .cb.editing { outline: 0 }
   .wrap { max-width: none; padding: 0 } .panel { box-shadow: none !important; break-inside: avoid } .scroll { overflow: visible; border: 0 }
 }
+.skip { position: absolute; left: -9999px; top: 8px; z-index: 60; background: var(--accent); color: var(--accent-ink); padding: 8px 12px; border-radius: var(--r); font-weight: 600 }
+.skip:focus { left: 16px }
+#view:focus { outline: none }
+th[data-sort]:focus-visible { outline-offset: -2px }
 .badge-ex { font-size: .72rem; background: var(--surface-2); border: 1px dashed var(--line); border-radius: 4px; padding: 1px 7px; color: var(--ink-2) }
 </style>
 
 <div class="wrap">
+  <a class="skip" href="#view">Saltar al análisis</a>
   <header class="top">
     <h1 class="brand-h">StatsLAB</h1>
     <div class="row top-ctl">
@@ -400,9 +412,9 @@ td.wrap { white-space: normal; min-width: 180px }
     <div class="status" id="st-scout">Se cargan todos los partidos terminados del equipo en la competición elegida y se acumulan jugada a jugada.</div>
   </section>
 
-  <section id="view"></section>
+  <section id="view" tabindex="-1" aria-live="off"></section>
 </div>
-<div id="tip" hidden></div>
+<div id="tip" role="tooltip" hidden></div>
 
 <script>
 /* Motor de análisis ACB a partir del play by play de api2.acb.com
@@ -1799,7 +1811,7 @@ function tbl(id, cols, rows, opt = {}) {
     }
   }
   TABLES[id] = { cols, rows: r, foot: opt.footRow };
-  const head = cols.map(c => `<th class="${c.num ? 'n' : ''}" data-sort="${id}|${c.k}" title="${esc(c.title || '')}" scope="col">${esc(c.label)}${st && st.k === c.k ? (st.d < 0 ? ' ↓' : ' ↑') : ''}</th>`).join('');
+  const head = cols.map(c => `<th class="${c.num ? 'n' : ''}" data-sort="${id}|${c.k}" title="${esc(c.title || '')}" scope="col" tabindex="0"${st && st.k === c.k ? ` aria-sort="${st.d < 0 ? 'descending' : 'ascending'}"` : ''}>${esc(c.label)}${st && st.k === c.k ? (st.d < 0 ? ' ↓' : ' ↑') : ''}</th>`).join('');
   const body = r.length ? r.map(row => '<tr>' + cols.map(c => `<td class="${c.num ? 'n' : ''} ${c.cls || ''}">${c.f ? c.f(row) : esc((c.v || (x => x[c.k]))(row))}</td>`).join('') + '</tr>').join('')
     : `<tr><td colspan="${cols.length}" class="empty">${opt.empty || 'Sin datos para este filtro.'}</td></tr>`;
   const foot = opt.footRow ? '<tfoot><tr>' + cols.map(c => `<td class="${c.num ? 'n' : ''}">${c.f ? c.f(opt.footRow) : esc((c.v || (x => x[c.k]))(opt.footRow))}</td>`).join('') + '</tr></tfoot>' : '';
@@ -1926,7 +1938,7 @@ function decBlock(items, names) {
   return `<div class="legend"><span><i class="sw t0"></i>a favor de ${names[0]}</span><span><i class="sw t1"></i>a favor de ${names[1]}</span></div><div class="dec">` + items.map(i => {
     const w = 50 * Math.abs(i.v) / max;
     const pos = i.v >= 0;
-    return `<div class="r"><span>${i.label}</span><span class="track"><span class="mid"></span><span class="fill ${pos ? 'bg0' : 'bg1'}" style="${pos ? 'left:50%' : 'right:50%'};width:${w}%" data-tip="${esc(i.label + ': ' + sg(i.v, 1) + ' puntos')}"></span></span><span class="n" style="text-align:right">${sg(i.v, 1)}</span></div>`;
+    return `<div class="r"><span>${i.label}</span><span class="track"><span class="mid"></span><span class="fill ${pos ? 'bg0' : 'bg1'}" tabindex="0" role="img" aria-label="${esc(i.label + ': ' + sg(i.v, 1) + ' puntos')}" style="${pos ? 'left:50%' : 'right:50%'};width:${w}%" data-tip="${esc(i.label + ': ' + sg(i.v, 1) + ' puntos')}"></span></span><span class="n" style="text-align:right">${sg(i.v, 1)}</span></div>`;
   }).join('') + '</div>';
 }
 function profileTable(id, P0, P1, names) {
@@ -1970,7 +1982,29 @@ function hideTip() { tip.hidden = true; TIP.html = null; }
 const tipMove = e => { const el = e.target.closest && e.target.closest('[data-tip]'); if (el) showTip(el.getAttribute('data-tip'), e.clientX, e.clientY); };
 document.addEventListener('pointerover', tipMove);
 document.addEventListener('pointermove', tipMove, { passive: true });
-document.addEventListener('pointerout', e => { if (e.target.closest && e.target.closest('[data-tip]')) hideTip(); });
+document.addEventListener('pointerout', e => { if (e.pointerType !== 'touch' && e.target.closest && e.target.closest('[data-tip]')) hideTip(); });
+document.addEventListener('pointerdown', e => { if (e.pointerType === 'touch' && !(e.target.closest && e.target.closest('[data-tip], svg'))) hideTip(); }, { passive: true });
+// Al desplazarse: la ficha táctil se cierra; la de teclado acompaña a su elemento
+addEventListener('scroll', () => {
+  if (tip.hidden) return;
+  if (!TIP.focus) { hideTip(); return; }
+  const r = TIP.focus.getBoundingClientRect(); TIP.x = r.left + Math.min(r.width, 40); TIP.y = r.bottom; if (!TIP.raf) TIP.raf = requestAnimationFrame(placeTip);
+}, { passive: true });
+document.addEventListener('focusin', e => { const el = e.target.closest && e.target.closest('[data-tip]'); if (!el) return; const r = el.getBoundingClientRect(); el.setAttribute('aria-describedby', 'tip'); TIP.focus = el; showTip(el.getAttribute('data-tip'), r.left + Math.min(r.width, 40), r.bottom); });
+document.addEventListener('focusout', e => { if (e.target.closest && e.target.closest('[data-tip]')) { TIP.focus = null; hideTip(); } });
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { TIP.focus = null; hideTip(); return; }
+  const t = e.target; if (!t || !t.matches) return;
+  if (t.matches('th[data-sort]') && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); const k = t.dataset.sort; t.click(); const n = document.querySelector(`th[data-sort="${k}"]`); if (n) n.focus(); return; }
+  if (!t.matches('[role="tab"]')) return;
+  const tabs = [...t.parentElement.querySelectorAll('[role="tab"]')], i = tabs.indexOf(t);
+  const j = e.key === 'ArrowRight' ? (i + 1) % tabs.length : e.key === 'ArrowLeft' ? (i - 1 + tabs.length) % tabs.length : e.key === 'Home' ? 0 : e.key === 'End' ? tabs.length - 1 : -1;
+  if (j < 0) return;
+  e.preventDefault();
+  const attr = tabs[j].dataset.tab ? 'tab' : 'stab', key = tabs[j].dataset[attr];
+  tabs[j].click();
+  const n = document.querySelector(`[role="tab"][data-${attr}="${key}"]`); if (n) n.focus();
+});
 
 // ---------- Gráficos SVG ----------
 const NS = 'http://www.w3.org/2000/svg';
@@ -2107,9 +2141,9 @@ function scoreboard(g) {
   const qs = g.quarterScores.map(q => `<span>${qLabel(q.q)} ${q.h}–${q.a}</span>`).join('');
   const allOk = v.ok === v.n && v.ptsOk && v.minOk === v.minN && v.pmOk === v.pmN;
   const extraV = (v.minN ? ` · minutos ${v.minOk}/${v.minN}` : '') + (v.pmN ? ` · +/- ${v.pmOk}/${v.pmN}` : '');
-  const val = v.n ? `<span class="pill ${allOk ? 'ok' : 'warn'}" data-tip="${esc(allOk ? 'Las estadísticas calculadas desde las jugadas coinciden con las oficiales de cada jugador' + (v.minN ? ', incluidos minutos en pista y +/-' : '') + '.' : 'Diferencias: ' + v.diffs.slice(0, 6).map(esc).join(' · '))}">${allOk ? '✓' : '!'} Cuadre con la estadística oficial ${v.ok}/${v.n}${extraV}</span>` : '';
+  const val = v.n ? `<span class="pill ${allOk ? 'ok' : 'warn'}" tabindex="0" data-tip="${esc(allOk ? 'Las estadísticas calculadas desde las jugadas coinciden con las oficiales de cada jugador' + (v.minN ? ', incluidos minutos en pista y +/-' : '') + '.' : 'Diferencias: ' + v.diffs.slice(0, 6).map(esc).join(' · '))}">${allOk ? '✓' : '!'} Cuadre con la estadística oficial ${v.ok}/${v.n}${extraV}</span>` : '';
   const compTag = `<span class="pill">${esc(COMPS[g.comp || 'acb'].name)}</span>`;
-  const warn = g.warnings.length ? `<span class="pill warn" data-tip="${esc(g.warnings.map(esc).join(' '))}">! Aviso en los datos</span>` : '';
+  const warn = g.warnings.length ? `<span class="pill warn" tabindex="0" data-tip="${esc(g.warnings.map(esc).join(' '))}">! Aviso en los datos</span>` : '';
   const sm = S.sample ? '<span class="badge-ex">Ejemplo</span>' : '';
   return `<section class="panel"><div class="board">
     <div class="team"><span class="ab"><i class="sw t0"></i>${esc(g.teams[0].abbr)} · Local</span><span class="nm">${esc(g.teams[0].name)}</span></div>
@@ -2119,7 +2153,7 @@ function scoreboard(g) {
 }
 const TABS = [['entrenador', 'Entrenador'], ['resumen', 'Resumen'], ['factores', 'Factores'], ['jugadores', 'Jugadores'], ['quintetos', 'Quintetos'], ['rotaciones', 'Rotaciones'], ['dinamica', 'Dinámica'], ['posesiones', 'Posesiones'], ['tiro', 'Tiro'], ['clutch', 'Clutch'], ['jugadas', 'Jugadas']];
 const STABS = [['resumen', 'Resumen'], ['jugadores', 'Jugadores'], ['quintetos', 'Quintetos'], ['posesiones', 'Posesiones'], ['cierres', 'Clutch y cierres'], ['partidos', 'Partidos']];
-function tabsBar(list, cur, attr) { return `<nav class="tabs" role="tablist">${list.map(([k, l]) => `<button role="tab" ${attr}="${k}" aria-selected="${cur === k}">${l}</button>`).join('')}</nav>`; }
+function tabsBar(list, cur, attr) { return `<nav class="tabs" role="tablist" aria-label="Secciones del análisis">${list.map(([k, l]) => `<button role="tab" id="tab-${k}" ${attr}="${k}" aria-selected="${cur === k}" aria-controls="tabpanel" tabindex="${cur === k ? 0 : -1}">${l}</button>`).join('')}</nav>`; }
 
 // ---------- Resumen (piezas reutilizables) ----------
 const CMP_ROWS = [
@@ -2316,8 +2350,71 @@ const BLOCKS = [
   { id: 'asistencias', label: 'Red de asistencias', w: 'half', team: true, r: (g, s) => s.map(x => `<section class="panel"><div class="sec-h"><h2>${tm(g, x)} Asistencias</h2></div>${assistNet(g, x)}</section>`).join('') },
   { id: 'clutch', label: 'Clutch (equipos)', w: 'half', r: g => { const tb = A.teamBoxes(g, x => x.clutch); if (!tb[0].sec) return `<section class="panel"><div class="sec-h"><h2>Clutch</h2></div><p class="empty">Todavía no hay minutos clutch.</p></section>`; const m = [A.teamMetrics(tb[0], tb[1]), A.teamMetrics(tb[1], tb[0])]; return `<section class="panel"><div class="sec-h"><h2>Clutch</h2><span class="note">${mmss(tb[0].sec)} jugados</span></div>${cmpBlock(gameCtx(g).names, m[0], m[1], [{ k: 'pts', label: 'Puntos', better: 1, fmt: v => v }, { k: 'ortg', label: 'Pts / 100 pos.', better: 1, fmt: v => nf(v, 1) }, ...FF])}</section>`; } }
 ];
-const COACH_DEFAULT = { blocks: ['pista', 'claves', 'ultimas', 'marcador', 'factores', 'jugadores', 'rotacion', 'parciales', 'faltas'], focus: 'mine', mine: 'SBB' };
-function coachCfg() { const c = store.get('coach', null); return c && Array.isArray(c.blocks) ? Object.assign({}, COACH_DEFAULT, c) : JSON.parse(JSON.stringify(COACH_DEFAULT)); }
+// Bloques nuevos
+BLOCKS.push(
+  { id: 'racha', label: 'Últimos 5 minutos', w: 'half', r: g => bRecent(g) },
+  { id: 'lideres', label: 'Líderes del partido', w: 'half', team: true, r: (g, s) => bLeaders(g, s) },
+  { id: 'tramos', label: 'Factores por cuarto', w: 'full', r: g => `<section class="panel"><div class="sec-h"><h2>Por tramos</h2></div>${factorSplits(g, 'ctr')}</section>` },
+  { id: 'notas', label: 'Notas del partido', w: 'half', r: g => bNotes(g) }
+);
+// Para qué sirve cada bloque (galería «Añadir bloques»)
+const BLOCK_DESC = {
+  claves: 'Lo más importante del partido en frases', pista: 'Quién está en pista, faltas, bonus y tiempos muertos que quedan', ultimas: 'Las 12 últimas acciones',
+  comparativa: 'Eficiencia, tiro y ritmo de los dos equipos', factores: 'Tiro, pérdidas, rebote ofensivo y tiros libres', diferencia: 'Qué factor explica la diferencia del marcador',
+  marcador: 'Diferencia en el marcador minuto a minuto', wp: 'Cómo cambia la probabilidad de ganar', jugadores: 'Puntos, tiros, rebotes, faltas y +/-',
+  avanzada: 'TS%, uso, porcentajes de rebote, robo y tapón', impacto: 'On/off, net rating y WPA de cada jugador', faltas: 'Faltas de cada jugador por cuarto',
+  quintetos: 'Quintetos con más minutos y su rendimiento', parejas: 'Las parejas que mejor funcionan', rotacion: 'Tramos en pista de cada jugador',
+  parciales: 'Rachas de 7-0 o más', tiempos: 'Qué pasa antes y después de cada tiempo muerto', momentos: 'Jugadas que más cambiaron la probabilidad',
+  posesiones: 'Puntos por posesión, segundas oportunidades y transición', inicio: 'Eficiencia según cómo empieza la posesión', mapa: 'Tiros por zona (BCL y Liga U)',
+  asistencias: 'Quién asiste a quién', clutch: 'Final apretado: últimos 5 minutos a 5 puntos o menos', racha: 'Parcial y factores de los últimos 5 minutos jugados',
+  lideres: 'Máximo anotador, reboteador, asistente, valoración y +/-', tramos: 'Cuatro factores en cada cuarto y en cada parte', notas: 'Tus apuntes del partido, guardados en este dispositivo'
+};
+function bRecent(g) {
+  const t0 = Math.max(0, g.lastT - 300), f = x => tOf(x) > t0;
+  const tb = A.teamBoxes(g, f), { names } = gameCtx(g);
+  const m = [A.teamMetrics(tb[0], tb[1]), A.teamMetrics(tb[1], tb[0])];
+  return `<section class="panel"><div class="sec-h"><h2>Últimos 5 minutos</h2><span class="note">desde ${clockAt(t0)}</span></div>
+    <div class="kv" style="margin-bottom:10px"><div><b>${tb[0].pts}–${tb[1].pts}</b><span>Parcial ${names[0]}–${names[1]}</span></div><div><b>${tb[0].poss} / ${tb[1].poss}</b><span>Posesiones</span></div></div>
+    ${cmpBlock(names, m[0], m[1], [{ k: 'ortg', label: 'Pts / 100 pos.', better: 1, fmt: v => nf(v, 1) }, ...FF])}</section>`;
+}
+function bLeaders(g, sides) {
+  const adv = gameCtx(g).adv;
+  const cats = [['Puntos', p => p.box.pts], ['Rebotes', p => p.box.orb + p.box.drb], ['Asistencias', p => p.box.ast], ['Valoración', p => p.pir], ['+/-', p => p.pm]];
+  return sides.map(s => {
+    const ps = adv.filter(p => p.side === s && p.min > 0);
+    const rows = cats.map(([lab, f]) => { const top = ps.slice().sort((a, b) => f(b) - f(a))[0]; return top ? `<tr><td class="faint">${lab}</td><td>${esc(short(top.name))}</td><td class="n"><b>${lab === '+/-' ? sg(f(top)) : f(top)}</b></td></tr>` : ''; }).join('');
+    return `<section class="panel"><div class="sec-h"><h2>${tm(g, s)} Líderes</h2></div><div class="scroll"><table><tbody>${rows}</tbody></table></div></section>`;
+  }).join('');
+}
+function bNotes(g) {
+  const k = 'notes-' + (S.sample ? 'ejemplo' : g.comp + '-' + S.matchId);
+  return `<section class="panel"><div class="sec-h"><h2>Notas del partido</h2><span class="note">Se guardan en este dispositivo</span></div>
+    <textarea data-notes="${esc(k)}" aria-label="Notas del partido" placeholder="Ajustes, emparejamientos, jugadas que funcionan…" style="min-height:140px;font-family:var(--f-body);font-size:.9rem">${esc(store.get(k, ''))}</textarea></section>`;
+}
+
+// ---------- Configuración del panel Entrenador ----------
+// Varios paneles guardados (p. ej. Directo, Descanso, Post-partido); cada uno con sus bloques, orden y anchos.
+const COACH_PRESETS = {
+  directo: { name: 'Directo', blocks: ['pista', 'ultimas', 'racha', 'faltas', 'marcador', 'tiempos'], w: {} },
+  descanso: { name: 'Descanso', blocks: ['claves', 'lideres', 'factores', 'diferencia', 'jugadores', 'rotacion', 'parciales'], w: {} },
+  final: { name: 'Post-partido', blocks: ['claves', 'diferencia', 'tramos', 'avanzada', 'impacto', 'quintetos', 'momentos', 'asistencias', 'mapa'], w: {} }
+};
+const clone = o => JSON.parse(JSON.stringify(o));
+const presetPanels = () => Object.values(COACH_PRESETS).map(clone);
+function coachCfg() {
+  let c = store.get('coach', null);
+  // Configuración antigua (un solo panel): pasa a «Mi panel» junto a las plantillas
+  if (c && Array.isArray(c.blocks)) c = { panels: [{ name: 'Mi panel', blocks: c.blocks, w: c.w || {} }, ...presetPanels()], cur: 0, focus: c.focus, mine: c.mine };
+  if (!c || !Array.isArray(c.panels) || !c.panels.length) c = { panels: presetPanels() };
+  c = Object.assign({ cur: 0, focus: 'mine', mine: 'SBB', compact: false }, c);
+  c.focus = c.focus || 'mine'; c.mine = c.mine || 'SBB';
+  c.panels = c.panels.filter(p => p && typeof p === 'object').map(p => ({ name: String(p.name || 'Panel').slice(0, 24), blocks: (p.blocks || []).filter(id => BLOCKS.some(b => b.id === id)), w: p.w || {} }));
+  if (!c.panels.length) c.panels = presetPanels();
+  c.cur = Math.min(Math.max(0, c.cur | 0), c.panels.length - 1);
+  return c;
+}
+const curPanel = c => c.panels[c.cur];
+function saveCoach(c, undoable = true) { if (undoable) S.coachUndo = JSON.stringify(coachCfg()); store.set('coach', c); if (S.g) delete S.g._ctx; render(); }
 function coachSides(g, cfg) {
   if (cfg.focus === '0') return [0]; if (cfg.focus === '1') return [1];
   if (cfg.focus === 'mine') { const i = g.teams.findIndex(t => String(t.abbr).toUpperCase() === String(cfg.mine || '').toUpperCase()); return i >= 0 ? [i] : [0, 1]; }
@@ -2328,40 +2425,53 @@ function coachPlayers(g, sides, set) {
   return sides.map(s => `<section class="panel"><div class="sec-h"><h2>${tm(g, s)} Jugadores</h2></div>${tbl('cpl' + s + set, playerCols(set, g), adv.filter(p => p.side === s && (p.min > 0 || p.box.pts)), { sort: { k: 'min', d: -1 } })}</section>`).join('');
 }
 function vEntrenador(g) {
-  const cfg = coachCfg();
+  const cfg = coachCfg(), P = curPanel(cfg), ed = S.coachEdit;
   const sides = coachSides(g, cfg);
   const foc = [['mine', 'Mi equipo'], ['all', 'Ambos'], ['0', g.teams[0].abbr + ' (local)'], ['1', g.teams[1].abbr + ' (visitante)']];
-  const head = `<section class="panel stack" style="gap:8px">
-    <div class="row" style="justify-content:space-between"><div class="filters"><span class="lbl">Equipo</span>${foc.map(([k, l]) => `<button class="chipbtn" data-cfocus="${k}" aria-pressed="${cfg.focus === k}">${esc(l)}</button>`).join('')}</div>
-    <button class="btn ghost" data-cedit="1">${S.coachEdit ? 'Cerrar edición' : 'Personalizar panel'}</button></div>
+  const head = `<section class="panel stack coach-head" style="gap:8px">
+    <div class="row" style="justify-content:space-between">
+      <div class="filters" role="group" aria-label="Panel"><span class="lbl">Panel</span>${cfg.panels.map((p, i) => `<button class="chipbtn" data-cpanel="${i}" aria-pressed="${i === cfg.cur}">${esc(p.name)}</button>`).join('')}${ed ? '<button class="chipbtn" data-cnew="1" title="Crea un panel nuevo copiando este">+ Nuevo</button>' : ''}</div>
+      <div class="row"><button class="chipbtn" data-ccompact="1" aria-pressed="${!!cfg.compact}" title="Menos espacio entre bloques para ver más de un vistazo">Compacto</button>
+        <button class="btn ${ed ? '' : 'ghost'}" data-cedit="1" aria-expanded="${ed}">${ed ? '✓ Listo' : '✎ Editar panel'}</button></div>
+    </div>
+    <div class="filters" role="group" aria-label="Equipo"><span class="lbl">Equipo</span>${foc.map(([k, l]) => `<button class="chipbtn" data-cfocus="${k}" aria-pressed="${cfg.focus === k}">${esc(l)}</button>`).join('')}</div>
     ${cfg.focus === 'mine' && sides.length === 2 ? `<p class="note" style="margin:0">«Mi equipo» es ${esc(cfg.mine)} y no juega este partido: se muestran los dos equipos.</p>` : ''}
-    ${S.coachEdit ? coachEditor(cfg) : ''}</section>`;
-  const blocks = cfg.blocks.map(id => BLOCKS.find(b => b.id === id)).filter(Boolean);
-  if (!blocks.length) return head + '<div class="panel empty">El panel está vacío. Pulsa «Personalizar panel» y marca lo que quieres ver.</div>';
-  // Empareja los bloques de media anchura en filas de dos
-  let html = '', buf = [];
-  const flush = () => { if (buf.length) { html += `<div class="grid2">${buf.join('')}</div>`; buf = []; } };
-  blocks.forEach(b => {
+    ${ed ? coachEditor(cfg) : ''}</section>`;
+  const blocks = P.blocks.map(id => BLOCKS.find(b => b.id === id)).filter(Boolean);
+  let html = '';
+  blocks.forEach((b, i) => {
     let inner = ''; try { inner = b.r(g, sides); } catch (e) { inner = `<section class="panel"><p class="empty">No se pudo calcular «${esc(b.label)}».</p></section>`; }
-    const w = (cfg.w && cfg.w[b.id]) || b.w;
-    if (w === 'full') { flush(); html += `<div class="stack">${b.team && sides.length === 2 ? `<div class="grid2">${inner}</div>` : inner}</div>`; }
-    else { if (b.team && sides.length === 2) { flush(); html += `<div class="grid2">${inner}</div>`; } else { buf.push(`<div class="stack">${inner}</div>`); if (buf.length === 2) flush(); } }
+    const w = P.w[b.id] || b.w, two = b.team && sides.length === 2;
+    // Un bloque con los dos equipos ocupa el ancho completo (uno al lado del otro)
+    html += `<div class="cb w-${two ? 'full' : w}${ed ? ' editing' : ''}" data-block="${b.id}">${ed ? blockBar(b, i, blocks.length, w) : ''}${two ? `<div class="grid2">${inner}</div>` : inner}</div>`;
   });
-  flush();
-  return head + html;
+  const empty = !blocks.length ? `<div class="panel empty">Este panel está vacío. ${ed ? 'Añade bloques desde la lista de abajo.' : 'Pulsa «✎ Editar panel» para elegir qué ver.'}</div>` : '';
+  return head + empty + `<div class="coach-grid${cfg.compact ? ' compact' : ''}">${html}</div>` + (ed ? addGallery(P) : '');
+}
+function blockBar(b, i, n, w) {
+  const W = [['third', '⅓'], ['half', '½'], ['full', 'Todo']];
+  return `<div class="cb-bar"><b>${esc(b.label)}</b><span class="cb-act">
+    <button class="cb-btn" data-cmove="${b.id}|-1" ${i ? '' : 'disabled'} aria-label="Subir ${esc(b.label)}" title="Subir">↑</button>
+    <button class="cb-btn" data-cmove="${b.id}|1" ${i < n - 1 ? '' : 'disabled'} aria-label="Bajar ${esc(b.label)}" title="Bajar">↓</button>
+    <span class="seg cb-w" role="group" aria-label="Ancho de ${esc(b.label)}">${W.map(([k, l]) => `<button data-cwidth="${b.id}|${k}" aria-pressed="${w === k}" title="${k === 'third' ? 'Un tercio' : k === 'half' ? 'Media anchura' : 'Ancho completo'}">${l}</button>`).join('')}</span>
+    <button class="cb-btn" data-cremove="${b.id}" aria-label="Quitar ${esc(b.label)}" title="Quitar">✕</button></span></div>`;
+}
+function addGallery(P) {
+  const off = BLOCKS.filter(b => !P.blocks.includes(b.id));
+  return `<section class="panel cb-gal-sec"><div class="sec-h"><h2>Añadir bloques</h2><span class="note">Toca uno para añadirlo al final del panel</span></div>
+    ${off.length ? `<div class="cb-gallery">${off.map(b => `<button class="cb-add" data-cadd="${b.id}"><b>+ ${esc(b.label)}</b><small>${esc(BLOCK_DESC[b.id] || '')}</small></button>`).join('')}</div>` : '<p class="empty">Ya están todos los bloques en este panel.</p>'}</section>`;
 }
 function coachEditor(cfg) {
-  const on = new Set(cfg.blocks);
-  const ordered = [...cfg.blocks.map(id => BLOCKS.find(b => b.id === id)).filter(Boolean), ...BLOCKS.filter(b => !on.has(b.id))];
+  const P = curPanel(cfg);
   return `<div class="coach-ed">
-    <div class="row"><div class="field" style="flex:0 1 200px"><label for="in-mine">Mi equipo (siglas)</label><input type="text" id="in-mine" value="${esc(cfg.mine)}" maxlength="6"></div>
-    <p class="note" style="margin:0;flex:1 1 260px">Marca los bloques que quieres ver, ordénalos con las flechas y elige su ancho. Se guarda en este dispositivo; para usar la misma configuración en otro, copia el código y pégalo allí.</p></div>
-    <ol class="ced-list">${ordered.map(b => `<li class="${on.has(b.id) ? '' : 'off'}"><label><input type="checkbox" data-cblock="${b.id}" ${on.has(b.id) ? 'checked' : ''}> ${esc(b.label)}</label>
-      ${on.has(b.id) ? `<span class="ced-act"><button class="lnk" data-cwidth="${b.id}" title="Cambiar ancho">${((cfg.w && cfg.w[b.id]) || b.w) === 'full' ? 'Ancho completo' : 'Media anchura'}</button><button class="lnk" data-cmove="${b.id}|-1" aria-label="Subir">↑</button><button class="lnk" data-cmove="${b.id}|1" aria-label="Bajar">↓</button></span>` : ''}</li>`).join('')}</ol>
-    <div class="row"><button class="btn ghost" data-ccopy="1">Copiar código de configuración</button><input type="text" id="in-ccode" placeholder="Pega aquí un código de configuración" style="flex:1 1 220px;width:auto"><button class="btn ghost" data-cpaste="1">Aplicar código</button><button class="lnk" data-creset="1">Restablecer</button></div>
-    <div class="status" id="st-coach"></div></div>`;
+    <div class="row"><div class="field" style="flex:1 1 180px"><label for="in-cpname">Nombre del panel</label><input type="text" id="in-cpname" value="${esc(P.name)}" maxlength="24"></div>
+      <div class="field" style="flex:0 1 150px"><label for="in-mine">Mi equipo (siglas)</label><input type="text" id="in-mine" value="${esc(cfg.mine)}" maxlength="6"></div></div>
+    <div class="filters"><span class="lbl">Empezar desde</span>${Object.entries(COACH_PRESETS).map(([k, p]) => `<button class="chipbtn" data-cpreset="${k}">${esc(p.name)}</button>`).join('')}<button class="chipbtn" data-cpreset="vacio">Vacío</button></div>
+    <p class="note" style="margin:0">Cada bloque tiene su barra para moverlo, cambiar el ancho o quitarlo. Abajo están los que puedes añadir. Todo se guarda solo en este dispositivo.</p>
+    <div class="row">${S.coachUndo ? '<button class="btn ghost" data-cundo="1">↶ Deshacer</button>' : ''}${cfg.panels.length > 1 ? '<button class="btn ghost" data-cdel="1">Borrar este panel</button>' : ''}<button class="lnk" data-creset="1">Restablecer todo</button></div>
+    <details><summary>Usar estos paneles en otro dispositivo</summary><div class="row" style="margin-top:8px"><button class="btn ghost" data-ccopy="1">Copiar código</button><input type="text" id="in-ccode" placeholder="Pega aquí un código" aria-label="Código de configuración" style="flex:1 1 220px;width:auto"><button class="btn ghost" data-cpaste="1">Aplicar código</button></div></details>
+    <div class="status" id="st-coach" role="status"></div></div>`;
 }
-function saveCoach(cfg) { store.set('coach', cfg); delete S.g._ctx; render(); }
 
 // Tablas reutilizadas (Dinámica y Entrenador)
 // Columnas compartidas por Dinámica (completa) y Entrenador (compacta)
@@ -2414,8 +2524,7 @@ function assistNet(g, s, f, empty) {
   return `<div class="scroll"><table><thead><tr><th>Pasa ↓ / Anota →</th>${scorers.map(b => `<th class="n">${nm(b)}</th>`).join('')}<th class="n">Total</th><th class="n">Pts gen.</th></tr></thead><tbody>${passers.map(a => `<tr><td>${nm(a)}</td>${scorers.map(b => { const c = cnt(a, b); return `<td class="n" style="background:color-mix(in srgb, var(--${s ? 'away' : 'home'}) ${Math.round(70 * c / max)}%, transparent)">${c || ''}</td>`; }).join('')}<td class="n"><b>${as.filter(x => x.from === a).length}</b></td><td class="n">${as.filter(x => x.from === a).reduce((t, x) => t + x.pts, 0)}</td></tr>`).join('')}</tbody></table></div>`;
 }
 
-function vFactores(g) {
-  const names = g.teams.map(t => esc(t.abbr));
+function factorSplits(g, id) {
   const splits = [['Partido', null], ...g.periods.map(q => [qLabel(q), x => x.q === q]), ['1ª parte', x => x.q <= 2], ['2ª parte', x => x.q >= 3], ['Clutch', x => x.clutch]];
   const rows = [];
   splits.forEach(([lab, f]) => { const tb = A.teamBoxes(g, f); if (!tb[0].sec && lab !== 'Partido') return; [0, 1].forEach(s => { const m = A.teamMetrics(tb[s], tb[1 - s]); rows.push(Object.assign({ split: lab, s, team: g.teams[s].abbr, pts: tb[s].pts }, m)); }); });
@@ -2427,11 +2536,15 @@ function vFactores(g) {
     { k: 'ts', label: 'TS%', num: true, f: r => pct(r.ts) }, { k: 'fg2', label: 'T2%', num: true, f: r => pct(r.fg2) },
     { k: 'fg3', label: 'T3%', num: true, f: r => pct(r.fg3) }, { k: 'r3', label: '%T3 tiros', num: true, f: r => pct(r.r3) },
     { k: 'astp', label: '%Asist.', num: true, f: r => pct(r.astp) }, { k: 'possEst', label: 'Pos. fórmula', title: 'TCI + 0,44 × TLI − RO + Pér (estimación clásica)', num: true, f: r => nf(r.possEst, 1) }];
+  return tbl(id, cols, rows);
+}
+function vFactores(g) {
+  const names = g.teams.map(t => esc(t.abbr));
   const tb = A.teamBoxes(g); const m = [A.teamMetrics(tb[0], tb[1]), A.teamMetrics(tb[1], tb[0])];
   return `<div class="grid2"><section class="panel"><div class="sec-h"><h2>Cuatro factores</h2></div>${cmpBlock(names, m[0], m[1], FF)}
     <p class="note">Tiro, pérdidas, rebote ofensivo y tiros libres explican la mayoría de los resultados. Se resalta el equipo que gana cada factor.</p></section>
     <section class="panel"><div class="sec-h"><h2>De dónde sale la diferencia</h2></div>${decBlock(decomposition(tb[0], tb[1]), names)}</section></div>
-    <section class="panel"><div class="sec-h"><h2>Por tramos</h2><span class="note">Clutch: últimos 5 minutos del 4C o prórroga con diferencia de 5 o menos</span></div>${tbl('ff', cols, rows)}</section>`;
+    <section class="panel"><div class="sec-h"><h2>Por tramos</h2><span class="note">Clutch: últimos 5 minutos del 4C o prórroga con diferencia de 5 o menos</span></div>${factorSplits(g, 'ff')}</section>`;
 }
 function vJugadores(g) {
   const f = filterFn(S.filt);
@@ -2724,13 +2837,13 @@ function render(silent) {
     if (!g) { view.innerHTML = `<div class="panel empty">${S.waiting ? 'El partido aún no ha empezado: se abrirá solo en cuanto haya jugadas.' : S.booting ? 'Cargando partido…' : 'Carga un partido para empezar.'}</div>`; return; }
     if (!TABS.find(t => t[0] === S.tab)) S.tab = 'resumen';
     const V = { entrenador: vEntrenador, resumen: vResumen, factores: vFactores, jugadores: vJugadores, quintetos: vQuintetos, rotaciones: vRotaciones, dinamica: vDinamica, posesiones: vPosesiones, tiro: vTiro, clutch: vClutch, jugadas: vJugadas }[S.tab];
-    html = scoreboard(g) + tabsBar(TABS, S.tab, 'data-tab') + `<div class="stack" style="margin-top:14px">${V(g)}</div>`;
+    html = scoreboard(g) + tabsBar(TABS, S.tab, 'data-tab') + `<div class="stack" id="tabpanel" role="tabpanel" aria-labelledby="tab-${S.tab}" style="margin-top:14px">${V(g)}</div>`;
   } else {
     const list = S.scout.list;
     if (!list.length) { view.innerHTML = `<div class="panel empty">Elige un equipo y pulsa «Cargar partidos». Se analizarán jugada a jugada todos sus partidos terminados.</div>`; return; }
     const t = list[0].g.teams[list[0].side];
     const V = { resumen: sResumen, jugadores: sJugadores, quintetos: sQuintetos, posesiones: sPosesiones, cierres: sCierres, partidos: sPartidos }[S.stab] || sResumen;
-    html = `<section class="panel"><div class="sec-h" style="margin:0"><h2><i class="sw t0"></i> ${esc(t.name)}</h2><span class="note">${list.length} partidos · jornadas ${list.map(x => x.round).join(', ')}</span></div></section>` + tabsBar(STABS, S.stab, 'data-stab') + `<div class="stack" style="margin-top:14px">${V(list)}</div>`;
+    html = `<section class="panel"><div class="sec-h" style="margin:0"><h2><i class="sw t0"></i> ${esc(t.name)}</h2><span class="note">${list.length} partidos · jornadas ${list.map(x => x.round).join(', ')}</span></div></section>` + tabsBar(STABS, S.stab, 'data-stab') + `<div class="stack" id="tabpanel" role="tabpanel" aria-labelledby="tab-${S.stab}" style="margin-top:14px">${V(list)}</div>`;
   }
   applyTeamColors(view);
   view.innerHTML = html;
@@ -2765,18 +2878,30 @@ document.addEventListener('click', async e => {
   else if (d.skin != null && b.classList.contains('skin-opt')) { applySkin(d.skin); }
   else if (d.compet) { setCompet(d.compet); setPick(true); }
   else if (d.pk) { loadMatch(parseLink(d.pk)); }
-  else if (d.cfocus) { const c = coachCfg(); c.focus = d.cfocus; saveCoach(c); }
+  else if (d.cfocus) { const c = coachCfg(); c.focus = d.cfocus; saveCoach(c, false); }
+  else if (d.cpanel) { const c = coachCfg(); c.cur = Number(d.cpanel); saveCoach(c, false); }
+  else if (d.ccompact) { const c = coachCfg(); c.compact = !c.compact; saveCoach(c, false); }
   else if (d.cedit) { S.coachEdit = !S.coachEdit; render(); }
-  else if (d.cwidth) { const c = coachCfg(); const b = BLOCKS.find(x => x.id === d.cwidth); c.w = c.w || {}; c.w[b.id] = ((c.w[b.id] || b.w) === 'full') ? 'half' : 'full'; saveCoach(c); }
-  else if (d.cmove) { const [id, dir] = d.cmove.split('|'); const c = coachCfg(); const i = c.blocks.indexOf(id), j = i + Number(dir); if (i >= 0 && j >= 0 && j < c.blocks.length) { [c.blocks[i], c.blocks[j]] = [c.blocks[j], c.blocks[i]]; saveCoach(c); } }
-  else if (d.creset) { store.set('coach', null); render(); }
+  else if (d.cremove) { const c = coachCfg(), P = curPanel(c); P.blocks = P.blocks.filter(x => x !== d.cremove); saveCoach(c); }
+  else if (d.cadd) { const c = coachCfg(); curPanel(c).blocks.push(d.cadd); saveCoach(c); const el = $(`#view [data-block="${d.cadd}"]`); if (el && el.scrollIntoView) el.scrollIntoView({ block: 'nearest' }); }
+  else if (d.cpreset) { const c = coachCfg(), P = curPanel(c), pr = COACH_PRESETS[d.cpreset]; P.blocks = pr ? pr.blocks.slice() : []; P.w = pr ? clone(pr.w) : {}; saveCoach(c); }
+  else if (d.cnew) { const c = coachCfg(), P = curPanel(c); c.panels.push({ name: 'Panel ' + (c.panels.length + 1), blocks: P.blocks.slice(), w: clone(P.w) }); c.cur = c.panels.length - 1; saveCoach(c); const n = $('#in-cpname'); if (n) { n.focus(); n.select(); } }
+  else if (d.cdel) { const c = coachCfg(); if (c.panels.length > 1) { c.panels.splice(c.cur, 1); c.cur = Math.max(0, c.cur - 1); saveCoach(c); } }
+  else if (d.cundo) { if (S.coachUndo) { store.set('coach', JSON.parse(S.coachUndo)); S.coachUndo = null; render(); } }
+  else if (d.cwidth) { const [id, w] = d.cwidth.split('|'); const c = coachCfg(); curPanel(c).w[id] = w; saveCoach(c); }
+  else if (d.cmove) { const [id, dir] = d.cmove.split('|'); const c = coachCfg(), B = curPanel(c).blocks; const i = B.indexOf(id), j = i + Number(dir); if (i >= 0 && j >= 0 && j < B.length) { [B[i], B[j]] = [B[j], B[i]]; saveCoach(c); } }
+  else if (d.creset) { S.coachUndo = JSON.stringify(coachCfg()); store.set('coach', null); render(); }
   else if (d.ccopy) {
     const code = btoa(unescape(encodeURIComponent(JSON.stringify(coachCfg()))));
     try { await navigator.clipboard.writeText(code); $('#st-coach').textContent = 'Código copiado. Pégalo en «Aplicar código» en el otro dispositivo.'; }
     catch (err) { const i = $('#in-ccode'); i.value = code; i.select(); $('#st-coach').textContent = 'Copia el código seleccionado en la casilla.'; }
   } else if (d.cpaste) {
-    try { const c = JSON.parse(decodeURIComponent(escape(atob($('#in-ccode').value.trim())))); if (!Array.isArray(c.blocks)) throw 0; c.blocks = c.blocks.filter(id => BLOCKS.some(b => b.id === id)); store.set('coach', c); render(); }
-    catch (err) { $('#st-coach').textContent = 'Ese código no es válido. Cópialo de nuevo desde el otro dispositivo.'; }
+    try {
+      const x = JSON.parse(decodeURIComponent(escape(atob($('#in-ccode').value.trim()))));
+      if (Array.isArray(x.blocks)) { const c = coachCfg(); c.panels.push({ name: 'Importado', blocks: x.blocks, w: x.w || {} }); c.cur = c.panels.length - 1; saveCoach(c); } // código antiguo: un panel
+      else if (Array.isArray(x.panels)) saveCoach(x);
+      else throw 0;
+    } catch (err) { $('#st-coach').textContent = 'Ese código no es válido. Cópialo de nuevo desde el otro dispositivo.'; }
   }
   else if (d.shotq) { S.shotQ = d.shotq; render(); }
   else if (d.copy) {
@@ -2798,11 +2923,12 @@ document.addEventListener('click', e => {
 function setMode(m) { S.mode = m; render(); }
 document.addEventListener('change', e => {
   const t = e.target;
-  if (t.dataset && t.dataset.cblock) { const c = coachCfg(); const id = t.dataset.cblock; c.blocks = t.checked ? [...c.blocks.filter(x => x !== id), id] : c.blocks.filter(x => x !== id); saveCoach(c); }
+  if (t.id === 'in-cpname') { const c = coachCfg(); curPanel(c).name = t.value.trim().slice(0, 24) || 'Panel'; saveCoach(c, false); }
   else if (t.id === 'in-mine') { const c = coachCfg(); c.mine = t.value.trim().toUpperCase(); saveCoach(c); }
   else if (t.id === 'sel-shotp') { S.shotPlayer = t.value; render(); }
   else if (t.id === 'in-tcolors') { store.set('teamcolors', t.checked); render(true); }
 });
+document.addEventListener('input', e => { const t = e.target; if (t.dataset && t.dataset.notes) store.set(t.dataset.notes, t.value); });
 document.addEventListener('focusout', () => { if (S.pendingRender) setTimeout(() => { if (S.pendingRender) render(true); }, 0); });
 $('#m-match').onclick = () => setMode('match');
 $('#m-scout').onclick = () => setMode('scout');
