@@ -339,7 +339,7 @@ td.wrap { white-space: normal; min-width: 180px }
 @media print {
   :root, :root[data-skin] { --bg: #fff; --surface: #fff; --surface-2: #f3f3f3; --ink: #000; --ink-2: #333; --ink-3: #555; --line: #c8c8c8; --line-2: #e2e2e2; color-scheme: light }
   body { background: #fff } body::before { display: none !important }
-  .top, #skin-menu, .loader, .tabs, .filters, .tbtns, .lnk, #tip, .coach-ed, .coach-head, .cb-bar, .cb-gal-sec, [data-pmore], .skip { display: none !important }
+  .top, #skin-menu, .loader, .tabs, .filters, .tbtns, .lnk, #tip, #toasts, [data-alerts], .alerts-panel, .coach-ed, .coach-head, .cb-bar, .cb-gal-sec, [data-pmore], .skip { display: none !important }
   .cb.editing { outline: 0 }
   .wrap { max-width: none; padding: 0 } .panel { box-shadow: none !important; break-inside: avoid } .scroll { overflow: visible; border: 0 }
 }
@@ -347,6 +347,20 @@ td.wrap { white-space: normal; min-width: 180px }
 .skip:focus { left: 16px }
 #view:focus { outline: none }
 th[data-sort]:focus-visible { outline-offset: -2px }
+#toasts { position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 55; display: grid; gap: 8px; width: min(380px, calc(100vw - 32px)); pointer-events: none }
+.toast { pointer-events: auto; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: start; background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-left: 5px solid var(--accent); border-radius: var(--r); padding: 10px 12px; box-shadow: 0 8px 24px rgba(0,0,0,.2); animation: toast-in .2s ease-out; font-size: .88rem }
+.toast b { font-weight: 600 } .toast small { display: block; color: var(--ink-2); font-size: .74rem } .toast .ti { font-size: 1.25rem; line-height: 1.1 }
+.toast.t-faltas, .toast.t-bonus, .toast.t-fatiga { border-left-color: var(--warn) } .toast.t-parcial, .toast.t-quinteto, .toast.t-caliente { border-left-color: var(--bad) }
+@media (max-width: 600px) { .toast { padding: 7px 10px; font-size: .82rem; gap: 8px } .toast .ti { font-size: 1.05rem } }
+@keyframes toast-in { from { transform: translateY(8px); opacity: 0 } }
+@media (prefers-reduced-motion: reduce) { .toast { animation: none } }
+.pill-btn { cursor: pointer; background: var(--surface); color: var(--ink-2); font: inherit; font-size: .75rem }
+.al-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 6px 10px; align-items: center; padding: 4px 0; border-bottom: 1px solid var(--line-2); font-size: .88rem }
+.al-row label { display: flex; gap: 6px; align-items: center; cursor: pointer; min-width: 0 }
+.al-row select { width: auto; padding: 3px 6px } .al-n { white-space: nowrap; font-size: .8rem; color: var(--ink-2) }
+.al-n input { width: 4.2em; padding: 3px 6px; background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r) }
+@media (max-width: 560px) { .al-row { grid-template-columns: minmax(0, 1fr) auto } .al-row > :last-child { grid-column: 1 / -1; justify-self: start } }
+.al-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 5px; font-size: .85rem; max-height: 340px; overflow: auto }
 .badge-ex { font-size: .72rem; background: var(--surface-2); border: 1px dashed var(--line); border-radius: 4px; padding: 1px 7px; color: var(--ink-2) }
 </style>
 
@@ -417,6 +431,7 @@ th[data-sort]:focus-visible { outline-offset: -2px }
   <section id="view" tabindex="-1" aria-live="off"></section>
 </div>
 <div id="tip" role="tooltip" hidden></div>
+<div id="toasts" aria-live="polite"></div>
 
 <script>
 /* Motor de análisis ACB a partir del play by play de api2.acb.com
@@ -1548,6 +1563,7 @@ function applyResult(link, res, opts = {}) {
     S.g.comp = link.comp; S.g.hasShots = S.g.events.some(e => e.x != null && e.x !== 0);
     S.sample = false; S.matchId = link.id; S.sig = res.sig; S.dsig = res.dsig;
     if (!opts.saved) saveGame(link, res, S.g);
+    checkAlerts();
     store.set('last', link.comp + '-' + link.id);
     try { if (location.hash !== '#' + link.comp + '-' + link.id) history.replaceState(null, '', '#' + link.comp + '-' + link.id); } catch (e) { }
   }
@@ -1598,6 +1614,7 @@ function showFallback(id) {
 }
 function loadSample() {
   S.g = A.parseGame(sampleRaw(), { id: SAMPLE.id }); S.g.comp = 'acb'; S.g.hasShots = false; S.sample = true; S.matchId = null;
+  checkAlerts();
   $('#st-match').innerHTML = '<span class="badge-ex">Ejemplo</span> ' + esc(SAMPLE.label) + ' · elige un partido para analizar otro';
   $('#pk-title').textContent = pickTitle(); setPick(true);
   render();
@@ -2184,7 +2201,7 @@ function scoreboard(g) {
     <div class="team"><span class="ab"><i class="sw t0"></i>${esc(g.teams[0].abbr)} · Local</span><span class="nm">${esc(g.teams[0].name)}</span></div>
     <div class="score"><div class="big">${g.final[0]}<span class="faint">–</span>${g.final[1]}</div><div class="st ${live ? 'live' : ''}" id="sb-st">${st}</div><div class="qs">${qs}</div></div>
     <div class="team r"><span class="ab">Visitante · ${esc(g.teams[1].abbr)}<i class="sw t1"></i></span><span class="nm">${esc(g.teams[1].name)}</span></div>
-  </div><div class="boardfoot">${sm}${compTag}${val}${warn}<span>${g.poss.filter(p => p.side === 0).length} posesiones por equipo</span><span>${g.events.length} jugadas</span></div></section>`;
+  </div><div class="boardfoot">${sm}${compTag}${val}${warn}<button class="pill pill-btn" data-alerts="1" aria-expanded="${!!S.alertsOpen}" title="Elegir avisos y ver el historial">🔔 Avisos${AL.list.length ? ' · ' + AL.list.length : ''}</button><span>${g.poss.filter(p => p.side === 0).length} posesiones por equipo</span><span>${g.events.length} jugadas</span></div></section>`;
 }
 const TABS = [['entrenador', 'Entrenador'], ['resumen', 'Resumen'], ['factores', 'Factores'], ['jugadores', 'Jugadores'], ['quintetos', 'Quintetos'], ['rotaciones', 'Rotaciones'], ['dinamica', 'Dinámica'], ['posesiones', 'Posesiones'], ['tiro', 'Tiro'], ['clutch', 'Clutch'], ['jugadas', 'Jugadas']];
 const STABS = [['resumen', 'Resumen'], ['jugadores', 'Jugadores'], ['quintetos', 'Quintetos'], ['posesiones', 'Posesiones'], ['cierres', 'Clutch y cierres'], ['partidos', 'Partidos']];
@@ -2785,6 +2802,121 @@ function sPartidos(list) {
   return `<section class="panel">${tbl('sgm', cols, rows, { sort: { k: 'round', d: 1 } })}</section>`;
 }
 
+// ---------- Avisos en directo ----------
+// Se calculan sobre todo el partido con claves estables; solo se muestran (como avisos flotantes) los que aparecen
+// con datos nuevos mientras el partido está en juego. La configuración se guarda por partido.
+const ALERTS = [
+  { id: 'faltas', label: 'Faltas de un jugador', n: 4, unit: 'faltas', side: 'all', icon: '🟨' },
+  { id: 'bonus', label: 'Equipo en bonus (4 faltas en el cuarto)', side: 'all', icon: '🚨' },
+  { id: 'parcial', label: 'Parcial', n: 8, unit: 'puntos seguidos', side: 'rival', icon: '📉' },
+  { id: 'quinteto', label: 'Quinteto en pista con +/- negativo', n: 6, unit: 'puntos abajo', side: 'mine', icon: '🔁' },
+  { id: 'caliente', label: 'Anotador caliente', n: 8, unit: 'puntos en 5 min', side: 'rival', icon: '🔥' },
+  { id: 'fatiga', label: 'Minutos seguidos en pista', n: 8, unit: 'min', side: 'mine', icon: '⏱' },
+  { id: 'clutch', label: 'Empieza el clutch (últimos 5 min, ±5)', icon: '⏳' },
+  { id: 'tmrival', label: 'Tiempo muerto', side: 'rival', icon: '✋', off: true }
+];
+const ALERT_ICON = Object.fromEntries(ALERTS.map(a => [a.id, a.icon]));
+const AL = { key: null, seen: new Set(), list: [] };
+const alertDefaults = () => ({ on: Object.fromEntries(ALERTS.map(a => [a.id, !a.off])), n: Object.fromEntries(ALERTS.filter(a => a.n).map(a => [a.id, a.n])), side: Object.fromEntries(ALERTS.filter(a => a.side).map(a => [a.id, a.side])), sound: false });
+const alertKey = () => S.g && !S.sample && S.matchId ? 'alerts-' + S.g.comp + '-' + S.matchId : null;
+function alertCfg() {
+  const d = alertDefaults(), gl = store.get('alerts', {}) || {}, k = alertKey(), m = (k && store.get(k, null)) || {};
+  return { on: Object.assign({}, d.on, gl.on, m.on), n: Object.assign({}, d.n, gl.n, m.n), side: Object.assign({}, d.side, gl.side, m.side), sound: m.sound != null ? m.sound : gl.sound != null ? gl.sound : d.sound };
+}
+// Lado de «mi equipo» en el partido: el favorito o las siglas de «Mi equipo» del Entrenador (−1 si no juega)
+function mySide(g) {
+  const f = favOf(g.comp); let i = f ? g.teams.findIndex(t => isFav(f, t)) : -1;
+  if (i < 0) { const m = String(coachCfg().mine || '').toUpperCase(); i = g.teams.findIndex(t => String(t.abbr).toUpperCase() === m); }
+  return i;
+}
+function computeAlerts(g, c) {
+  const out = [], me = mySide(g);
+  const ok = (id, s) => { const v = c.side[id] || 'all'; return v === 'all' || me < 0 || (v === 'mine' ? s === me : s !== me); };
+  const nm = pid => { const p = g.players.get(pid); return p ? p.name : '?'; }, ab = s => g.teams[s].abbr;
+  const add = (type, key, t, text) => out.push({ type, key: type + '|' + key, t, when: clockAt(t), text });
+  const pf = new Map(), tf = new Map();
+  for (const e of g.events) {
+    if (e.pid && A.isPF(e.type)) {
+      const n = (pf.get(e.pid) || 0) + 1; pf.set(e.pid, n);
+      if (c.on.faltas && n >= c.n.faltas && ok('faltas', e.side)) add('faltas', e.pid + '|' + n, e.t, `${nm(e.pid)} (${ab(e.side)}) ${n >= 5 ? 'eliminado con 5 faltas' : 'llega a ' + n + ' faltas'}`);
+      const k = e.side + '|' + e.q, m = (tf.get(k) || 0) + 1; tf.set(k, m);
+      if (c.on.bonus && m === 4 && ok('bonus', e.side)) add('bonus', k, e.t, `${ab(e.side)} llega a 4 faltas en el ${qLabel(e.q)}: ${ab(1 - e.side)} tira libres desde la siguiente`);
+    }
+    if (c.on.tmrival && e.type === 113 && ok('tmrival', e.side)) add('tmrival', e.side + '|' + e.t, e.t, `Tiempo muerto de ${ab(e.side)}`);
+  }
+  if (c.on.parcial) for (const r of A.runs(g, c.n.parcial)) if (ok('parcial', r.side)) {
+    let acc = 0, t = r.t1; for (const x of r.list) { acc += x.pts; if (acc >= c.n.parcial) { t = x.t; break; } }
+    add('parcial', r.side + '|' + r.t0, t, `Parcial ${r.pts}-0 de ${ab(r.side)} desde ${clockAt(r.t0)}`);
+  }
+  if (c.on.quinteto) for (const s of [0, 1]) if (ok('quinteto', s)) {
+    let lin = null, pm = 0, t0 = 0, fired = false;
+    for (const e of g.events) {
+      if (e.lin[s] !== lin) { lin = e.lin[s]; pm = 0; t0 = e.t; fired = false; }
+      pm += e.d[s] - e.d[1 - s];
+      if (!fired && pm <= -c.n.quinteto && lin && lin.split(',').length === 5) { fired = true; add('quinteto', s + '|' + t0 + '|' + lin, e.t, `Quinteto de ${ab(s)} con ${sg(pm)} desde ${clockAt(t0)}: ${lin.split(',').map(p => short(nm(Number(p)))).join(' · ')}`); }
+    }
+  }
+  if (c.on.caliente) {
+    const hist = new Map(), hot = new Set(), P = { 92: 1, 93: 2, 100: 2, 94: 3 };
+    for (const e of g.events) {
+      const pts = e.pid && P[e.type]; if (!pts) continue;
+      const h = (hist.get(e.pid) || []).filter(x => x[0] > e.t - 300); h.push([e.t, pts]); hist.set(e.pid, h);
+      const sum = h.reduce((a, x) => a + x[1], 0);
+      if (sum >= c.n.caliente && !hot.has(e.pid)) { hot.add(e.pid); if (ok('caliente', e.side)) add('caliente', e.pid + '|' + e.t, e.t, `${nm(e.pid)} (${ab(e.side)}) lleva ${sum} puntos en los últimos 5 minutos`); }
+      else if (sum < c.n.caliente / 2) hot.delete(e.pid);
+    }
+  }
+  if (c.on.fatiga) for (const z of g.stints) if (z.t1 - z.t0 >= c.n.fatiga * 60 && ok('fatiga', z.side)) {
+    const open = z.t1 >= g.lastT && !g.finished;
+    add('fatiga', z.pid + '|' + z.t0, z.t0 + c.n.fatiga * 60, `${nm(z.pid)} (${ab(z.side)}) lleva ${c.n.fatiga} minutos seguidos en pista${open ? '' : ' (salió en ' + clockAt(z.t1) + ')'}`);
+  }
+  if (c.on.clutch) { const seenQ = new Set(); for (const e of g.events) if (e.clutch && !seenQ.has(e.q)) { seenQ.add(e.q); add('clutch', e.q, e.t, `Empieza el clutch en el ${qLabel(e.q)}: ${ab(0)} ${e.preH}-${e.preA} ${ab(1)}`); } }
+  return out.sort((a, b) => a.t - b.t);
+}
+// Recalcula los avisos; al abrir un partido (o con quiet) solo se registran, sin mostrarlos
+function checkAlerts(quiet) {
+  const g = S.g; if (!g) return;
+  const mk = S.sample ? 'ejemplo' : g.comp + '-' + S.matchId, fresh = AL.key !== mk;
+  if (fresh) { AL.key = mk; AL.seen = new Set(); }
+  const c = alertCfg(), list = computeAlerts(g, c), nuevos = list.filter(a => !AL.seen.has(a.key));
+  list.forEach(a => AL.seen.add(a.key)); AL.list = list;
+  if (fresh || quiet || g.finished || S.sample || !nuevos.length) return;
+  nuevos.slice(-4).forEach(toast);
+  if (c.sound) beep();
+}
+function toast(a) {
+  const box = $('#toasts'), el = document.createElement('div');
+  el.className = 'toast t-' + a.type; el.setAttribute('role', 'status');
+  el.innerHTML = `<span class="ti" aria-hidden="true">${ALERT_ICON[a.type]}</span><span><b>${esc(a.text)}</b><small>${esc(a.when)}</small></span><button class="lnk" aria-label="Cerrar aviso">✕</button>`;
+  el.querySelector('button').onclick = () => el.remove();
+  box.prepend(el); const max = innerWidth < 600 ? 2 : 4; while (box.children.length > max) box.lastChild.remove(); // el resto queda en el historial
+  setTimeout(() => el.remove(), 15000);
+}
+function beep() {
+  try {
+    if (navigator.vibrate) navigator.vibrate([120, 60, 120]);
+    const C = window.AudioContext || window.webkitAudioContext; if (!C) return;
+    const ctx = beep.ctx || (beep.ctx = new C()), o = ctx.createOscillator(), gn = ctx.createGain();
+    o.frequency.value = 880; gn.gain.value = .08; o.connect(gn).connect(ctx.destination); o.start(); o.stop(ctx.currentTime + .18);
+  } catch (e) { }
+}
+function alertsPanel(g) {
+  const c = alertCfg(), me = mySide(g);
+  const sideSel = a => a.side ? `<select data-aside="${a.id}" aria-label="Equipo para «${esc(a.label)}»">${[['all', 'Ambos'], ['mine', me >= 0 ? g.teams[me].abbr + ' (mi equipo)' : 'Mi equipo'], ['rival', a.id === 'parcial' ? 'Rival (en contra)' : 'Rival']].map(([k, l]) => `<option value="${k}" ${c.side[a.id] === k ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>` : '<span></span>';
+  const rows = ALERTS.map(a => `<div class="al-row"><label><input type="checkbox" data-aon="${a.id}" ${c.on[a.id] ? 'checked' : ''}> <span aria-hidden="true">${a.icon}</span> ${esc(a.label)}</label>${a.n ? `<span class="al-n"><input type="number" min="1" max="40" data-an="${a.id}" value="${c.n[a.id]}" aria-label="Umbral de «${esc(a.label)}»"> ${a.unit}</span>` : '<span></span>'}${sideSel(a)}</div>`).join('');
+  const hist = AL.list.slice().reverse().slice(0, 40).map(a => `<li><span aria-hidden="true">${ALERT_ICON[a.type]}</span> <b class="n">${esc(a.when)}</b> ${esc(a.text)}</li>`).join('');
+  return `<section class="panel alerts-panel"><div class="sec-h"><h2>🔔 Avisos de este partido</h2><span class="note">${me < 0 ? 'Elige tu equipo favorito para separar «mi equipo» y «rival».' : 'Se guardan para este partido.'}</span></div>
+    <div class="grid2"><div class="stack" style="gap:6px">${rows}
+      <div class="row" style="margin-top:6px"><label class="row"><input type="checkbox" data-asound="1" ${c.sound ? 'checked' : ''}> Sonido y vibración</label><button class="btn ghost" data-adefault="1">Usar en todos los partidos</button></div>
+      <div class="status" id="st-alerts" role="status"></div></div>
+    <div><h3 style="margin-bottom:6px">Historial</h3>${hist ? `<ol class="al-list">${hist}</ol>` : '<p class="empty">Todavía no hay avisos con esta configuración.</p>'}</div></div></section>`;
+}
+function setAlertCfg(fn) {
+  const c = alertCfg(); fn(c);
+  const k = alertKey(); store.set(k || 'alerts', c);
+  checkAlerts(true); render(true);
+}
+
 // ---------- Colores de los equipos ----------
 // Cada fuente da un color por equipo (ACB: primaryColorHex/textColorHex; BCL: color del partido; Liga U: color del club).
 // Se ajusta para que se vea sobre el fondo del estilo y para que los dos equipos no se confundan.
@@ -2872,7 +3004,7 @@ function render(silent) {
     if (!g) { view.innerHTML = `<div class="panel empty">${S.waiting ? 'El partido aún no ha empezado: se abrirá solo en cuanto haya jugadas.' : S.booting ? 'Cargando partido…' : 'Carga un partido para empezar.'}</div>`; return; }
     if (!TABS.find(t => t[0] === S.tab)) S.tab = 'resumen';
     const V = { entrenador: vEntrenador, resumen: vResumen, factores: vFactores, jugadores: vJugadores, quintetos: vQuintetos, rotaciones: vRotaciones, dinamica: vDinamica, posesiones: vPosesiones, tiro: vTiro, clutch: vClutch, jugadas: vJugadas }[S.tab];
-    html = scoreboard(g) + tabsBar(TABS, S.tab, 'data-tab') + `<div class="stack" id="tabpanel" role="tabpanel" aria-labelledby="tab-${S.tab}" style="margin-top:14px">${V(g)}</div>`;
+    html = scoreboard(g) + (S.alertsOpen ? alertsPanel(g) : '') + tabsBar(TABS, S.tab, 'data-tab') + `<div class="stack" id="tabpanel" role="tabpanel" aria-labelledby="tab-${S.tab}" style="margin-top:14px">${V(g)}</div>`;
   } else {
     const list = S.scout.list;
     if (!list.length) { view.innerHTML = `<div class="panel empty">Elige un equipo y pulsa «Cargar partidos». Se analizarán jugada a jugada todos sus partidos terminados.</div>`; return; }
@@ -2939,6 +3071,8 @@ document.addEventListener('click', async e => {
     } catch (err) { $('#st-coach').textContent = 'Ese código no es válido. Cópialo de nuevo desde el otro dispositivo.'; }
   }
   else if (d.shotq) { S.shotQ = d.shotq; render(); }
+  else if (d.alerts) { S.alertsOpen = !S.alertsOpen; render(); }
+  else if (d.adefault) { store.set('alerts', alertCfg()); const st = $('#st-alerts'); if (st) st.textContent = 'Guardado: los próximos partidos empezarán con estos avisos.'; }
   else if (d.copy) {
     const txt = tableText(d.copy, '\t');
     try { await navigator.clipboard.writeText(txt); b.textContent = 'Copiada'; } catch (err) { b.textContent = 'No se pudo copiar'; }
@@ -2960,6 +3094,10 @@ document.addEventListener('change', e => {
   const t = e.target;
   if (t.id === 'in-cpname') { const c = coachCfg(); curPanel(c).name = t.value.trim().slice(0, 24) || 'Panel'; saveCoach(c, false); }
   else if (t.id === 'in-mine') { const c = coachCfg(); c.mine = t.value.trim().toUpperCase(); saveCoach(c); }
+  else if (t.dataset && t.dataset.aon) setAlertCfg(c => { c.on[t.dataset.aon] = t.checked; });
+  else if (t.dataset && t.dataset.an) setAlertCfg(c => { c.n[t.dataset.an] = Math.max(1, Math.min(40, Number(t.value) || 1)); });
+  else if (t.dataset && t.dataset.aside) setAlertCfg(c => { c.side[t.dataset.aside] = t.value; });
+  else if (t.dataset && t.dataset.asound) setAlertCfg(c => { c.sound = t.checked; if (t.checked) beep(); });
   else if (t.id === 'sel-shotp') { S.shotPlayer = t.value; render(); }
   else if (t.id === 'in-tcolors') { store.set('teamcolors', t.checked); render(true); }
 });
