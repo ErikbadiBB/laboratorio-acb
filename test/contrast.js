@@ -1,6 +1,6 @@
 // Contraste de los colores de texto en cada estilo (WCAG: 4,5 texto normal; 3 para texto grande o negrita ≥ 14pt)
 const launch = require('./browser');
-const SKINS = ['', 'noche', 'scouting', 'tv', 'parque', 'negro'];
+const SKINS = ['', 'minimal', 'papel', 'banquillo', 'pizarra', 'medianoche', 'noche', 'scouting', 'tv', 'parque', 'negro'];
 const PAIRS = [ // [texto, fondo, mínimo, dónde]
   ['--ink-3', '--surface', 4.5, 'etiquetas y notas'], ['--ink-3', '--bg', 4.5, 'pestañas sin elegir'], ['--ink-3', '--surface-2', 4.5, 'texto tenue en filas/tarjetas'],
   ['--ink-2', '--surface-2', 4.5, 'cabeceras de tabla'], ['--accent', '--surface', 4.5, 'enlaces (Copiar…)'],

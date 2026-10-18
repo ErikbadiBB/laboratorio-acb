@@ -69,11 +69,11 @@ Todas son públicas (las mismas que usan las webs oficiales). Las claves están 
 - Selector de partido: carrusel por jornada/semana con tarjetas; se pliega en una franja al cargar un partido.
 - Pestañas: Entrenador (bloques configurables, guardados en `localStorage` y exportables con un código), Resumen, Factores, Jugadores, Quintetos, Rotaciones, Dinámica, Posesiones, Tiro, Clutch, Jugadas.
 - Directo: refresco configurable (1 s por defecto en ordenador, 3 s en móvil/tableta). Si solo cambia el reloj se actualiza el marcador sin redibujar. Sin novedades 30 s → cada 5 s; 3 min (descanso) → cada 15 s. En BCL además canal en tiempo real; en Liga U solo se piden las jugadas nuevas (lista completa cada 30 s). Si el partido no ha empezado, reintenta cada 15 s.
-- Estilos (`data-skin` en `<html>`): Original, Noche de partido, Informe de scouting, Retransmisión TV, Parqué, Bilbao Negro. Se guardan por dispositivo.
+- Estilos (`data-skin` en `<html>`): Original, Minimal, Papel (para imprimir), Banquillo (letra grande, máximo contraste), Pizarra, Medianoche (negro puro, OLED), Noche de partido, Informe de scouting, Retransmisión TV, Parqué, Bilbao Negro. Se guardan por dispositivo. El menú 🎨 muestra para qué sirve cada uno (`desc` en `SKINS`). Al imprimir, cualquier estilo sale en claro y sin controles (`@media print`).
 - Colores de los equipos (por defecto activados; interruptor en el menú 🎨, `lab-acb:teamcolors`): `applyTeamColors` pone `--home/--away/--home-ink/--away-ink` en `#view` con el color de la fuente (ACB `primaryColorHex`/`textColorHex`, BCL color del partido, Liga U color del club). Se ajusta a contraste 3:1 con el fondo del estilo; si los dos equipos se parecen, el visitante pasa a su secundario o a los colores del estilo. Prueba: `node test/teamcolors.js`.
 - Hash de la URL: `#acb-ID`, `#bcl-ID`, `#lu-ID`.
 - Sin conexión: los 12 últimos partidos abiertos se guardan en el dispositivo (Cache API `statslab-partidos`, índice en `lab-acb:saved`; en directo como mucho cada 30 s). Si falla la red al abrir uno guardado, se muestra con «Sin conexión · datos guardados…» y el selector ofrece las tarjetas guardadas.
-- Colores: todo texto debe tener contraste ≥ 4,5 sobre su fondo en los 6 estilos (`node test/contrast.js` debe dar «PARES POR DEBAJO 0»). Las siglas de equipo usan `--home-ink`/`--away-ink`.
+- Colores: todo texto debe tener contraste ≥ 4,5 sobre su fondo en todos los estilos (`node test/contrast.js` debe dar «PARES POR DEBAJO 0»). Las siglas de equipo usan `--home-ink`/`--away-ink`.
 - `localStorage` usa el prefijo `lab-acb:` (no cambiarlo, perdería la configuración guardada de los usuarios).
 
 ## Convenciones
