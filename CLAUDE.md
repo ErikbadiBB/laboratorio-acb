@@ -22,7 +22,7 @@ Usuario: Erik (Bilbao Basket). Responde siempre en castellano.
 | `site/api/bcl.js` | Puente BCL (función Edge de Vercel). Se edita directamente aquí. |
 | `.github/workflows/vigilancia.yml` | Cada mañana (06:47 UTC) y a mano: `node test/fuentes.js` comprueba las fuentes reales, el puente BCL, la web publicada y que los partidos de referencia cuadran. Si falla, GitHub avisa por correo. **También sirve para verificar con datos reales desde una sesión sin acceso a internet**: lanzarlo con la herramienta de GitHub y leer el registro. |
 | `.github/workflows/pages.yml` | Al hacer push a `main`: `npm ci` + `npm test` (si falla alguna prueba **no se publica**), `node build.js` y publica `site/` en GitHub Pages. |
-| `test/` | Pruebas con datos reales (`m105375.json` ACB, `bcl136295.json` BCL) y Liga U sintética (`lu.js`). `browser.js` arranca Chromium para las pruebas con navegador (usa `CHROMIUM_PATH` o `/opt/pw-browsers/chromium` si falta el de Playwright). |
+| `test/` | Pruebas con datos reales (`m105375.json` ACB, `bcl136295.json` BCL, `lu2538967.json` Liga U) y Liga U sintética para el directo (`lu.js`). Para capturar otro partido real de la Liga U: flujo «Capturar datos de prueba» (`.github/workflows/capturar.yml`), que lo deja en la rama `datos-prueba`. `browser.js` arranca Chromium para las pruebas con navegador (usa `CHROMIUM_PATH` o `/opt/pw-browsers/chromium` si falta el de Playwright). |
 
 No editar `site/index.html` a mano: se regenera con `npm run build`.
 
