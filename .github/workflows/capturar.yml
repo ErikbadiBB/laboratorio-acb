@@ -1,0 +1,32 @@
+name: Capturar datos de prueba
+
+# Descarga un partido real de la Liga U y lo guarda en la rama «datos-prueba» (test/lu<ID>.json)
+# para usarlo en las pruebas sin conexión. Se lanza a mano desde Actions.
+on:
+  workflow_dispatch:
+    inputs:
+      partido:
+        description: 'Número de partido de la Liga U'
+        default: '2538967'
+
+permissions:
+  contents: write
+
+jobs:
+  capturar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Descargar el partido
+        run: node test/capturar-lu.js "${{ github.event.inputs.partido }}"
+      - name: Guardar en la rama datos-prueba
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B datos-prueba
+          git add -f test/lu*.json
+          git commit -m "Datos de prueba: partido ${{ github.event.inputs.partido }} de la Liga U"
+          git push -f origin datos-prueba
