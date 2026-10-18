@@ -17,7 +17,7 @@
 <title>StatsLAB</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" media="print" onload="this.media='all'">
 <style>
 /* Layout: mesa de anotador — marcador arriba, pestañas de análisis fijas, paneles de datos en rejilla fluida */
 :root {
@@ -52,7 +52,7 @@ button, select, input, textarea { font: inherit; color: inherit }
 .top-ctl { justify-content: flex-end; gap: 6px }
 
 /* ---------- Estilos (skins) ---------- */
-.tabs { background: var(--bg-solid, var(--bg)) }
+:root[data-skin="tv"] body::before, :root[data-skin="parque"] body::before { content: ""; position: fixed; inset: 0; z-index: -1; background: var(--bg-img); pointer-events: none }
 .tm.t0 { color: var(--home-ink, #fff) } .tm.t1 { color: var(--away-ink, #fff) }
 :root[data-skin="noche"] { color-scheme: dark;
   --bg: #0c0e11; --surface: #15191e; --surface-2: #1b2026; --ink: #f3f2ef; --ink-2: #b9c0c7; --ink-3: #7d8791; --line: #262c33; --line-2: #1f242a;
@@ -68,7 +68,7 @@ button, select, input, textarea { font: inherit; color: inherit }
 :root[data-skin="scouting"] .brand-h { text-transform: none; letter-spacing: 0 }
 :root[data-skin="scouting"] .tabs button { font-family: var(--f-body); font-size: .8rem; letter-spacing: .08em }
 :root[data-skin="tv"] { color-scheme: dark;
-  --bg: radial-gradient(120% 50% at 50% 0%, #16245a 0%, #070b1a 70%) fixed; --bg-solid: #0a1028; --surface: rgba(255,255,255,.05); --surface-2: rgba(255,255,255,.08); --ink: #fff; --ink-2: #c7d0ef; --ink-3: #8291c4; --line: rgba(255,255,255,.13); --line-2: rgba(255,255,255,.07);
+  --bg: #0a1028; --bg-img: radial-gradient(120% 50% at 50% 0%, #16245a 0%, #070b1a 70%); --surface: rgba(255,255,255,.05); --surface-2: rgba(255,255,255,.08); --ink: #fff; --ink-2: #c7d0ef; --ink-3: #8291c4; --line: rgba(255,255,255,.13); --line-2: rgba(255,255,255,.07);
   --accent: #ffd400; --accent-ink: #0a0f22; --home: #22d3ee; --home-ink: #04121a; --away: #ff4d6d; --good: #4ade80; --bad: #ff4d6d; --warn: #ffd400;
   --f-display: "Bebas Neue", "Barlow Condensed", "Arial Narrow", sans-serif; --f-body: "Manrope", "Segoe UI", system-ui, sans-serif; --f-data: "JetBrains Mono", ui-monospace, monospace; --r: 14px }
 :root[data-skin="tv"] h1, :root[data-skin="tv"] h2, :root[data-skin="tv"] .tabs button, :root[data-skin="tv"] .score .big, :root[data-skin="tv"] .team .nm, :root[data-skin="tv"] .pk-sum b { font-weight: 400; letter-spacing: .04em }
@@ -76,7 +76,7 @@ button, select, input, textarea { font: inherit; color: inherit }
 :root[data-skin="tv"] .score .big { font-size: 4rem }
 :root[data-skin="tv"] .tabs button { font-size: 1.25rem }
 :root[data-skin="parque"] { color-scheme: light;
-  --bg: linear-gradient(180deg, #ead9be 0%, #e3cda9 100%) fixed; --bg-solid: #e8d5b6; --surface: #fbf6ee; --surface-2: #f3e7d4; --ink: #2a1c10; --ink-2: #5d4a38; --ink-3: #8f7a63; --line: #e2d3bb; --line-2: #eee2cf;
+  --bg: #e8d5b6; --bg-img: linear-gradient(180deg, #ead9be 0%, #e3cda9 100%); --surface: #fbf6ee; --surface-2: #f3e7d4; --ink: #2a1c10; --ink-2: #5d4a38; --ink-3: #8f7a63; --line: #e2d3bb; --line-2: #eee2cf;
   --accent: #d9531e; --accent-ink: #fff; --home: #1f5f6e; --away: #d9531e; --good: #2f7a3e; --bad: #b8321a; --warn: #a86a00;
   --f-display: "Archivo Black", "Arial Black", sans-serif; --f-body: "Archivo", "Segoe UI", system-ui, sans-serif; --f-data: "JetBrains Mono", ui-monospace, monospace; --r: 18px }
 :root[data-skin="parque"] .panel { border: 0; box-shadow: 0 6px 18px rgba(80,50,20,.12) }
@@ -247,7 +247,7 @@ td.wrap { white-space: normal; min-width: 180px }
 .chart .lab { fill: var(--ink-2) }
 .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: .78rem; color: var(--ink-2); margin-bottom: 6px }
 .legend span { display: inline-flex; align-items: center; gap: 5px }
-#tip { position: fixed; z-index: 50; pointer-events: none; background: var(--ink); color: var(--bg); font-size: .78rem; line-height: 1.35; padding: 6px 9px; border-radius: 5px; max-width: 280px; box-shadow: 0 4px 14px rgba(0,0,0,.18) }
+#tip { position: fixed; left: 0; top: 0; z-index: 50; will-change: transform; pointer-events: none; background: var(--ink); color: var(--bg); font-size: .78rem; line-height: 1.35; padding: 6px 9px; border-radius: 5px; max-width: 280px; box-shadow: 0 4px 14px rgba(0,0,0,.18) }
 .empty { padding: 26px 10px; text-align: center; color: var(--ink-3) }
 .progress { height: 4px; background: var(--surface-2); border-radius: 2px; overflow: hidden }
 .progress i { display: block; height: 100%; background: var(--accent); width: 0; transition: width .2s }
@@ -263,6 +263,11 @@ td.wrap { white-space: normal; min-width: 180px }
 .ced-list li.off { background: none; color: var(--ink-3) }
 .ced-list label { display: flex; gap: 6px; align-items: center; cursor: pointer; min-width: 0 }
 .ced-act { display: flex; gap: 2px; flex: none }
+@media (pointer: coarse) {
+  .chipbtn { padding: 7px 13px } .lnk { padding: 8px 8px } .tabs button { padding: 10px 12px }
+  .seg button { padding: 8px 12px } .skin-btn { width: 38px; height: 38px } .pk-arrow { width: 40px; height: 40px }
+}
+.tabs { padding-right: 28px; -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent) }
 .badge-ex { font-size: .72rem; background: var(--surface-2); border: 1px dashed var(--line); border-radius: 4px; padding: 1px 7px; color: var(--ink-2) }
 </style>
 
@@ -1172,7 +1177,7 @@ let KEY = store.get('key', DEFAULT_KEY);
 
 const S = {
   mode: 'match', tab: store.get('tab', 'resumen'), stab: 'resumen', g: null, sample: false, filt: 'all', sort: {},
-  lineSize: 5, lineMin: 2, pcols: 'basic', closeMode: 'clutch', pbpSide: 'all', pbpKind: 'all', perGame: true,
+  lineSize: 5, lineMin: 2, pcols: 'basic', closeMode: 'clutch', pbpSide: 'all', pbpKind: 'all', pbpMax: 200, perGame: true,
   timer: null, comp: null, scout: { team: null, list: [], loading: false },
   compet: store.get('compet', 'acb'), every: store.get('every', 1), coachEdit: false, shotQ: 'all', shotPlayer: 'all'
 };
@@ -1284,16 +1289,24 @@ function sampleRaw() {
 // Descarga un partido y lo deja en el formato del motor
 async function fetchGame(comp, id) {
   if (comp === 'lu') {
-    const [pbp, md, box, shots, teams] = await Promise.all([
-      lu(`pbp_player_name_ligau_view?select=*&match_id=eq.${id}&order=num.asc`), lu(`all_matches_data_lf_endesa?select=*&match_id=eq.${id}`),
-      lu(`all_players_boxscores_lf_endesa?select=*&match_id=eq.${id}`), lu(`shots_with_player_info_view?select=*&limit=10000&match_id=eq.${id}`).catch(() => []), luTeams()]);
+    const [pbp, md, teams] = await Promise.all([
+      lu(`pbp_player_name_ligau_view?select=*&match_id=eq.${id}&order=num.asc`), lu(`all_matches_data_lf_endesa?select=*&match_id=eq.${id}`), luTeams()]);
     if (!md || !md.length) throw new Error('No encuentro el partido ' + id + ' en la Liga U.');
     if (!pbp || !pbp.length) throw Object.assign(new Error('El partido todavía no tiene jugadas publicadas'), { notStarted: true });
+    // Acta y tiros solo se vuelven a pedir cuando hay jugadas nuevas (en directo ahorra 2 peticiones por segundo)
+    const k = pbp.length + '|' + pbp[pbp.length - 1].num + '|' + md[0].status_code;
+    let c = LUC.get(id);
+    if (!c || c.k !== k) {
+      const [box, shots] = await Promise.all([lu(`all_players_boxscores_lf_endesa?select=*&match_id=eq.${id}`), lu(`shots_with_player_info_view?select=*&limit=10000&match_id=eq.${id}`).catch(() => [])]);
+      c = { k, box, shots }; LUC.set(id, c);
+    }
+    const { box, shots } = c;
     const d = LU.luToFiba(pbp, md[0], box, shots, teams);
     const raw = F.fibaToRaw(d); raw.competition = 'U22';
     const live = !d.finished;
     const header = { status: live ? 'STARTED' : 'FINALIZED', period: md[0].quarter || 1, clock: /final/i.test(md[0].game_time || '') ? null : md[0].game_time };
-    return { raw, header, src: 'ligau.com', sig: d.rows.length + '|' + (d.rows.length ? d.rows[d.rows.length - 1][0] : 0) + '|' + d.game.sa + '-' + d.game.sb + '|' + md[0].game_time };
+    const dsig = d.rows.length + '|' + (d.rows.length ? d.rows[d.rows.length - 1][0] : 0) + '|' + d.game.sa + '-' + d.game.sb + '|' + live;
+    return { raw, header, src: 'ligau.com', dsig, sig: dsig + '|' + md[0].game_time };
   }
   if (comp === 'bcl') {
     const [d, box] = await Promise.all([bclPbp(id), hapi('getgdapgamestatisticsbygameid?gdapGameId=' + id).catch(() => null)]);
@@ -1314,18 +1327,21 @@ async function fetchGame(comp, id) {
   if (!raw || !raw.plays || !raw.plays.length) return null;
   const last = raw.plays[raw.plays.length - 1];
   const header = h ? { status: h.matchStatus, period: h.currentQuarter, clock: h.timeLeft } : null;
-  return { raw, header, src: 'api2.acb.com', sig: raw.plays.length + '|' + last.order + '|' + last.scoreHome + '-' + last.scoreAway + '|' + (h && h.timeLeft) };
+  const dsig = raw.plays.length + '|' + last.order + '|' + last.scoreHome + '-' + last.scoreAway + '|' + !!raw.matchFinished;
+  return { raw, header, src: 'api2.acb.com', dsig, sig: dsig + '|' + (h && h.timeLeft) + '|' + (h && h.currentQuarter) };
 }
 
 
 // ---------- BCL: datos en memoria y canal en tiempo real (WebPubSub de la web oficial) ----------
 const BCLD = new Map();
+const LUC = new Map(); // Liga U: acta y tiros del último estado visto de cada partido
 const lastOrder = d => d.rows.length ? d.rows[d.rows.length - 1][0] : 0;
 function bclResult(d) {
   const raw = F.fibaToRaw(JSON.parse(JSON.stringify(d)));
   const live = !d.finished && (d.game.isLive || d.rows.length > 0);
   const header = { status: live ? 'STARTED' : d.finished ? 'FINALIZED' : 'SCHEDULED', period: F.periodNum(d.game.period || 'Q1'), clock: d.game.chrono };
-  return { raw, header, src: 'championsleague.basketball', sig: d.rows.length + '|' + lastOrder(d) + '|' + d.game.sa + '-' + d.game.sb + '|' + d.game.chrono };
+  const dsig = d.rows.length + '|' + lastOrder(d) + '|' + d.game.sa + '-' + d.game.sb + '|' + !!d.finished;
+  return { raw, header, src: 'championsleague.basketball', dsig, sig: dsig + '|' + d.game.chrono + '|' + d.game.period };
 }
 const und = v => (v === '$undefined' || v === undefined ? null : v);
 const rowOf = (q, i) => [i.order, q, i.Time, i.SA, i.SB, i.ac, i.txt, und(i.oId) || 0, und(i.pId) || 0, i.made === undefined ? null : (i.made ? 1 : 0), und(i.x), und(i.y), i.in === undefined ? null : (/in/i.test(String(i.in)) || i.in === true ? 1 : 0), und(i.p2Id)];
@@ -1389,12 +1405,16 @@ async function loadMatch(link, opts = {}) {
 // Aplica un resultado descargado (o recibido por el canal en directo) a la vista
 function applyResult(link, res, opts = {}) {
   const st = $('#st-match');
-  const same = opts.silent && S.g && S.g.comp === link.comp && S.matchId === link.id && S.sig === res.sig;
-  S.lastFetch = new Date();
-  if (!same) {
+  const sameGame = opts.silent && S.g && !S.sample && S.g.comp === link.comp && S.matchId === link.id;
+  const same = sameGame && S.sig === res.sig;
+  // Mismas jugadas y solo avanza el reloj: se actualiza el estado del marcador sin recalcular ni redibujar
+  const clockOnly = sameGame && !same && res.dsig && S.dsig === res.dsig;
+  S.lastFetch = new Date(); S.waiting = null;
+  if (clockOnly) { S.sig = res.sig; S.g.meta.header = res.header; const el = $('#sb-st'); if (el) el.textContent = boardStatus(S.g); }
+  if (!same && !clockOnly) {
     S.g = A.parseGame(res.raw, { id: link.id, header: res.header });
     S.g.comp = link.comp; S.g.hasShots = S.g.events.some(e => e.x != null && e.x !== 0);
-    S.sample = false; S.matchId = link.id; S.sig = res.sig;
+    S.sample = false; S.matchId = link.id; S.sig = res.sig; S.dsig = res.dsig;
     store.set('last', link.comp + '-' + link.id);
     try { if (location.hash !== '#' + link.comp + '-' + link.id) history.replaceState(null, '', '#' + link.comp + '-' + link.id); } catch (e) { }
   }
@@ -1406,11 +1426,11 @@ function applyResult(link, res, opts = {}) {
   $('#pk-title').textContent = pickTitle();
   if (!opts.silent) { setupLive(); setPick(false); const at = gameKeyIndex(); if (at >= 0 && at !== S.cal.i) { S.cal.i = at; fillMatches().catch(() => { }); } else markCards(); }
   if (link.comp === 'bcl' && !S.g.finished) bclSocket(link.id); else if (BWS.id === link.id && S.g.finished) stopBclSocket();
-  if (!same) render(opts.silent);
+  if (!same && !clockOnly) { if (opts.silent) scheduleRender(); else render(); }
 }
 // Partido aún sin empezar: se reintenta solo y se abre en cuanto haya jugadas
 function waitForStart(link, opts) {
-  const st = $('#st-match'); clearTimeout(S.waitTimer);
+  const st = $('#st-match'); clearTimeout(S.waitTimer); S.waiting = link;
   st.className = 'status';
   st.textContent = COMPS[link.comp].short + ' · el partido ' + link.id + ' aún no ha empezado · se abrirá solo en cuanto haya jugadas (comprobando cada 15 s)';
   $('#pk-title').textContent = 'Esperando el inicio';
@@ -1809,11 +1829,22 @@ function profileKV(P, label) {
 
 // ---------- Tooltip ----------
 const tip = $('#tip');
-function showTip(html, x, y) { tip.innerHTML = html; tip.hidden = false; const r = tip.getBoundingClientRect(); let L = x + 14, T = y + 14; if (L + r.width > innerWidth - 8) L = x - r.width - 14; if (T + r.height > innerHeight - 8) T = y - r.height - 14; tip.style.left = Math.max(8, L) + 'px'; tip.style.top = Math.max(8, T) + 'px'; }
-function hideTip() { tip.hidden = true; }
-document.addEventListener('pointerover', e => { const el = e.target.closest('[data-tip]'); if (el) showTip(el.getAttribute('data-tip'), e.clientX, e.clientY); });
-document.addEventListener('pointermove', e => { const el = e.target.closest('[data-tip]'); if (el) showTip(el.getAttribute('data-tip'), e.clientX, e.clientY); });
-document.addEventListener('pointerout', e => { if (e.target.closest('[data-tip]')) hideTip(); });
+const TIP = { html: null, w: 0, h: 0, x: 0, y: 0, raf: 0 };
+function placeTip() {
+  TIP.raf = 0; if (tip.hidden) return;
+  let L = TIP.x + 14, T = TIP.y + 14;
+  if (L + TIP.w > innerWidth - 8) L = TIP.x - TIP.w - 14; if (T + TIP.h > innerHeight - 8) T = TIP.y - TIP.h - 14;
+  tip.style.transform = `translate(${Math.max(8, L)}px,${Math.max(8, T)}px)`;
+}
+function showTip(html, x, y) {
+  if (html !== TIP.html || tip.hidden) { TIP.html = html; tip.innerHTML = html; tip.hidden = false; TIP.w = tip.offsetWidth; TIP.h = tip.offsetHeight; }
+  TIP.x = x; TIP.y = y; if (!TIP.raf) TIP.raf = requestAnimationFrame(placeTip);
+}
+function hideTip() { tip.hidden = true; TIP.html = null; }
+const tipMove = e => { const el = e.target.closest && e.target.closest('[data-tip]'); if (el) showTip(el.getAttribute('data-tip'), e.clientX, e.clientY); };
+document.addEventListener('pointerover', tipMove);
+document.addEventListener('pointermove', tipMove, { passive: true });
+document.addEventListener('pointerout', e => { if (e.target.closest && e.target.closest('[data-tip]')) hideTip(); });
 
 // ---------- Gráficos SVG ----------
 const NS = 'http://www.w3.org/2000/svg';
@@ -1834,7 +1865,9 @@ function attachCross(svg, el, opts) {
   const line = document.createElementNS(NS, 'line'); line.setAttribute('y1', top); line.setAttribute('y2', bot); line.setAttribute('stroke', 'var(--ink-3)'); line.setAttribute('visibility', 'hidden');
   const dot = document.createElementNS(NS, 'circle'); dot.setAttribute('r', 4); dot.setAttribute('fill', 'var(--ink)'); dot.setAttribute('stroke', 'var(--surface)'); dot.setAttribute('stroke-width', 2); dot.setAttribute('visibility', 'hidden');
   svg.appendChild(line); svg.appendChild(dot);
-  const move = ev => {
+  let pend = null;
+  const move = ev => { const first = !pend; pend = { clientX: ev.clientX, clientY: ev.clientY }; if (first) requestAnimationFrame(() => { const p = pend; pend = null; if (p) track(p); }); };
+  const track = ev => {
     const r = svg.getBoundingClientRect(); const px = (ev.clientX - r.left) * (svg.viewBox.baseVal.width / r.width);
     if (px < x0 || px > x1) { hide(); return; }
     const t = (px - x0) / (x1 - x0) * T; const hit = find(t); if (!hit) { hide(); return; }
@@ -1842,8 +1875,8 @@ function attachCross(svg, el, opts) {
     dot.setAttribute('cx', hit.cx); dot.setAttribute('cy', hit.cy); dot.setAttribute('visibility', 'visible');
     showTip(label(hit, t), ev.clientX, ev.clientY);
   };
-  const hide = () => { line.setAttribute('visibility', 'hidden'); dot.setAttribute('visibility', 'hidden'); hideTip(); };
-  svg.addEventListener('pointermove', move); svg.addEventListener('pointerleave', hide); svg.addEventListener('pointerdown', move);
+  const hide = () => { pend = null; line.setAttribute('visibility', 'hidden'); dot.setAttribute('visibility', 'hidden'); hideTip(); };
+  svg.addEventListener('pointermove', move, { passive: true }); svg.addEventListener('pointerleave', hide); svg.addEventListener('pointerdown', move);
 }
 function stepFinder(pts, x, y, key) {
   return t => { let lo = 0; for (let i = 0; i < pts.length; i++) { if (pts[i].t <= t) lo = i; else break; } const p = pts[lo]; return Object.assign({ cx: x(Math.min(t, pts[pts.length - 1].t)), cy: y(p[key]) }, p); };
@@ -1902,7 +1935,7 @@ function drawGantt(el, g, side) {
     s += `<line x1="${Lw}" x2="${W - R}" y1="${yy + rowH - .5}" y2="${yy + rowH - .5}" stroke="var(--line-2)"/>`;
     st.filter(z => z.pid === p.pid).forEach(z => {
       const w = Math.max(1.5, x(z.t1) - x(z.t0) - 2);
-      s += `<rect x="${x(z.t0) + 1}" y="${yy + 4}" width="${w}" height="${rowH - 9}" rx="3" fill="var(--${side ? 'away' : 'home'})" data-tip="${esc(`<b>${p.name}</b><br>Entra ${clockAt(z.t0)} · Sale ${z.t1 >= g.lastT && !g.finished ? 'sigue en pista' : clockAt(z.t1)}<br>${mmss(z.t1 - z.t0)} en pista · +/- ${sg(z.pm)}`)}"/>`;
+      s += `<rect x="${x(z.t0) + 1}" y="${yy + 4}" width="${w}" height="${rowH - 9}" rx="3" fill="var(--${side ? 'away' : 'home'})" data-tip="${esc(`<b>${esc(p.name)}</b><br>Entra ${clockAt(z.t0)} · Sale ${z.t1 >= g.lastT && !g.finished ? 'sigue en pista' : clockAt(z.t1)}<br>${mmss(z.t1 - z.t0)} en pista · +/- ${sg(z.pm)}`)}"/>`;
     });
   });
   s += '</svg>';
@@ -1937,21 +1970,24 @@ function chart(fn, minH) { CHARTS.push(fn); return `<div class="chart" data-char
 let rz; addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(drawCharts, 150); });
 
 // ---------- Vista: partido ----------
-function scoreboard(g) {
+function boardStatus(g) {
   const h = g.meta && g.meta.header;
+  return !g.finished && !S.sample ? `En juego · ${h && h.period ? qLabel(h.period) + ' ' + (h.clock || '') : clockAt(g.lastT)}` : 'Final';
+}
+function scoreboard(g) {
   const live = !g.finished && !S.sample;
-  const st = live ? `En juego · ${h && h.period ? qLabel(h.period) + ' ' + (h.clock || '') : clockAt(g.lastT)}` : 'Final';
-  const v = A.validate(g);
+  const st = boardStatus(g);
+  const v = g._val || (g._val = A.validate(g));
   const qs = g.quarterScores.map(q => `<span>${qLabel(q.q)} ${q.h}–${q.a}</span>`).join('');
   const allOk = v.ok === v.n && v.ptsOk && v.minOk === v.minN && v.pmOk === v.pmN;
   const extraV = (v.minN ? ` · minutos ${v.minOk}/${v.minN}` : '') + (v.pmN ? ` · +/- ${v.pmOk}/${v.pmN}` : '');
-  const val = v.n ? `<span class="pill ${allOk ? 'ok' : 'warn'}" data-tip="${esc(allOk ? 'Las estadísticas calculadas desde las jugadas coinciden con las oficiales de cada jugador' + (v.minN ? ', incluidos minutos en pista y +/-' : '') + '.' : 'Diferencias: ' + v.diffs.slice(0, 6).join(' · '))}">${allOk ? '✓' : '!'} Cuadre con la estadística oficial ${v.ok}/${v.n}${extraV}</span>` : '';
+  const val = v.n ? `<span class="pill ${allOk ? 'ok' : 'warn'}" data-tip="${esc(allOk ? 'Las estadísticas calculadas desde las jugadas coinciden con las oficiales de cada jugador' + (v.minN ? ', incluidos minutos en pista y +/-' : '') + '.' : 'Diferencias: ' + v.diffs.slice(0, 6).map(esc).join(' · '))}">${allOk ? '✓' : '!'} Cuadre con la estadística oficial ${v.ok}/${v.n}${extraV}</span>` : '';
   const compTag = `<span class="pill">${esc(COMPS[g.comp || 'acb'].name)}</span>`;
-  const warn = g.warnings.length ? `<span class="pill warn" data-tip="${esc(g.warnings.join(' '))}">! Aviso en los datos</span>` : '';
+  const warn = g.warnings.length ? `<span class="pill warn" data-tip="${esc(g.warnings.map(esc).join(' '))}">! Aviso en los datos</span>` : '';
   const sm = S.sample ? '<span class="badge-ex">Ejemplo</span>' : '';
   return `<section class="panel"><div class="board">
     <div class="team"><span class="ab"><i class="sw t0"></i>${esc(g.teams[0].abbr)} · Local</span><span class="nm">${esc(g.teams[0].name)}</span></div>
-    <div class="score"><div class="big">${g.final[0]}<span class="faint">–</span>${g.final[1]}</div><div class="st ${live ? 'live' : ''}">${st}</div><div class="qs">${qs}</div></div>
+    <div class="score"><div class="big">${g.final[0]}<span class="faint">–</span>${g.final[1]}</div><div class="st ${live ? 'live' : ''}" id="sb-st">${st}</div><div class="qs">${qs}</div></div>
     <div class="team r"><span class="ab">Visitante · ${esc(g.teams[1].abbr)}<i class="sw t1"></i></span><span class="nm">${esc(g.teams[1].name)}</span></div>
   </div><div class="boardfoot">${sm}${compTag}${val}${warn}<span>${g.poss.filter(p => p.side === 0).length} posesiones por equipo</span><span>${g.events.length} jugadas</span></div></section>`;
 }
@@ -2396,7 +2432,8 @@ function vJugadas(g) {
     .filter(e => S.pbpKind === 'all' || (S.pbpKind === 'foul' ? isFoul(e.type) : S.pbpKind === 'pos' ? e.possEnd != null : K[S.pbpKind].has(e.type)));
   const ctl = `<div class="filters"><span class="lbl">Equipo</span>${[['all', 'Ambos'], ['0', g.teams[0].abbr], ['1', g.teams[1].abbr]].map(([k, l]) => `<button class="chipbtn" data-pside="${k}" aria-pressed="${S.pbpSide === k}">${esc(l)}</button>`).join('')}</div>
     <div class="filters"><span class="lbl">Tipo</span>${Object.entries(kinds).map(([k, l]) => `<button class="chipbtn" data-pkind="${k}" aria-pressed="${S.pbpKind === k}">${l}</button>`).join('')}</div>`;
-  const rows = ev.slice().reverse().slice(0, 600);
+  const max = S.pbpMax || 200;
+  const rows = ev.slice(-max).reverse();
   const endTxt = { canasta: 'canasta', tl: 'tiros libres', perdida: 'pérdida', rebote: 'rebote rival', fin_periodo: 'fin de periodo', cambio: 'otras' };
   const body = rows.map(e => {
     const team = (e.pid || [113, 101, 104, 106].includes(e.type)) ? tm(g, e.side) : '';
@@ -2404,7 +2441,7 @@ function vJugadas(g) {
     const scored = e.d[0] || e.d[1];
     return `<tr><td class="n">${qLabel(e.q)} ${e.clock}</td><td>${team}</td><td>${e.pid ? esc(g.players.get(e.pid).name) : (e.type === 101 || e.type === 104 ? '<span class="faint">Equipo</span>' : '')}</td><td>${esc(A.label(e))}</td><td class="n">${scored ? '<b>' + e.sh + '-' + e.sa + '</b>' : '<span class="faint">' + e.sh + '-' + e.sa + '</span>'}</td><td class="faint">${pe ? `Fin posesión ${esc(g.teams[pe.side].abbr)} · ${endTxt[pe.end]} · ${pe.pts} pts` : ''}</td></tr>`;
   }).join('');
-  return `<section class="panel stack" style="gap:8px">${ctl}</section><section class="panel"><div class="sec-h"><h2>Jugada a jugada</h2><span class="note">${ev.length} acciones${ev.length > 600 ? ' (se muestran las 600 más recientes)' : ''}, de la más reciente a la más antigua</span></div><div class="scroll"><table><thead><tr><th>Tiempo</th><th>Eq.</th><th>Jugador</th><th>Acción</th><th class="n">Marcador</th><th>Posesión</th></tr></thead><tbody>${body}</tbody></table></div></section>`;
+  return `<section class="panel stack" style="gap:8px">${ctl}</section><section class="panel"><div class="sec-h"><h2>Jugada a jugada</h2><span class="note">${ev.length} acciones, de la más reciente a la más antigua</span></div><div class="scroll"><table><thead><tr><th>Tiempo</th><th>Eq.</th><th>Jugador</th><th>Acción</th><th class="n">Marcador</th><th>Posesión</th></tr></thead><tbody>${body}</tbody></table></div>${ev.length > max ? `<div class="row" style="justify-content:center;margin-top:10px"><button class="btn ghost" data-pmore="1">Mostrar ${Math.min(400, ev.length - max)} más (quedan ${ev.length - max})</button></div>` : ''}</section>`;
 }
 
 // ---------- Vista: scouting ----------
@@ -2501,18 +2538,30 @@ function sPartidos(list) {
 }
 
 // ---------- Render ----------
+// Actualizaciones en segundo plano (directo): como mucho un redibujado por fotograma y ninguno con la pestaña oculta
+function scheduleRender() {
+  if (document.hidden) { S.dirty = true; return; }
+  if (S.raf) return;
+  S.raf = requestAnimationFrame(() => { S.raf = 0; render(true); });
+}
 function render(silent) {
   const view = $('#view');
   const ae = document.activeElement;
   if (silent && ae && view.contains(ae) && /INPUT|SELECT|TEXTAREA/.test(ae.tagName)) { S.pendingRender = true; return; }
-  S.pendingRender = false;
+  S.pendingRender = false; S.dirty = false;
+  if (S.raf) { cancelAnimationFrame(S.raf); S.raf = 0; }
+  // Se conserva el desplazamiento lateral de la barra de pestañas y, si la vista es la misma, el de cada tabla
+  const vkey = S.mode + '|' + (S.mode === 'match' ? S.tab : S.stab);
+  const tabsX = (view.querySelector('.tabs') || {}).scrollLeft || 0;
+  const scrollX = S.vkey === vkey ? [...view.querySelectorAll('.scroll')].map(x => x.scrollLeft) : [];
+  S.vkey = vkey;
   CHARTS.length = 0; hideTip();
   $('#m-match').setAttribute('aria-pressed', S.mode === 'match'); $('#m-scout').setAttribute('aria-pressed', S.mode === 'scout');
   $('#loader-match').hidden = S.mode !== 'match'; $('#loader-scout').hidden = S.mode !== 'scout';
   let html = '';
   if (S.mode === 'match') {
     const g = S.g;
-    if (!g) { view.innerHTML = '<div class="panel empty">Carga un partido para empezar.</div>'; return; }
+    if (!g) { view.innerHTML = `<div class="panel empty">${S.waiting ? 'El partido aún no ha empezado: se abrirá solo en cuanto haya jugadas.' : S.booting ? 'Cargando partido…' : 'Carga un partido para empezar.'}</div>`; return; }
     if (!TABS.find(t => t[0] === S.tab)) S.tab = 'resumen';
     const V = { entrenador: vEntrenador, resumen: vResumen, factores: vFactores, jugadores: vJugadores, quintetos: vQuintetos, rotaciones: vRotaciones, dinamica: vDinamica, posesiones: vPosesiones, tiro: vTiro, clutch: vClutch, jugadas: vJugadas }[S.tab];
     html = scoreboard(g) + tabsBar(TABS, S.tab, 'data-tab') + `<div class="stack" style="margin-top:14px">${V(g)}</div>`;
@@ -2524,7 +2573,9 @@ function render(silent) {
     html = `<section class="panel"><div class="sec-h" style="margin:0"><h2><i class="sw t0"></i> ${esc(t.name)}</h2><span class="note">${list.length} partidos · jornadas ${list.map(x => x.round).join(', ')}</span></div></section>` + tabsBar(STABS, S.stab, 'data-stab') + `<div class="stack" style="margin-top:14px">${V(list)}</div>`;
   }
   view.innerHTML = html;
-  document.querySelectorAll('.dl-only').forEach(b => b.hidden = !DL);
+  const tb = view.querySelector('.tabs'); if (tb && tabsX) tb.scrollLeft = tabsX;
+  if (scrollX.some(Boolean)) view.querySelectorAll('.scroll').forEach((x, i) => { if (scrollX[i]) x.scrollLeft = scrollX[i]; });
+  if (DL) view.querySelectorAll('.dl-only').forEach(b => b.hidden = false);
   requestAnimationFrame(drawCharts);
 }
 
@@ -2532,16 +2583,23 @@ function render(silent) {
 document.addEventListener('click', async e => {
   const b = e.target.closest('button'); if (!b) return;
   const d = b.dataset;
-  if (d.tab) { S.tab = d.tab; store.set('tab', S.tab); render(); }
-  else if (d.stab) { S.stab = d.stab; render(); }
+  if (d.tab || d.stab) {
+    const nav = b.closest('.tabs'), stuck = nav && scrollY > 0 && nav.getBoundingClientRect().top <= 1;
+    if (d.tab) { S.tab = d.tab; store.set('tab', S.tab); } else S.stab = d.stab;
+    render();
+    const nv = $('#view .tabs');
+    if (nv) { const sel = nv.querySelector('[aria-selected="true"]'); if (sel) nv.scrollLeft = Math.max(0, Math.min(nv.scrollLeft, sel.offsetLeft - 8), sel.offsetLeft + sel.offsetWidth - nv.clientWidth + 24);
+      if (stuck && nv.previousElementSibling) window.scrollTo(0, nv.previousElementSibling.getBoundingClientRect().bottom + scrollY); }
+  }
   else if (d.filt) { S.filt = d.filt; render(); }
   else if (d.pcols) { S.pcols = d.pcols; render(); }
   else if (d.pergame) { S.perGame = d.pergame === '1'; render(); }
   else if (d.lsize) { S.lineSize = Number(d.lsize); render(); }
   else if (d.lmin != null && d.lmin !== undefined && b.hasAttribute('data-lmin')) { S.lineMin = Number(d.lmin); render(); }
   else if (d.close) { S.closeMode = d.close; render(); }
-  else if (d.pside) { S.pbpSide = d.pside; render(); }
-  else if (d.pkind) { S.pbpKind = d.pkind; render(); }
+  else if (d.pside) { S.pbpSide = d.pside; S.pbpMax = 200; render(); }
+  else if (d.pkind) { S.pbpKind = d.pkind; S.pbpMax = 200; render(); }
+  else if (d.pmore) { S.pbpMax += 400; render(); }
   else if (d.open) { setMode('match'); loadMatch({ comp: S.compet, id: Number(d.open) }); }
   else if (d.skin != null && b.classList.contains('skin-opt')) { applySkin(d.skin); }
   else if (d.compet) { setCompet(d.compet); setPick(true); }
@@ -2597,7 +2655,11 @@ $('#sel-every').value = String(S.every);
 $('#sel-every').onchange = e => { S.every = Number(e.target.value); store.set('every', S.every); setupLive(); };
 $('#in-proxy').value = PROXY || DEFAULT_PROXY;
 $('#b-proxy').onclick = () => { PROXY = $('#in-proxy').value.trim().replace(/\/+$/, ''); store.set('proxy', PROXY); $('#st-match').textContent = 'Dirección del puente BCL guardada.'; };
-document.addEventListener('visibilitychange', () => { if (!document.hidden && S.g && !S.g.finished && S.matchId && S.timer) loadMatch({ comp: S.g.comp, id: S.matchId }, { silent: true }); });
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) return;
+  if (S.dirty) render(true);
+  if (S.g && !S.g.finished && S.matchId && S.timer) loadMatch({ comp: S.g.comp, id: S.matchId }, { silent: true });
+});
 $('#b-scout').onclick = loadScout;
 $('#in-key').value = KEY;
 $('#b-key').onclick = () => { KEY = $('#in-key').value.trim() || DEFAULT_KEY; store.set('key', KEY); S.comp = null; initRounds(); $('#st-match').textContent = 'Clave guardada.'; };
@@ -2653,11 +2715,20 @@ applySkin(store.get('skin', ''));
   const h = (location.hash || '').replace('#', '');
   let link = /^(acb|bcl|lu)-\d{5,8}$/.test(h) ? parseLink(h) : /^\d{5,7}$/.test(h) ? { comp: 'acb', id: +h } : null;
   if (!link) { const l = store.get('last', null); link = l == null ? null : typeof l === 'number' ? { comp: 'acb', id: l } : parseLink(String(l)); }
-  loadSample();
   if (link && link.comp !== S.compet) { S.compet = link.comp; store.set('compet', link.comp); document.querySelectorAll('[data-compet]').forEach(b => b.setAttribute('aria-pressed', b.dataset.compet === S.compet)); }
   initRounds();
-  if (link) loadMatch(link);
+  if (!link) { loadSample(); return; }
+  S.booting = true; render();
+  await loadMatch(link);
+  S.booting = false;
+  if (!S.g && S.waiting) render();
+  else if (!S.g) { const st = $('#st-match'), msg = st.textContent, cls = st.className; loadSample(); if (cls.includes('err')) { st.textContent = msg; st.className = cls; } }
 })();
+// Cambiar el #partido de la dirección abre ese partido
+addEventListener('hashchange', () => {
+  const l = parseLink(location.hash.replace('#', ''));
+  if (l && /^(acb|bcl|lu)-\d{5,8}$/.test(location.hash.slice(1)) && !(S.g && !S.sample && S.g.comp === l.comp && S.matchId === l.id)) { setMode('match'); loadMatch(l); }
+});
 })();
 </script>
 
