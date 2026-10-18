@@ -293,9 +293,6 @@
     const P = new Map();
     const get = pid => { let b = P.get(pid); if (!b) { b = newBox(); P.set(pid, b); } return b; };
     for (const e of g.events) if (f(e)) for (const [, pid, st, v] of e.c) if (pid) get(pid)[st] += v;
-    for (const st of g.stints) {
-      // segundos dentro del filtro: usamos las franjas
-    }
     return P;
   }
   // Tallies por quinteto: {side, key, for:Box, against:Box}
@@ -549,6 +546,6 @@
   root.ACB = {
     C, LABEL, TOV_TAG, START_LABEL, label, parseGame, teamBoxes, playerBoxes, lineupTallies, combos,
     teamMetrics, playerAdvanced, playerRaw, mergeRaw, playerMetrics, runs, bestStretch, timeouts, possessionProfile, validate, wpHome,
-    newBox, addBox, pir, gmsc, sideOf, elapsed, periodStart, periodLen
+    newBox, addBox, pir, gmsc, sideOf, elapsed, periodStart, periodLen, isPF: t => PF.has(t)
   };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

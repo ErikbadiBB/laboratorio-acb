@@ -20,7 +20,7 @@ Usuario: Erik (Bilbao Basket). Responde siempre en castellano.
 | `site/` | **Lo que se publica**: `index.html` (generado), `manifest.webmanifest`, iconos, `api/bcl.js`. |
 | `site/api/bcl.js` | Puente BCL (función Edge de Vercel). Se edita directamente aquí. |
 | `.github/workflows/pages.yml` | Al hacer push a `main`: ejecuta `node build.js` y publica `site/` en GitHub Pages. |
-| `test/` | Pruebas con datos reales (`m105375.json` ACB, `bcl136295.json` BCL). |
+| `test/` | Pruebas con datos reales (`m105375.json` ACB, `bcl136295.json` BCL) y Liga U sintética (`lu.js`). `browser.js` arranca Chromium para las pruebas con navegador (usa `CHROMIUM_PATH` o `/opt/pw-browsers/chromium` si falta el de Playwright). |
 
 No editar `site/index.html` a mano: se regenera con `npm run build`.
 
@@ -31,6 +31,7 @@ npm install          # jsdom + playwright (para las pruebas)
 npm run build        # genera site/index.html y dist/statslab.html
 npm test             # motor ACB, BCL, interfaz sin navegador, directo (BCL y Liga U)
 npm run test:visual  # capturas con Playwright (desbordes en 1200/800/400 px, mapa de tiro)
+npm run test:perf    # tiempos de cada pestaña, ordenar/filtrar y scouting (referencia: ~160 ms todas las pestañas)
 ```
 
 Antes de publicar: `npm run build && npm test` sin errores (las pruebas imprimen `ERRORS []`).
@@ -75,4 +76,6 @@ Todas son públicas (las mismas que usan las webs oficiales). Las claves están 
 
 - HTML autónomo y ligero en dependencias; sin frameworks ni paso de compilación aparte de `build.js`.
 - Textos de la interfaz en castellano.
+- Tablas que aparecen en Dinámica y en Entrenador comparten columnas (`runCols`, `timeoutCols`, `swingCols`, `assistNet`): cambiar ahí, no copiar.
+- Qué cuenta como falta personal lo decide el motor (`ACB.isPF`), validado contra el acta.
 - Al añadir una competición: escribir un adaptador al formato compacto FIBA y reutilizar `fibaToRaw`; validar con `ACB.validate()` contra el acta (debe cuadrar en puntos y minutos).

@@ -1,7 +1,7 @@
-const { chromium } = require('playwright');
+const launch = require('./browser');
 const fx = require('./bcl136295.json');
 (async () => {
-  const b = await chromium.launch(); const p = await b.newPage();
+  const b = await launch(); const p = await b.newPage();
   await p.route('**/*', r => { const u = r.request().url(); if (u.includes('/api/bcl')) { const { box, ...rest } = fx; return r.fulfill({ json: Object.assign(rest, { finished: true }), headers: { 'access-control-allow-origin': '*' } }); } if (u.startsWith('file:')) return r.continue(); return r.abort(); });
   for (const [w, h] of [[1200, 900], [800, 900], [400, 900]]) {
     await p.setViewportSize({ width: w, height: h });

@@ -1,7 +1,7 @@
-const { chromium } = require('playwright');
+const launch = require('./browser');
 const fx = require('./bcl136295.json');
 (async () => {
-  const b = await chromium.launch();
+  const b = await launch();
   const p = await b.newPage({ viewport: { width: 1200, height: 1500 } });
   const boxObjs = fx.box.map(r => ({ player: { playerId: r[0] }, team: { organisationId: r[1] }, isStarter: !!r[2], playDurationInSeconds: r[3], points: r[4], twoPointsMade: r[5], twoPointsAttempted: r[6], threePointsMade: r[7], threePointsAttempted: r[8], freeThrowsMade: r[9], freeThrowsAttempted: r[10], offensiveRebounds: r[11], defensiveRebounds: r[12], assists: r[13], steals: r[14], turnovers: r[15], blockedShots: r[16], personalFouls: r[17], plusMinus: r[18] }));
   await p.route('**/*', route => {

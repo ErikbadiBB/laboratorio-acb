@@ -632,9 +632,6 @@ td.wrap { white-space: normal; min-width: 180px }
     const P = new Map();
     const get = pid => { let b = P.get(pid); if (!b) { b = newBox(); P.set(pid, b); } return b; };
     for (const e of g.events) if (f(e)) for (const [, pid, st, v] of e.c) if (pid) get(pid)[st] += v;
-    for (const st of g.stints) {
-      // segundos dentro del filtro: usamos las franjas
-    }
     return P;
   }
   // Tallies por quinteto: {side, key, for:Box, against:Box}
@@ -888,7 +885,7 @@ td.wrap { white-space: normal; min-width: 180px }
   root.ACB = {
     C, LABEL, TOV_TAG, START_LABEL, label, parseGame, teamBoxes, playerBoxes, lineupTallies, combos,
     teamMetrics, playerAdvanced, playerRaw, mergeRaw, playerMetrics, runs, bestStretch, timeouts, possessionProfile, validate, wpHome,
-    newBox, addBox, pir, gmsc, sideOf, elapsed, periodStart, periodLen
+    newBox, addBox, pir, gmsc, sideOf, elapsed, periodStart, periodLen, isPF: t => PF.has(t)
   };
 })(typeof globalThis !== 'undefined' ? globalThis : this);
 
@@ -1198,6 +1195,8 @@ function clockAt(t) {
 const short = n => { const p = String(n || '').split(' '); return p.length > 1 ? p.slice(1).join(' ') : n; };
 const tm = (g, s) => `<span class="tm t${s}">${esc(g.teams[s].abbr)}</span>`;
 const div0 = (a, b) => b ? a / b : null;
+const TEAM_T = new Set([113, 101, 104, 106]); // tiempo muerto, rebotes y pérdida de equipo
+const teamEv = e => e.pid || TEAM_T.has(e.type);
 const tOf = x => x.t != null ? x.t : x.t1 != null ? x.t1 : x.endT;
 const remIn = x => A.periodStart(x.q) + A.periodLen(x.q) - tOf(x);
 
@@ -2066,10 +2065,9 @@ function courtNow(g) {
   const last = g.events[g.events.length - 1];
   const q = last ? last.q : 1;
   const half = q <= 2 ? [1, 2] : q <= 4 ? [3, 4] : [q];
-  const isPF = t => t === 109 || (t >= 159 && t <= 174) || (t >= 537 && t <= 539) || (t >= 548 && t <= 551) || (t >= 750 && t <= 787);
   const out = [0, 1].map(s => {
     const on = last ? (last.linAfter[s] ? last.linAfter[s].split(',').map(Number) : []) : [];
-    const teamFouls = g.events.filter(e => e.q === q && e.side === s && e.pid && isPF(e.type)).length;
+    const teamFouls = g.events.filter(e => e.q === q && e.side === s && e.pid && A.isPF(e.type)).length;
     const tos = g.events.filter(e => e.type === 113 && e.side === s && half.includes(e.q)).length;
     return { on, teamFouls, tos, q };
   });
@@ -2099,15 +2097,14 @@ function bFouls(g, sides) {
   return sides.map(s => {
     const rows = adv.filter(p => p.side === s && (p.box.pf > 0 || p.min > 0)).sort((a, b) => b.box.pf - a.box.pf || b.min - a.min);
     const per = g.periods;
-    const isPF = t => t === 109 || (t >= 159 && t <= 174) || (t >= 537 && t <= 539) || (t >= 548 && t <= 551) || (t >= 750 && t <= 787);
-    const byQ = pid => per.map(q => g.events.filter(e => e.pid === pid && e.q === q && isPF(e.type)).length);
+    const byQ = pid => per.map(q => g.events.filter(e => e.pid === pid && e.q === q && A.isPF(e.type)).length);
     return `<section class="panel"><div class="sec-h"><h2>${tm(g, s)} Faltas por jugador</h2></div><div class="scroll"><table><thead><tr><th>Jugador</th>${per.map(q => `<th class="n">${qLabel(q)}</th>`).join('')}<th class="n">Total</th><th class="n">Recibidas</th></tr></thead><tbody>
       ${rows.map(p => { const b = byQ(p.pid); return `<tr><td>${esc(p.name)}</td>${b.map(x => `<td class="n">${x || '<span class="faint">·</span>'}</td>`).join('')}<td class="n"><b class="${p.box.pf >= 4 ? 'neg' : p.box.pf >= 3 ? 'warnc' : ''}">${p.box.pf}</b></td><td class="n">${p.box.fd}</td></tr>`; }).join('')}</tbody></table></div></section>`;
   }).join('');
 }
 function bLastPlays(g, sides, n = 12) {
   const ev = g.events.filter(e => e.type !== 600 && e.type !== 599 && e.type !== 112 && e.type !== 115 && (sides.length === 2 || e.side === sides[0] || !e.pid)).slice(-n).reverse();
-  return `<section class="panel"><div class="sec-h"><h2>Últimas jugadas</h2></div><div class="scroll"><table><tbody>${ev.map(e => `<tr><td class="n">${qLabel(e.q)} ${e.clock}</td><td>${e.pid || [113, 101, 104, 106].includes(e.type) ? tm(g, e.side) : ''}</td><td>${e.pid ? esc(short(g.players.get(e.pid).name)) : ''}</td><td>${esc(A.label(e))}</td><td class="n">${e.d[0] || e.d[1] ? '<b>' + e.sh + '-' + e.sa + '</b>' : '<span class="faint">' + e.sh + '-' + e.sa + '</span>'}</td></tr>`).join('')}</tbody></table></div></section>`;
+  return `<section class="panel"><div class="sec-h"><h2>Últimas jugadas</h2></div><div class="scroll"><table><tbody>${ev.map(e => `<tr><td class="n">${qLabel(e.q)} ${e.clock}</td><td>${teamEv(e) ? tm(g, e.side) : ''}</td><td>${e.pid ? esc(short(g.players.get(e.pid).name)) : ''}</td><td>${esc(A.label(e))}</td><td class="n">${e.d[0] || e.d[1] ? '<b>' + e.sh + '-' + e.sa + '</b>' : '<span class="faint">' + e.sh + '-' + e.sa + '</span>'}</td></tr>`).join('')}</tbody></table></div></section>`;
 }
 
 // ---------- Mapa de tiro (BCL: coordenadas FIBA) ----------
@@ -2253,33 +2250,47 @@ function coachEditor(cfg) {
 function saveCoach(cfg) { store.set('coach', cfg); delete S.g._ctx; render(); }
 
 // Tablas reutilizadas (Dinámica y Entrenador)
-function runsTable(g) {
-  const rr = A.runs(g, 7);
-  const cols = [{ k: 'side', label: 'Equipo', f: r => tm(g, r.side), v: r => g.teams[r.side].abbr }, { k: 'pts', label: 'Parcial', num: true, f: r => r.pts + '-0' },
+// Columnas compartidas por Dinámica (completa) y Entrenador (compacta)
+const ppp = a => div0(a[0], a[1]);
+// Efecto de un tiempo muerto: (PPP propio − PPP rival) en las posesiones de después menos en las de antes
+const toEffect = r => { const a = ppp(r.afterO), b = ppp(r.afterD), c = ppp(r.beforeO), d = ppp(r.beforeD); return a == null || b == null || c == null || d == null ? null : (a - b) - (c - d); };
+function runCols(g, full) {
+  const pn = pid => short(g.players.get(pid).name);
+  return [{ k: 'side', label: 'Equipo', f: r => tm(g, r.side), v: r => g.teams[r.side].abbr }, { k: 'pts', label: 'Parcial', num: true, f: r => r.pts + '-0' },
     { k: 't0', label: 'Desde', num: true, f: r => clockAt(r.t0) }, { k: 't1', label: 'Hasta', num: true, f: r => clockAt(r.t1) },
+    full && { k: 'dur', label: 'Duración', num: true, v: r => r.t1 - r.t0, f: r => mmss(r.t1 - r.t0) },
     { k: 'score', label: 'Marcador', num: true, v: r => r.endScore[0] - r.endScore[1], f: r => `${r.startScore[0]}-${r.startScore[1]} → ${r.endScore[0]}-${r.endScore[1]}` },
-    { k: 'to', label: 'Tiempo muerto rival', v: r => r.timeouts.length ? r.timeouts.join(', ') + ` (después: ${r.afterTO}-0)` : 'No' }];
-  return tbl('crun', cols, rr, { sort: { k: 't0', d: -1 }, empty: 'No hay parciales de 7-0 o más.' });
+    full && { k: 'who', label: 'Anotadores', cls: 'wrap', v: r => [...new Set(r.list.filter(x => x.pid).map(x => pn(x.pid)))].join(', ') },
+    { k: 'to', label: 'Tiempo muerto rival', v: r => r.timeouts.length ? r.timeouts.join(', ') + ` (después: ${r.afterTO}-0)` : 'No' },
+    full && { k: 'brk', label: 'Lo cortó', cls: 'wrap', v: r => r.breaker ? (r.breaker.pid ? pn(r.breaker.pid) + ' · ' + A.label(r.breaker) : A.label(r.breaker)) : (g.finished ? 'Final del partido' : 'Sigue abierto') }
+  ].filter(Boolean);
 }
-function timeoutTable(g) {
-  const to = A.timeouts(g, 4);
-  const ppp = a => div0(a[0], a[1]);
-  const cols = [{ k: 'side', label: 'Pide', f: r => tm(g, r.side), v: r => g.teams[r.side].abbr }, { k: 'when', label: 'Momento', num: true, v: r => r.e.t, f: r => qLabel(r.q) + ' ' + r.clock },
-    { k: 'p2', label: '2 min antes', num: true, v: r => r.prev2[0] - r.prev2[1], f: r => `${r.prev2[0]}-${r.prev2[1]}` },
-    { k: 'n2', label: '2 min después', num: true, v: r => r.next2[0] - r.next2[1], f: r => `${r.next2[0]}-${r.next2[1]}` },
-    { k: 'eff', label: 'Efecto neto (PPP)', num: true, v: r => { const a = ppp(r.afterO), b = ppp(r.afterD), c = ppp(r.beforeO), d = ppp(r.beforeD); return a == null || b == null || c == null || d == null ? null : (a - b) - (c - d); }, f: r => { const a = ppp(r.afterO), b = ppp(r.afterD), c = ppp(r.beforeO), d = ppp(r.beforeD); return sgc(a == null || b == null || c == null || d == null ? null : (a - b) - (c - d), 2); } }];
-  return tbl('cto', cols, to, { sort: { k: 'when', d: -1 }, empty: 'Sin tiempos muertos todavía.' });
+function timeoutCols(g, full) {
+  const P = (k, label, a, title) => ({ k, label, title, num: true, v: r => ppp(r[a]), f: r => nf(ppp(r[a]), 2) });
+  return [{ k: 'side', label: 'Pide', f: r => tm(g, r.side), v: r => g.teams[r.side].abbr }, { k: 'when', label: 'Momento', num: true, v: r => r.e.t, f: r => qLabel(r.q) + ' ' + r.clock },
+    full && { k: 'sc', label: 'Marcador', num: true, v: r => r.score[0] - r.score[1], f: r => r.score[0] + '-' + r.score[1] },
+    { k: 'p2', label: full ? 'Parcial 2 min antes' : '2 min antes', num: true, v: r => r.prev2[0] - r.prev2[1], f: r => `${r.prev2[0]}-${r.prev2[1]}` },
+    { k: 'n2', label: full ? 'Parcial 2 min después' : '2 min después', num: true, v: r => r.next2[0] - r.next2[1], f: r => `${r.next2[0]}-${r.next2[1]}` },
+    ...(full ? [P('bo', 'PPP ataque antes', 'beforeO', 'Puntos por posesión en las 4 posesiones previas'), P('ao', 'PPP ataque después', 'afterO', 'Puntos por posesión en las 4 siguientes'),
+      P('bd', 'PPP rival antes', 'beforeD'), P('ad', 'PPP rival después', 'afterD')] : []),
+    { k: 'eff', label: full ? 'Efecto neto' : 'Efecto neto (PPP)', num: true, title: full ? '(PPP propio − PPP rival) después menos antes' : undefined, v: toEffect, f: r => sgc(toEffect(r), 2) }
+  ].filter(Boolean);
 }
-function swingTable(g) {
-  const sw = g.swings.map(s => ({ s, t: s.e.t }));
-  const cols = [{ k: 't', label: 'Momento', num: true, f: r => clockAt(r.t) }, { k: 'tm', label: 'Equipo', f: r => tm(g, r.s.side), v: r => g.teams[r.s.side].abbr },
+function swingCols(g, full) {
+  return [{ k: 't', label: 'Momento', num: true, f: r => clockAt(r.t) }, { k: 'tm', label: 'Equipo', f: r => tm(g, r.s.side), v: r => g.teams[r.s.side].abbr },
     { k: 'who', label: 'Jugada', cls: 'wrap', v: r => (r.s.e.pid ? g.players.get(r.s.e.pid).name + ' · ' : '') + A.label(r.s.e) },
-    { k: 'dwp', label: 'Δ prob. victoria', num: true, v: r => Math.abs(r.s.dwp), f: r => sgc(100 * (r.s.side === 0 ? r.s.dwp : -r.s.dwp), 1) + '<span class="faint">%</span>' }];
-  return tbl('csw', cols, sw.slice(0, 8), { sort: { k: 'dwp', d: -1 } });
+    full && { k: 'sc', label: 'Marcador', num: true, v: r => r.s.e.sh - r.s.e.sa, f: r => r.s.e.sh + '-' + r.s.e.sa },
+    { k: 'dwp', label: 'Δ prob. victoria', num: true, v: r => Math.abs(r.s.dwp), f: r => sgc(100 * (r.s.side === 0 ? r.s.dwp : -r.s.dwp), 1) + '<span class="faint">%</span>' }
+  ].filter(Boolean);
 }
-function assistNet(g, s) {
-  const as = g.assists.filter(a => a.side === s);
-  if (!as.length) return '<p class="empty">Sin asistencias todavía.</p>';
+const swingRows = g => g.swings.map(s => ({ s, t: s.e.t }));
+function runsTable(g) { return tbl('crun', runCols(g, false), A.runs(g, 7), { sort: { k: 't0', d: -1 }, empty: 'No hay parciales de 7-0 o más.' }); }
+function timeoutTable(g) { return tbl('cto', timeoutCols(g, false), A.timeouts(g, 4), { sort: { k: 'when', d: -1 }, empty: 'Sin tiempos muertos todavía.' }); }
+function swingTable(g) { return tbl('csw', swingCols(g, false), swingRows(g).slice(0, 8), { sort: { k: 'dwp', d: -1 } }); }
+// Red de asistencias: quién pasa (filas) a quién (columnas)
+function assistNet(g, s, f, empty) {
+  const as = g.assists.filter(a => a.side === s && (!f || f(a)));
+  if (!as.length) return `<p class="empty">${empty || 'Sin asistencias todavía.'}</p>`;
   const passers = [...new Set(as.map(a => a.from))], scorers = [...new Set(as.map(a => a.to))];
   const cnt = (a, b) => as.filter(x => x.from === a && x.to === b).length;
   const max = Math.max(1, ...passers.flatMap(a => scorers.map(b => cnt(a, b))));
@@ -2317,7 +2328,7 @@ function vJugadores(g) {
   const out = [0, 1].map(s => {
     const rows = adv.filter(p => p.side === s && (p.min > 0 || p.box.pts));
     const foot = Object.assign({ name: 'Equipo', min: tb[s].sec * 5 / 60, box: Object.assign({}, tb[s]), pm: tb[s].pts - tb[1 - s].pts, gp: 0 }, A.teamMetrics(tb[s], tb[1 - s]));
-    foot.pir = A.pir(tb[s]); foot.gmsc = A.gmsc(tb[s]); foot.usg = 1; foot.astdp = div0(tb[s].astd, tb[s].fgm); foot.astp = foot.astp;
+    foot.pir = A.pir(tb[s]); foot.gmsc = A.gmsc(tb[s]); foot.usg = 1; foot.astdp = div0(tb[s].astd, tb[s].fgm);
     foot.onOrtg = foot.ortg; foot.onDrtg = foot.drtg; foot.onNet = foot.net; foot.offNet = null; foot.onOff = null; foot.possOn = tb[s].poss; foot.created = NaN; foot.wpa = NaN;
     foot.tovp = div0(tb[s].tov, tb[s].fga + .44 * tb[s].fta + tb[s].tov); foot.orbp = div0(tb[s].orb, tb[s].orb + tb[1 - s].drb); foot.drbp = div0(tb[s].drb, tb[s].drb + tb[1 - s].orb); foot.stlp = div0(tb[s].stl, tb[1 - s].poss); foot.blkp = div0(tb[s].blk, tb[1 - s].fg2a);
     return `<section class="panel"><div class="sec-h"><h2>${tm(g, s)} ${esc(g.teams[s].name)}</h2></div>${tbl('pl' + s + S.pcols, playerCols(S.pcols, g), rows, { sort: { k: 'min', d: -1 }, footRow: foot })}</section>`;
@@ -2353,39 +2364,15 @@ function vRotaciones(g) {
 }
 function vDinamica(g) {
   const names = g.teams.map(t => esc(t.abbr));
-  const rr = A.runs(g, 7);
-  const runCols = [{ k: 'side', label: 'Equipo', f: r => tm(g, r.side), v: r => g.teams[r.side].abbr },
-    { k: 'pts', label: 'Parcial', num: true, f: r => r.pts + '-0' },
-    { k: 't0', label: 'Desde', num: true, f: r => clockAt(r.t0) }, { k: 't1', label: 'Hasta', num: true, f: r => clockAt(r.t1) },
-    { k: 'dur', label: 'Duración', num: true, v: r => r.t1 - r.t0, f: r => mmss(r.t1 - r.t0) },
-    { k: 'score', label: 'Marcador', num: true, v: r => r.endScore[0] - r.endScore[1], f: r => `${r.startScore[0]}-${r.startScore[1]} → ${r.endScore[0]}-${r.endScore[1]}` },
-    { k: 'who', label: 'Anotadores', cls: 'wrap', v: r => [...new Set(r.list.filter(x => x.pid).map(x => short(g.players.get(x.pid).name)))].join(', ') },
-    { k: 'to', label: 'Tiempo muerto rival', v: r => r.timeouts.length ? r.timeouts.join(', ') + ` (después: ${r.afterTO}-0)` : 'No' },
-    { k: 'brk', label: 'Lo cortó', cls: 'wrap', v: r => r.breaker ? (r.breaker.pid ? short(g.players.get(r.breaker.pid).name) + ' · ' + A.label(r.breaker) : A.label(r.breaker)) : (g.finished ? 'Final del partido' : 'Sigue abierto') }];
   const bs = A.bestStretch(g, 300);
-  const to = A.timeouts(g, 4);
-  const toCols = [{ k: 'side', label: 'Pide', f: r => tm(g, r.side), v: r => g.teams[r.side].abbr }, { k: 'when', label: 'Momento', num: true, v: r => r.e.t, f: r => qLabel(r.q) + ' ' + r.clock },
-    { k: 'sc', label: 'Marcador', num: true, v: r => r.score[0] - r.score[1], f: r => r.score[0] + '-' + r.score[1] },
-    { k: 'p2', label: 'Parcial 2 min antes', num: true, v: r => r.prev2[0] - r.prev2[1], f: r => `${r.prev2[0]}-${r.prev2[1]}` },
-    { k: 'n2', label: 'Parcial 2 min después', num: true, v: r => r.next2[0] - r.next2[1], f: r => `${r.next2[0]}-${r.next2[1]}` },
-    { k: 'bo', label: 'PPP ataque antes', num: true, title: 'Puntos por posesión en las 4 posesiones previas', v: r => div0(r.beforeO[0], r.beforeO[1]), f: r => nf(div0(r.beforeO[0], r.beforeO[1]), 2) },
-    { k: 'ao', label: 'PPP ataque después', num: true, title: 'Puntos por posesión en las 4 siguientes', v: r => div0(r.afterO[0], r.afterO[1]), f: r => nf(div0(r.afterO[0], r.afterO[1]), 2) },
-    { k: 'bd', label: 'PPP rival antes', num: true, v: r => div0(r.beforeD[0], r.beforeD[1]), f: r => nf(div0(r.beforeD[0], r.beforeD[1]), 2) },
-    { k: 'ad', label: 'PPP rival después', num: true, v: r => div0(r.afterD[0], r.afterD[1]), f: r => nf(div0(r.afterD[0], r.afterD[1]), 2) },
-    { k: 'eff', label: 'Efecto neto', num: true, title: '(PPP propio − PPP rival) después menos antes', v: r => { const a = div0(r.afterO[0], r.afterO[1]), b = div0(r.afterD[0], r.afterD[1]), c = div0(r.beforeO[0], r.beforeO[1]), d = div0(r.beforeD[0], r.beforeD[1]); return (a == null || b == null || c == null || d == null) ? null : (a - b) - (c - d); }, f: r => { const v = toCols[9].v(r); return sgc(v, 2); } }];
-  const sw = g.swings.map(s => ({ s, t: s.e.t }));
-  const swCols = [{ k: 't', label: 'Momento', num: true, f: r => clockAt(r.t) }, { k: 'tm', label: 'Equipo', f: r => tm(g, r.s.side), v: r => g.teams[r.s.side].abbr },
-    { k: 'who', label: 'Jugada', cls: 'wrap', v: r => (r.s.e.pid ? g.players.get(r.s.e.pid).name + ' · ' : '') + A.label(r.s.e) },
-    { k: 'sc', label: 'Marcador', num: true, v: r => r.s.e.sh - r.s.e.sa, f: r => r.s.e.sh + '-' + r.s.e.sa },
-    { k: 'dwp', label: 'Δ prob. victoria', num: true, v: r => Math.abs(r.s.dwp), f: r => sgc(100 * (r.s.side === 0 ? r.s.dwp : -r.s.dwp), 1) + '<span class="faint">%</span>' }];
   return `<section class="panel"><div class="sec-h"><h2>Evolución del marcador</h2></div>${chart(el => drawFlow(el, g), 230)}</section>
     <section class="panel"><div class="sec-h"><h2>Probabilidad de victoria</h2><span class="note">Modelo simple: diferencia y tiempo restante, con ventaja de campo de 2,5 puntos</span></div>${chart(el => drawWP(el, g), 190)}</section>
     <div class="grid2">
       <section class="panel"><div class="sec-h"><h2>Mejores 5 minutos</h2></div><div class="kv">${[0, 1].map(s => bs[s] ? `<div><b>${sg(bs[s].net)}</b><span>${names[s]}: ${bs[s].f}-${bs[s].a} entre ${clockAt(bs[s].t0)} y ${clockAt(bs[s].t1)}</span></div>` : '').join('')}</div></section>
-      <section class="panel"><div class="sec-h"><h2>Jugadas de mayor impacto</h2></div>${tbl('sw', swCols, sw, { sort: { k: 'dwp', d: -1 } })}</section>
+      <section class="panel"><div class="sec-h"><h2>Jugadas de mayor impacto</h2></div>${tbl('sw', swingCols(g, true), swingRows(g), { sort: { k: 'dwp', d: -1 } })}</section>
     </div>
-    <section class="panel"><div class="sec-h"><h2>Parciales sin respuesta (7 o más puntos)</h2></div>${tbl('runs', runCols, rr, { sort: { k: 't0', d: 1 }, empty: 'No hubo parciales de 7-0 o más.' })}</section>
-    <section class="panel"><div class="sec-h"><h2>Efecto de los tiempos muertos</h2><span class="note">4 posesiones antes frente a 4 después, y parciales de 2 minutos</span></div>${tbl('tos', toCols, to, { sort: { k: 'when', d: 1 }, empty: 'Sin tiempos muertos registrados.' })}</section>`;
+    <section class="panel"><div class="sec-h"><h2>Parciales sin respuesta (7 o más puntos)</h2></div>${tbl('runs', runCols(g, true), A.runs(g, 7), { sort: { k: 't0', d: 1 }, empty: 'No hubo parciales de 7-0 o más.' })}</section>
+    <section class="panel"><div class="sec-h"><h2>Efecto de los tiempos muertos</h2><span class="note">4 posesiones antes frente a 4 después, y parciales de 2 minutos</span></div>${tbl('tos', timeoutCols(g, true), A.timeouts(g, 4), { sort: { k: 'when', d: 1 }, empty: 'Sin tiempos muertos registrados.' })}</section>`;
 }
 function vPosesiones(g) {
   const f = filterFn(S.filt);
@@ -2398,38 +2385,25 @@ function vPosesiones(g) {
   const tb = A.teamBoxes(g, f);
   const shot = [0, 1].map(s => { const b = tb[s]; return { s, team: g.teams[s].abbr, t2: b.fg2m + '/' + b.fg2a, p2: div0(b.fg2m, b.fg2a), t3: b.fg3m + '/' + b.fg3a, p3: div0(b.fg3m, b.fg3a), tl: b.ftm + '/' + b.fta, ptl: div0(b.ftm, b.fta), dunk: b.dunk, r3: div0(b.fg3a, b.fga), ftr: div0(b.fta, b.fga), astd: div0(b.astd, b.fgm), pts2: 2 * b.fg2m, pts3: 3 * b.fg3m, ptsft: b.ftm }; });
   const shotCols = [{ k: 'team', label: 'Equipo', f: r => tm(g, r.s) }, { k: 'p2', label: 'T2', num: true, f: r => r.t2 + ' · ' + pct(r.p2, 0), t: r => r.t2 }, { k: 'p3', label: 'T3', num: true, f: r => r.t3 + ' · ' + pct(r.p3, 0), t: r => r.t3 }, { k: 'ptl', label: 'TL', num: true, f: r => r.tl + ' · ' + pct(r.ptl, 0), t: r => r.tl }, { k: 'dunk', label: 'Mates', num: true, f: r => r.dunk }, { k: 'r3', label: '% tiros de 3', num: true, f: r => pct(r.r3) }, { k: 'ftr', label: 'TLI/TCI', num: true, f: r => nf(r.ftr, 2) }, { k: 'astd', label: '% canastas asistidas', num: true, f: r => pct(r.astd) }, { k: 'mix', label: 'Puntos 2 / 3 / TL', num: true, v: r => r.pts2, f: r => `${r.pts2} / ${r.pts3} / ${r.ptsft}` }];
-  // Red de asistencias
-  const net = [0, 1].map(s => {
-    const as = g.assists.filter(a => a.side === s && (!f || f(a)));
-    const passers = [...new Set(as.map(a => a.from))], scorers = [...new Set(as.map(a => a.to))];
-    if (!as.length) return '<p class="empty">Sin asistencias en este tramo.</p>';
-    const cnt = (a, b) => as.filter(x => x.from === a && x.to === b).length;
-    const max = Math.max(1, ...passers.flatMap(a => scorers.map(b => cnt(a, b))));
-    passers.sort((a, b) => as.filter(x => x.from === b).length - as.filter(x => x.from === a).length);
-    scorers.sort((a, b) => as.filter(x => x.to === b).length - as.filter(x => x.to === a).length);
-    const nm = pid => esc(short(g.players.get(pid).name));
-    return `<div class="scroll"><table><thead><tr><th>Pasa ↓ / Anota →</th>${scorers.map(b => `<th class="n">${nm(b)}</th>`).join('')}<th class="n">Total</th><th class="n">Pts gen.</th></tr></thead><tbody>${passers.map(a => `<tr><td>${nm(a)}</td>${scorers.map(b => { const c = cnt(a, b); return `<td class="n" style="background:color-mix(in srgb, var(--${s ? 'away' : 'home'}) ${Math.round(70 * c / max)}%, transparent)">${c || ''}</td>`; }).join('')}<td class="n"><b>${as.filter(x => x.from === a).length}</b></td><td class="n">${as.filter(x => x.from === a).reduce((t, x) => t + x.pts, 0)}</td></tr>`).join('')}</tbody></table></div>`;
-  });
   return `<section class="panel stack" style="gap:8px">${filterBar(g)}</section>
     <div class="grid2">${[0, 1].map(s => `<section class="panel"><div class="sec-h"><h2>${tm(g, s)} ${esc(g.teams[s].name)}</h2><span class="note">${P[s].tot} posesiones</span></div>${profileKV(P[s])}</section>`).join('')}</div>
     <section class="panel"><div class="sec-h"><h2>Eficiencia según cómo empieza la posesión</h2><span class="note">PPP: puntos por posesión. Transición: primera acción en 8 s o menos tras robo o rebote</span></div>${profileTable('pst', P[0], P[1], names)}</section>
     <div class="grid2"><section class="panel"><div class="sec-h"><h2>Duración de las posesiones</h2></div><div class="legend"><span><i class="sw t0"></i>${names[0]}</span><span><i class="sw t1"></i>${names[1]}</span></div>${chart(el => drawHist(el, P[0], P[1], names), 180)}</section>
     <section class="panel"><div class="sec-h"><h2>Cómo terminan</h2></div>${tbl('pend', endCols, endRows)}</section></div>
     <section class="panel"><div class="sec-h"><h2>Perfil de tiro</h2><span class="note">El acta no incluye coordenadas de tiro: no hay mapa por zonas</span></div>${tbl('shot', shotCols, shot)}</section>
-    <div class="grid2">${[0, 1].map(s => `<section class="panel"><div class="sec-h"><h2>Red de asistencias · ${tm(g, s)}</h2></div>${net[s]}</section>`).join('')}</div>`;
+    <div class="grid2">${[0, 1].map(s => `<section class="panel"><div class="sec-h"><h2>Red de asistencias · ${tm(g, s)}</h2></div>${assistNet(g, s, f, 'Sin asistencias en este tramo.')}</section>`).join('')}</div>`;
 }
 function vClutch(g) {
   const modes = [['clutch', 'Clutch (≤5 pts, últimos 5 min)'], ['last5', 'Últimos 5 minutos'], ['last2', 'Últimos 2 minutos']];
   const lastQ = Math.max(4, ...g.periods);
   const f = S.closeMode === 'clutch' ? (x => x.clutch) : S.closeMode === 'last5' ? (x => x.q >= 4 && remIn(x) <= 300) : (x => x.q === lastQ && remIn(x) <= 120);
   const ctl = `<div class="filters"><span class="lbl">Tramo</span>${modes.map(([k, l]) => `<button class="chipbtn" data-close="${k}" aria-pressed="${S.closeMode === k}">${l}</button>`).join('')}</div>`;
-  const ff = f;
-  const tb = A.teamBoxes(g, ff);
+  const tb = A.teamBoxes(g, f);
   if (!tb[0].sec && !tb[0].poss) return `<section class="panel stack" style="gap:8px">${ctl}<p class="empty">No hubo minutos de este tipo en el partido${S.closeMode === 'clutch' ? ' (nunca estuvo a 5 puntos o menos en los últimos 5 minutos)' : ''}.</p></section>`;
   const m = [A.teamMetrics(tb[0], tb[1]), A.teamMetrics(tb[1], tb[0])];
   const names = g.teams.map(t => esc(t.abbr));
-  const adv = A.playerAdvanced(g, ff).filter(p => p.min > 0 || p.box.pts);
-  const L = A.lineupTallies(g, ff);
+  const adv = A.playerAdvanced(g, f).filter(p => p.min > 0 || p.box.pts);
+  const L = A.lineupTallies(g, f);
   const rows = [{ k: 'pts', label: 'Puntos', better: 1, fmt: v => v }, { k: 'poss', label: 'Posesiones', better: 0, fmt: v => v }, { k: 'ortg', label: 'Pts / 100 pos.', better: 1, fmt: v => nf(v, 1) }, ...FF];
   return `<section class="panel stack" style="gap:8px">${ctl}<p class="note" style="margin:0">${mmss(tb[0].sec)} de juego en este tramo.</p></section>
     <section class="panel"><div class="sec-h"><h2>Equipos</h2></div>${cmpBlock(names, m[0], m[1], rows)}</section>
@@ -2441,7 +2415,7 @@ function vJugadas(g) {
   const K = { tiro: new Set([92, 96, 93, 94, 97, 98, 100, 533, 102, 105, 107, 108, 119]), reb: new Set([101, 104]), tov: new Set([106, 103]), sub: new Set([112, 115, 113, 118]) };
   const isFoul = t => t === 110 || t === 109 || (t >= 159 && t <= 177) || (t >= 537 && t <= 563) || (t >= 750 && t <= 787);
   const ev = g.events.filter(e => e.type !== 600 && e.type !== 599)
-    .filter(e => S.pbpSide === 'all' || (e.pid || [113, 101, 104, 106].includes(e.type)) && String(e.side) === S.pbpSide)
+    .filter(e => S.pbpSide === 'all' || teamEv(e) && String(e.side) === S.pbpSide)
     .filter(e => S.pbpKind === 'all' || (S.pbpKind === 'foul' ? isFoul(e.type) : S.pbpKind === 'pos' ? e.possEnd != null : K[S.pbpKind].has(e.type)));
   const ctl = `<div class="filters"><span class="lbl">Equipo</span>${[['all', 'Ambos'], ['0', g.teams[0].abbr], ['1', g.teams[1].abbr]].map(([k, l]) => `<button class="chipbtn" data-pside="${k}" aria-pressed="${S.pbpSide === k}">${esc(l)}</button>`).join('')}</div>
     <div class="filters"><span class="lbl">Tipo</span>${Object.entries(kinds).map(([k, l]) => `<button class="chipbtn" data-pkind="${k}" aria-pressed="${S.pbpKind === k}">${l}</button>`).join('')}</div>`;
@@ -2449,7 +2423,7 @@ function vJugadas(g) {
   const rows = ev.slice(-max).reverse();
   const endTxt = { canasta: 'canasta', tl: 'tiros libres', perdida: 'pérdida', rebote: 'rebote rival', fin_periodo: 'fin de periodo', cambio: 'otras' };
   const body = rows.map(e => {
-    const team = (e.pid || [113, 101, 104, 106].includes(e.type)) ? tm(g, e.side) : '';
+    const team = teamEv(e) ? tm(g, e.side) : '';
     const pe = e.possEnd != null ? g.poss[e.possEnd] : null;
     const scored = e.d[0] || e.d[1];
     return `<tr><td class="n">${qLabel(e.q)} ${e.clock}</td><td>${team}</td><td>${e.pid ? esc(g.players.get(e.pid).name) : (e.type === 101 || e.type === 104 ? '<span class="faint">Equipo</span>' : '')}</td><td>${esc(A.label(e))}</td><td class="n">${scored ? '<b>' + e.sh + '-' + e.sa + '</b>' : '<span class="faint">' + e.sh + '-' + e.sa + '</span>'}</td><td class="faint">${pe ? `Fin posesión ${esc(g.teams[pe.side].abbr)} · ${endTxt[pe.end]} · ${pe.pts} pts` : ''}</td></tr>`;
@@ -2529,12 +2503,11 @@ function sCierres(list) {
   // Tiempos muertos
   const tos = []; list.forEach(({ g, side }) => A.timeouts(g, 4).filter(x => x.side === side).forEach(x => tos.push(x)));
   const avg = (arr, f) => { const v = arr.map(f).filter(x => x != null); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; };
-  const eff = x => { const a = div0(x.afterO[0], x.afterO[1]), b = div0(x.afterD[0], x.afterD[1]), c = div0(x.beforeO[0], x.beforeO[1]), d = div0(x.beforeD[0], x.beforeD[1]); return (a == null || b == null || c == null || d == null) ? null : (a - b) - (c - d); };
   const runsF = list.reduce((a, { g, side }) => a + A.runs(g, 8).filter(r => r.side === side).length, 0), runsA = list.reduce((a, { g, side }) => a + A.runs(g, 8).filter(r => r.side !== side).length, 0);
   return `<section class="panel"><div class="kv">
       <div><b>${inClutch}/${list.length}</b><span>Partidos con minutos clutch</span></div><div><b>${mmss(cl.us.sec)}</b><span>Minutos clutch totales</span></div>
       <div><b>${nf(mc.ortg, 1)}</b><span>ORtg clutch</span></div><div><b>${nf(mc.drtg, 1)}</b><span>DRtg clutch</span></div><div><b>${sg(mc.net, 1)}</b><span>Net clutch</span></div>
-      <div><b>${tos.length}</b><span>Tiempos muertos pedidos</span></div><div><b>${sg(avg(tos, eff), 2)}</b><span>Efecto medio del tiempo muerto (PPP neto)</span></div>
+      <div><b>${tos.length}</b><span>Tiempos muertos pedidos</span></div><div><b>${sg(avg(tos, toEffect), 2)}</b><span>Efecto medio del tiempo muerto (PPP neto)</span></div>
       <div><b>${runsF} / ${runsA}</b><span>Parciales 8-0 a favor / en contra</span></div></div></section>
     <section class="panel"><div class="sec-h"><h2>Jugadores en clutch</h2><span class="note">Últimos 5 minutos del 4C o prórroga con diferencia de 5 o menos</span></div>${tbl('scp', ccols, pc, { sort: { k: 'min', d: -1 }, empty: 'Sin minutos clutch en los partidos cargados.' })}</section>
     <div class="grid2"><section class="panel"><div class="sec-h"><h2>Quintetos en clutch</h2></div>${tbl('scl', lineupCols.slice(0, 7), lineupRows(cl.lineups, 5, nameOf), { sort: { k: 'min', d: -1 }, empty: 'Sin minutos clutch.' })}</section>
@@ -2608,7 +2581,7 @@ document.addEventListener('click', async e => {
   else if (d.pcols) { S.pcols = d.pcols; render(); }
   else if (d.pergame) { S.perGame = d.pergame === '1'; render(); }
   else if (d.lsize) { S.lineSize = Number(d.lsize); render(); }
-  else if (d.lmin != null && d.lmin !== undefined && b.hasAttribute('data-lmin')) { S.lineMin = Number(d.lmin); render(); }
+  else if (d.lmin !== undefined) { S.lineMin = Number(d.lmin); render(); }
   else if (d.close) { S.closeMode = d.close; render(); }
   else if (d.pside) { S.pbpSide = d.pside; S.pbpMax = 200; render(); }
   else if (d.pkind) { S.pbpKind = d.pkind; S.pbpMax = 200; render(); }
