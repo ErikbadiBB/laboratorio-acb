@@ -21,9 +21,9 @@
 <style>
 /* Layout: mesa de anotador — marcador arriba, pestañas de análisis fijas, paneles de datos en rejilla fluida */
 :root {
-  --bg: #eef1f3; --surface: #ffffff; --surface-2: #f4f6f8; --ink: #11181d; --ink-2: #47535d; --ink-3: #75818b;
+  --bg: #eef1f3; --surface: #ffffff; --surface-2: #f4f6f8; --ink: #11181d; --ink-2: #47535d; --ink-3: #636e76;
   --line: #d6dce1; --line-2: #e6eaed; --accent: #1d3b53; --accent-ink: #ffffff;
-  --home: #2a78d6; --away: #eb6834; --good: #17804a; --bad: #c0392f; --warn: #a86a00;
+  --home: #2874d0; --away: #eb6834; --away-ink: #1a1208; --good: #17804a; --bad: #c0392f; --warn: #a36700;
   --f-display: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
   --f-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
   --f-data: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
@@ -32,11 +32,11 @@
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
   --bg: #0f1316; --surface: #161c20; --surface-2: #1c2328; --ink: #edf1f4; --ink-2: #b2bdc6; --ink-3: #86929c;
   --line: #2b343b; --line-2: #222a30; --accent: #93bddc; --accent-ink: #0f1316;
-  --home: #3987e5; --away: #d95926; --good: #4cb882; --bad: #e46b62; --warn: #d9a03a; color-scheme: dark } }
+  --home: #3987e5; --away: #d95926; --home-ink: #0f1316; --away-ink: #0f1316; --good: #4cb882; --bad: #e46b62; --warn: #d9a03a; color-scheme: dark } }
 :root[data-theme="dark"] {
   --bg: #0f1316; --surface: #161c20; --surface-2: #1c2328; --ink: #edf1f4; --ink-2: #b2bdc6; --ink-3: #86929c;
   --line: #2b343b; --line-2: #222a30; --accent: #93bddc; --accent-ink: #0f1316;
-  --home: #3987e5; --away: #d95926; --good: #4cb882; --bad: #e46b62; --warn: #d9a03a; color-scheme: dark }
+  --home: #3987e5; --away: #d95926; --home-ink: #0f1316; --away-ink: #0f1316; --good: #4cb882; --bad: #e46b62; --warn: #d9a03a; color-scheme: dark }
 * { box-sizing: border-box }
 body { background: var(--bg); color: var(--ink); font: 14px/1.5 var(--f-body); }
 .wrap { max-width: 1240px; margin: 0 auto; padding-inline: 16px; padding-block: 12px 48px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px }
@@ -55,12 +55,12 @@ button, select, input, textarea { font: inherit; color: inherit }
 :root[data-skin="tv"] body::before, :root[data-skin="parque"] body::before { content: ""; position: fixed; inset: 0; z-index: -1; background: var(--bg-img); pointer-events: none }
 .tm.t0 { color: var(--home-ink, #fff) } .tm.t1 { color: var(--away-ink, #fff) }
 :root[data-skin="noche"] { color-scheme: dark;
-  --bg: #0c0e11; --surface: #15191e; --surface-2: #1b2026; --ink: #f3f2ef; --ink-2: #b9c0c7; --ink-3: #7d8791; --line: #262c33; --line-2: #1f242a;
-  --accent: #f26a21; --accent-ink: #111; --home: #f26a21; --away: #6ea8ff; --away-ink: #0b1a33; --good: #4cb882; --bad: #ff6b5e; --warn: #e0a83a;
+  --bg: #0c0e11; --surface: #15191e; --surface-2: #1b2026; --ink: #f3f2ef; --ink-2: #b9c0c7; --ink-3: #808a93; --line: #262c33; --line-2: #1f242a;
+  --accent: #f26a21; --accent-ink: #111; --home: #f26a21; --home-ink: #111; --away: #6ea8ff; --away-ink: #0b1a33; --good: #4cb882; --bad: #ff6b5e; --warn: #e0a83a;
   --f-display: "Barlow Condensed", "Arial Narrow", sans-serif; --f-body: "Inter", "Segoe UI", system-ui, sans-serif; --f-data: "JetBrains Mono", ui-monospace, monospace; --r: 12px }
 :root[data-skin="scouting"] { color-scheme: light;
-  --bg: #f4efe6; --surface: #fffcf6; --surface-2: #f7f1e6; --ink: #1c1a16; --ink-2: #4c463d; --ink-3: #8a8174; --line: #d9d0c1; --line-2: #e8e0d2;
-  --accent: #b5121b; --accent-ink: #fff; --home: #1c1a16; --away: #b5121b; --good: #2f7a3e; --bad: #b5121b; --warn: #a86a00;
+  --bg: #f4efe6; --surface: #fffcf6; --surface-2: #f7f1e6; --ink: #1c1a16; --ink-2: #4c463d; --ink-3: #716a5f; --line: #d9d0c1; --line-2: #e8e0d2;
+  --accent: #b5121b; --accent-ink: #fff; --home: #1c1a16; --away: #b5121b; --away-ink: #fff; --good: #2f7a3e; --bad: #b5121b; --warn: #a06500;
   --f-display: "Fraunces", Georgia, serif; --f-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif; --f-data: "IBM Plex Mono", ui-monospace, monospace; --r: 2px }
 :root[data-skin="scouting"] .panel { border-width: 0; border-top: 2px solid var(--ink); border-radius: 0 }
 :root[data-skin="scouting"] .sec-h h2 { font-style: italic }
@@ -69,15 +69,15 @@ button, select, input, textarea { font: inherit; color: inherit }
 :root[data-skin="scouting"] .tabs button { font-family: var(--f-body); font-size: .8rem; letter-spacing: .08em }
 :root[data-skin="tv"] { color-scheme: dark;
   --bg: #0a1028; --bg-img: radial-gradient(120% 50% at 50% 0%, #16245a 0%, #070b1a 70%); --surface: rgba(255,255,255,.05); --surface-2: rgba(255,255,255,.08); --ink: #fff; --ink-2: #c7d0ef; --ink-3: #8291c4; --line: rgba(255,255,255,.13); --line-2: rgba(255,255,255,.07);
-  --accent: #ffd400; --accent-ink: #0a0f22; --home: #22d3ee; --home-ink: #04121a; --away: #ff4d6d; --good: #4ade80; --bad: #ff4d6d; --warn: #ffd400;
+  --accent: #ffd400; --accent-ink: #0a0f22; --home: #22d3ee; --home-ink: #04121a; --away: #ff4d6d; --away-ink: #0a0f22; --good: #4ade80; --bad: #ff4d6d; --warn: #ffd400;
   --f-display: "Bebas Neue", "Barlow Condensed", "Arial Narrow", sans-serif; --f-body: "Manrope", "Segoe UI", system-ui, sans-serif; --f-data: "JetBrains Mono", ui-monospace, monospace; --r: 14px }
 :root[data-skin="tv"] h1, :root[data-skin="tv"] h2, :root[data-skin="tv"] .tabs button, :root[data-skin="tv"] .score .big, :root[data-skin="tv"] .team .nm, :root[data-skin="tv"] .pk-sum b { font-weight: 400; letter-spacing: .04em }
 :root[data-skin="tv"] h2 { text-transform: uppercase; font-size: 1.5rem }
 :root[data-skin="tv"] .score .big { font-size: 4rem }
 :root[data-skin="tv"] .tabs button { font-size: 1.25rem }
 :root[data-skin="parque"] { color-scheme: light;
-  --bg: #e8d5b6; --bg-img: linear-gradient(180deg, #ead9be 0%, #e3cda9 100%); --surface: #fbf6ee; --surface-2: #f3e7d4; --ink: #2a1c10; --ink-2: #5d4a38; --ink-3: #8f7a63; --line: #e2d3bb; --line-2: #eee2cf;
-  --accent: #d9531e; --accent-ink: #fff; --home: #1f5f6e; --away: #d9531e; --good: #2f7a3e; --bad: #b8321a; --warn: #a86a00;
+  --bg: #e8d5b6; --bg-img: linear-gradient(180deg, #ead9be 0%, #e3cda9 100%); --surface: #fbf6ee; --surface-2: #f3e7d4; --ink: #2a1c10; --ink-2: #5d4a38; --ink-3: #695a49; --line: #e2d3bb; --line-2: #eee2cf;
+  --accent: #c04a1b; --accent-ink: #fff; --home: #1f5f6e; --away: #c04a1b; --away-ink: #fff; --good: #2f7a3e; --bad: #b8321a; --warn: #9b6200;
   --f-display: "Archivo Black", "Arial Black", sans-serif; --f-body: "Archivo", "Segoe UI", system-ui, sans-serif; --f-data: "JetBrains Mono", ui-monospace, monospace; --r: 18px }
 :root[data-skin="parque"] .panel { border: 0; box-shadow: 0 6px 18px rgba(80,50,20,.12) }
 :root[data-skin="parque"] h1, :root[data-skin="parque"] h2, :root[data-skin="parque"] .score .big, :root[data-skin="parque"] .team .nm, :root[data-skin="parque"] .pk-sum b { font-weight: 400 }
@@ -87,7 +87,7 @@ button, select, input, textarea { font: inherit; color: inherit }
 :root[data-skin="parque"] .btn, :root[data-skin="parque"] .seg { border-radius: 999px }
 :root[data-skin="negro"] { color-scheme: light;
   --bg: #ffffff; --surface: #ffffff; --surface-2: #f2f2f2; --ink: #000; --ink-2: #222; --ink-3: #5a5a5a; --line: #000; --line-2: #d0d0d0;
-  --accent: #e30613; --accent-ink: #fff; --home: #000; --away: #e30613; --good: #1b7a3a; --bad: #e30613; --warn: #9a6400;
+  --accent: #e30613; --accent-ink: #fff; --home: #000; --away: #e30613; --away-ink: #fff; --good: #1b7a3a; --bad: #e30613; --warn: #9a6400;
   --f-display: "Space Grotesk", "Arial", sans-serif; --f-body: "Space Grotesk", "Arial", sans-serif; --f-data: "JetBrains Mono", ui-monospace, monospace; --r: 0px }
 :root[data-skin="negro"] .panel { border-width: 2px; box-shadow: 4px 4px 0 #000 }
 :root[data-skin="negro"] .top { background: #000; color: #fff; margin-inline: -16px; padding: 12px 16px }
@@ -128,7 +128,7 @@ button, select, input, textarea { font: inherit; color: inherit }
 .pk-card .r b { font-family: var(--f-data); font-weight: 500 }
 .pk-card .r.win { color: var(--ink) } .pk-card .r.lose { color: var(--ink-2); font-weight: 500 }
 .pk-card .s { font-size: .7rem; color: var(--ink-3); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
-.pk-card .s.live { color: #ff5a4f; font-weight: 600 }
+.pk-card .s.live { color: var(--bad); font-weight: 600 }
 .pk-empty { color: var(--ink-3); font-size: .85rem; padding: 10px 2px }
 .pk-tools { display: grid; gap: 8px }
 .pk-link { display: flex; gap: 8px } .pk-link input { flex: 1 }
@@ -2726,7 +2726,7 @@ const SKINS = [
   { id: 'noche', name: 'Noche de partido', sw: ['#0c0e11', '#f26a21', '#6ea8ff', '#f3f2ef'], fonts: 'Inter:wght@400;600&family=JetBrains+Mono:wght@500' },
   { id: 'scouting', name: 'Informe de scouting', sw: ['#f4efe6', '#1c1a16', '#b5121b', '#fffcf6'], fonts: 'Fraunces:ital,wght@0,600;0,700;1,600' },
   { id: 'tv', name: 'Retransmisión TV', sw: ['#0a1028', '#ffd400', '#22d3ee', '#ff4d6d'], fonts: 'Bebas+Neue&family=Manrope:wght@500;700&family=JetBrains+Mono:wght@500' },
-  { id: 'parque', name: 'Parqué', sw: ['#e3cda9', '#2a1c10', '#1f5f6e', '#d9531e'], fonts: 'Archivo+Black&family=Archivo:wght@400;600&family=JetBrains+Mono:wght@500' },
+  { id: 'parque', name: 'Parqué', sw: ['#e3cda9', '#2a1c10', '#1f5f6e', '#c04a1b'], fonts: 'Archivo+Black&family=Archivo:wght@400;600&family=JetBrains+Mono:wght@500' },
   { id: 'negro', name: 'Bilbao Negro', sw: ['#ffffff', '#000000', '#e30613', '#000000'], fonts: 'Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@500' }
 ];
 function applySkin(id) {

@@ -31,7 +31,7 @@ No editar `site/index.html` a mano: se regenera con `npm run build`.
 npm install          # jsdom + playwright (para las pruebas)
 npm run build        # genera site/index.html y dist/statslab.html
 npm test             # motor ACB, BCL, interfaz sin navegador, directo (BCL y Liga U)
-npm run test:visual  # con Playwright: capturas, desbordes en 1200/800/400 px y uso sin conexión
+npm run test:visual  # con Playwright: capturas, desbordes en 1200/800/400 px, uso sin conexión y contraste de colores
 npm run test:perf    # tiempos de cada pestaña, ordenar/filtrar y scouting (referencia: ~160 ms todas las pestañas)
 ```
 
@@ -72,6 +72,7 @@ Todas son públicas (las mismas que usan las webs oficiales). Las claves están 
 - Estilos (`data-skin` en `<html>`): Original, Noche de partido, Informe de scouting, Retransmisión TV, Parqué, Bilbao Negro. Se guardan por dispositivo.
 - Hash de la URL: `#acb-ID`, `#bcl-ID`, `#lu-ID`.
 - Sin conexión: los 12 últimos partidos abiertos se guardan en el dispositivo (Cache API `statslab-partidos`, índice en `lab-acb:saved`; en directo como mucho cada 30 s). Si falla la red al abrir uno guardado, se muestra con «Sin conexión · datos guardados…» y el selector ofrece las tarjetas guardadas.
+- Colores: todo texto debe tener contraste ≥ 4,5 sobre su fondo en los 6 estilos (`node test/contrast.js` debe dar «PARES POR DEBAJO 0»). Las siglas de equipo usan `--home-ink`/`--away-ink`.
 - `localStorage` usa el prefijo `lab-acb:` (no cambiarlo, perdería la configuración guardada de los usuarios).
 
 ## Convenciones
