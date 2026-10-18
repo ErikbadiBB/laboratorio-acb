@@ -4,7 +4,7 @@
   "description": "StatsLAB: estadística avanzada de baloncesto desde el jugada a jugada (ACB, BCL y Liga U)",
   "scripts": {
     "build": "node build.js",
-    "test": "node build.js && node test/run.js && node test/bcl.js && node test/ui.js && node test/ui2.js && node test/live.js && node test/lu.js && node test/lu-real.js && node test/fav.js && node test/alerts.js",
+    "test": "node build.js && node test/run.js && node test/bcl.js && node test/ui.js && node test/ui2.js && node test/live.js && node test/lu.js && node test/lu-real.js && node test/fav.js && node test/alerts.js && node test/liga.js",
     "test:visual": "node test/shot.js && node test/ov.js && node test/ov2.js && node test/offline.js && node test/contrast.js && node test/teamcolors.js && node test/share.js",
     "test:perf": "node build.js && node test/perf.js"
   },

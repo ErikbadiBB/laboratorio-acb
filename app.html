@@ -339,6 +339,7 @@ th[data-sort]:focus-visible { outline-offset: -2px }
 @keyframes toast-in { from { transform: translateY(8px); opacity: 0 } }
 @media (prefers-reduced-motion: reduce) { .toast { animation: none } }
 .sec-h .cb-share { margin-left: auto; font-size: .78rem }
+.lg-kv b small { font-size: .7rem; font-weight: 400; color: var(--ink-3) } .lg-kv span { text-transform: none; letter-spacing: 0; font-size: .76rem }
 .pill-btn { cursor: pointer; background: var(--surface); color: var(--ink-2); font: inherit; font-size: .75rem }
 .al-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 6px 10px; align-items: center; padding: 4px 0; border-bottom: 1px solid var(--line-2); font-size: .88rem }
 .al-row label { display: flex; gap: 6px; align-items: center; cursor: pointer; min-width: 0 }
@@ -1368,7 +1369,7 @@ function scoreboard(g) {
   </div><div class="boardfoot">${sm}${compTag}${val}${warn}<button class="pill pill-btn" data-alerts="1" aria-expanded="${!!S.alertsOpen}" title="Elegir avisos y ver el historial">🔔 Avisos${AL.list.length ? ' · ' + AL.list.length : ''}</button><span>${g.poss.filter(p => p.side === 0).length} posesiones por equipo</span><span>${g.events.length} jugadas</span></div></section>`;
 }
 const TABS = [['entrenador', 'Entrenador'], ['resumen', 'Resumen'], ['factores', 'Factores'], ['jugadores', 'Jugadores'], ['quintetos', 'Quintetos'], ['rotaciones', 'Rotaciones'], ['dinamica', 'Dinámica'], ['posesiones', 'Posesiones'], ['tiro', 'Tiro'], ['clutch', 'Clutch'], ['jugadas', 'Jugadas']];
-const STABS = [['informe', 'Informe del rival'], ['resumen', 'Resumen'], ['jugadores', 'Jugadores'], ['quintetos', 'Quintetos'], ['posesiones', 'Posesiones'], ['cierres', 'Clutch y cierres'], ['evolucion', 'Evolución'], ['partidos', 'Partidos']];
+const STABS = [['informe', 'Informe del rival'], ['resumen', 'Resumen'], ['jugadores', 'Jugadores'], ['quintetos', 'Quintetos'], ['posesiones', 'Posesiones'], ['cierres', 'Clutch y cierres'], ['evolucion', 'Evolución'], ['liga', 'Liga'], ['partidos', 'Partidos']];
 function tabsBar(list, cur, attr) { return `<nav class="tabs" role="tablist" aria-label="Secciones del análisis">${list.map(([k, l]) => `<button role="tab" id="tab-${k}" ${attr}="${k}" aria-selected="${cur === k}" aria-controls="tabpanel" tabindex="${cur === k ? 0 : -1}">${l}</button>`).join('')}</nav>`; }
 
 // ---------- Resumen (piezas reutilizables) ----------
@@ -1933,6 +1934,7 @@ function sInforme(list) {
   return `<section class="panel"><div class="sec-h"><h2>Informe: ${esc(t.name)}</h2><button class="btn ghost" data-print="1">🖨 Imprimir / PDF</button></div>
       <p class="note" style="margin:0">${n} partido${n > 1 ? 's' : ''} analizado${n > 1 ? 's' : ''} jugada a jugada · ${esc(COMPS[list[0].g.comp].name)}</p></section>
     <section class="panel"><div class="sec-h"><h2>Claves del rival</h2></div><ul class="ins">${ins.map(i => `<li>${i}</li>`).join('')}</ul></section>
+    ${(() => { const rows = leagueRows(list[0].g.comp); return rows.some(r => r.id === S.scout.team) ? `<section class="panel"><div class="sec-h"><h2>Frente a la liga</h2><span class="note">Posición entre ${rows.length} equipos</span></div>${leagueVs(rows, S.scout.team)}</section>` : `<section class="panel"><p class="note" style="margin:0">Para ver su posición en la liga (ritmo, ataque, defensa…), abre la pestaña «Liga» y pulsa «Calcular».</p></section>`; })()}
     <section class="panel"><div class="sec-h"><h2>Jugadores clave</h2><span class="note">Valores por partido · 10 minutos o más por partido</span></div>${tbl('sik', keyCols, ps, { sort: { k: 'mpg', d: -1 }, empty: 'Ningún jugador promedia 10 minutos.' })}</section>
     <div class="grid2"><section class="panel"><div class="sec-h"><h2>Por cuartos</h2><span class="note">Puntos por partido</span></div>${tbl('siq', qcols, qs)}</section>
       <section class="panel"><div class="sec-h"><h2>Cómo cierran</h2><span class="note">Quintetos con más minutos en los últimos 5 min</span></div>${closing.length ? `<ol class="ins">${closing.map(r => `<li>${esc(r.names)} <span class="faint">· ${mmss(r.sec)} · ${sg(r.pm)}</span></li>`).join('')}</ol>` : '<p class="empty">Sin datos de cierres.</p>'}</section></div>
@@ -2057,6 +2059,77 @@ function drawSeries(el, pts, o) {
     s += `<circle cx="${x(i)}" cy="${y(p.v)}" r="5" fill="var(--${p.win ? 'good' : 'bad'})" stroke="var(--surface)" stroke-width="1.5" data-tip="${esc(p.tip)}"/>`;
   });
   el.innerHTML = s + '</svg>';
+}
+// ---------- Comparación con la liga ----------
+// Cada partido terminado de la competición se resume en las cajas de los dos equipos (mismo cálculo jugada a jugada)
+// y se guarda en el dispositivo: la primera vez se descargan todos y después solo los nuevos.
+const BOXK = Object.keys(A.newBox());
+const packBox = b => BOXK.map(k => b[k] || 0), unpackBox = a => Object.fromEntries(BOXK.map((k, i) => [k, a[i] || 0]));
+const leagueStore = comp => store.get('league-' + comp, {}) || {};
+async function leagueGameIds(comp) {
+  if (comp === 'bcl' || comp === 'lu') return (await (comp === 'lu' ? luGames() : bclGames())).filter(m => m.status === 'FIN').map(m => m.id);
+  const c = await loadComp(), out = [];
+  await pool(c.rounds.filter(r => r.roundNumber <= c.cur.roundNumber), 4, async r => { (await roundMatches(r.id)).forEach(m => { if (m.matchStatus === 'FINALIZED') out.push(m.id); }); });
+  return out;
+}
+async function updateLeague(comp) {
+  const st = $('#st-league'), bar = $('#lg-prog');
+  S.leagueBusy = true; if (st) st.textContent = 'Buscando los partidos terminados…';
+  try {
+    const ids = await leagueGameIds(comp), have = leagueStore(comp);
+    // Los partidos ya cargados en el Scouting no se vuelven a descargar
+    S.scout.list.forEach(({ g }) => { if (g.comp === comp && !have[g.id]) have[g.id] = { t: g.teams.map(t => [t.id, t.abbr, t.name]), b: A.teamBoxes(g).map(packBox) }; });
+    const need = ids.filter(id => !have[id]);
+    let done = 0;
+    await pool(need, 4, async id => {
+      try { const res = await fetchGame(comp, id); if (res) { const g = A.parseGame(res.raw, { id }); have[id] = { t: g.teams.map(t => [t.id, t.abbr, t.name]), b: A.teamBoxes(g).map(packBox) }; } }
+      catch (e) { if (e.proxy) throw e; }
+      done++;
+      const s2 = $('#st-league'), b2 = $('#lg-prog'); if (s2) s2.textContent = `Analizando partidos de la liga: ${done} de ${need.length}…`; if (b2) b2.style.width = (100 * done / need.length) + '%';
+    });
+    const keep = {}; ids.forEach(id => { if (have[id]) keep[id] = have[id]; });
+    store.set('league-' + comp, keep); store.set('league-at-' + comp, Date.now());
+  } catch (e) { const s2 = $('#st-league'); if (s2) { s2.textContent = isNet(e) ? 'Sin conexión con la fuente de datos.' : e.message; s2.className = 'status err'; } S.leagueBusy = false; return; }
+  S.leagueBusy = false; render();
+}
+function leagueRows(comp) {
+  const all = leagueStore(comp), teams = new Map();
+  for (const id in all) {
+    const x = all[id], b = x.b.map(unpackBox);
+    [0, 1].forEach(i => {
+      const [tid, abbr, name] = x.t[i]; let T = teams.get(tid);
+      if (!T) { T = { id: tid, abbr, name, us: A.newBox(), them: A.newBox(), gp: 0, w: 0 }; teams.set(tid, T); }
+      A.addBox(T.us, b[i]); A.addBox(T.them, b[1 - i]); T.gp++; if (b[i].pts > b[1 - i].pts) T.w++;
+    });
+  }
+  return [...teams.values()].map(T => { const o = A.teamMetrics(T.them, T.us); return Object.assign({ id: T.id, abbr: T.abbr, name: T.name, gp: T.gp, w: T.w }, A.teamMetrics(T.us, T.them), { oppEfg: o.efg, oppTov: o.tovp, oppOrb: o.orbp }); });
+}
+// [clave, nombre, mejor (1 alto, −1 bajo, 0 sin juicio: se ordena de más a menos), formato, texto del 1.º cuando no hay juicio]
+const LG_METRICS = [['net', 'Net rating', 1, v => sg(v, 1)], ['ortg', 'Ataque (pts/100 pos.)', 1, v => nf(v, 1)], ['drtg', 'Defensa (pts/100 pos.)', -1, v => nf(v, 1)],
+  ['pace', 'Ritmo', 0, v => nf(v, 1), 'más rápido'], ['efg', 'eFG%', 1, v => pct(v)], ['tovp', 'Pérdidas/pos.', -1, v => pct(v)], ['orbp', 'Reb. of. %', 1, v => pct(v)],
+  ['ftr', 'TLI / TCI', 1, v => nf(v, 2)], ['fg3', 'T3%', 1, v => pct(v)], ['r3', '% tiros de 3', 0, v => pct(v), 'que más triples tira'],
+  ['oppEfg', 'eFG% del rival', -1, v => pct(v)], ['oppTov', 'Pérdidas forzadas', 1, v => pct(v)]];
+function leagueRank(rows, k, dir, id) {
+  const r = rows.filter(x => x[k] != null).sort((a, b) => dir < 0 ? a[k] - b[k] : b[k] - a[k]);
+  const i = r.findIndex(x => x.id === id), vals = r.map(x => x[k]);
+  return { rank: i + 1, n: r.length, avg: vals.reduce((a, b) => a + b, 0) / (vals.length || 1) };
+}
+function leagueVs(rows, teamId) {
+  const me = rows.find(r => r.id === teamId); if (!me) return '';
+  return `<div class="kv lg-kv">${LG_METRICS.map(([k, l, dir, f, top]) => { const x = leagueRank(rows, k, dir, teamId), good = dir && x.rank <= Math.ceil(x.n / 3), bad = dir && x.rank > x.n - Math.ceil(x.n / 3);
+    return `<div><b class="${good ? 'pos' : bad ? 'neg' : ''}">${x.rank}.º<small> de ${x.n}</small></b><span>${l}: ${f(me[k])} · liga ${f(x.avg)}${!dir && x.rank === 1 ? ' · el ' + top : ''}</span></div>`; }).join('')}</div>`;
+}
+function sLiga(list) {
+  const comp = list[0].g.comp, teamId = S.scout.team, rows = leagueRows(comp), at = store.get('league-at-' + comp, null);
+  const head = `<section class="panel"><div class="sec-h"><h2>Comparación con la liga</h2><button class="btn ghost" data-league="1" ${S.leagueBusy ? 'disabled' : ''}>${rows.length ? '↻ Actualizar con los últimos partidos' : 'Calcular'}</button></div>
+    <p class="note" style="margin:0">Todos los equipos se calculan igual, jugada a jugada, con los partidos terminados de la ${esc(COMPS[comp].name)}. La primera vez se descargan todos (puede tardar un poco); después solo los nuevos.</p>
+    <div class="progress" style="margin-top:8px" ${S.leagueBusy ? '' : 'hidden'}><i id="lg-prog"></i></div><div class="status" id="st-league" role="status">${rows.length ? `${Object.keys(leagueStore(comp)).length} partidos analizados${at ? ' · actualizado ' + new Date(at).toLocaleString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : ''}` : ''}</div></section>`;
+  if (!rows.length) return head;
+  const me = rows.find(r => r.id === teamId), f = favOf(comp);
+  const cols = [{ k: 'name', label: 'Equipo', v: r => r.name, f: r => `${r.id === teamId ? '<b>' : ''}${isFav(f, r) ? '★ ' : ''}${esc(r.name)}${r.id === teamId ? '</b>' : ''}` }, { k: 'gp', label: 'PJ', num: true, f: r => r.gp }, { k: 'w', label: 'G-P', num: true, f: r => r.w + '-' + (r.gp - r.w) },
+    ...LG_METRICS.map(([k, l, , fm]) => ({ k, label: l.replace(' (pts/100 pos.)', ''), num: true, f: r => k === 'net' ? sgc(r[k], 1) : fm(r[k]) }))];
+  return head + (me ? `<section class="panel"><div class="sec-h"><h2>${esc(me.name)} frente a la liga</h2><span class="note">Posición entre ${rows.length} equipos · verde: tercio alto · rojo: tercio bajo</span></div>${leagueVs(rows, teamId)}</section>` : '')
+    + `<section class="panel"><div class="sec-h"><h2>Clasificación avanzada</h2></div>${tbl('slg', cols, rows, { sort: { k: 'net', d: -1 } })}</section>`;
 }
 function sPartidos(list) {
   const rows = list.map(({ g, side, round, date }) => { const tb = A.teamBoxes(g); const m = A.teamMetrics(tb[side], tb[1 - side]); return { id: g.id, round, date, rival: g.teams[1 - side].name, loc: side === 0 ? 'Casa' : 'Fuera', pf: g.final[side], pa: g.final[1 - side], ortg: m.ortg, drtg: m.drtg, net: m.net, pace: m.pace, efg: m.efg, tov: m.tovp, orb: m.orbp }; });
@@ -2337,7 +2410,7 @@ function render(silent) {
     const list = S.scout.list;
     if (!list.length) { view.innerHTML = `<div class="panel empty">Elige un equipo y pulsa «Cargar partidos». Se analizarán jugada a jugada todos sus partidos terminados.</div>`; return; }
     const t = list[0].g.teams[list[0].side];
-    const V = { informe: sInforme, resumen: sResumen, jugadores: sJugadores, quintetos: sQuintetos, posesiones: sPosesiones, cierres: sCierres, evolucion: sEvolucion, partidos: sPartidos }[S.stab] || sResumen;
+    const V = { informe: sInforme, resumen: sResumen, jugadores: sJugadores, quintetos: sQuintetos, posesiones: sPosesiones, cierres: sCierres, evolucion: sEvolucion, liga: sLiga, partidos: sPartidos }[S.stab] || sResumen;
     html = `<section class="panel"><div class="sec-h" style="margin:0"><h2><i class="sw t0"></i> ${esc(t.name)}</h2><span class="note">${list.length} partidos · jornadas ${list.map(x => x.round).join(', ')}</span></div></section>` + tabsBar(STABS, S.stab, 'data-stab') + `<div class="stack" id="tabpanel" role="tabpanel" aria-labelledby="tab-${S.stab}" style="margin-top:14px">${V(list)}</div>`;
   }
   applyTeamColors(view);
@@ -2402,6 +2475,7 @@ document.addEventListener('click', async e => {
   else if (d.shotq) { S.shotQ = d.shotq; render(); }
   else if (d.share) { shareBlock(d.share, b); }
   else if (d.print) { window.print(); }
+  else if (d.league) { if (!S.leagueBusy && S.scout.list.length) { updateLeague(S.scout.list[0].g.comp); render(); } }
   else if (d.evoteam) { S.evoTeam = d.evoteam; render(); }
   else if (d.evostat) { S.evoStat = d.evostat; render(); }
   else if (d.alerts) { S.alertsOpen = !S.alertsOpen; render(); }
