@@ -339,7 +339,7 @@ td.wrap { white-space: normal; min-width: 180px }
 @media print {
   :root, :root[data-skin] { --bg: #fff; --surface: #fff; --surface-2: #f3f3f3; --ink: #000; --ink-2: #333; --ink-3: #555; --line: #c8c8c8; --line-2: #e2e2e2; color-scheme: light }
   body { background: #fff } body::before { display: none !important }
-  .top, #skin-menu, .loader, .tabs, .filters, .tbtns, .lnk, #tip, #toasts, [data-alerts], .alerts-panel, .coach-ed, .coach-head, .cb-bar, .cb-gal-sec, [data-pmore], .skip { display: none !important }
+  .top, #skin-menu, .loader, .tabs, .filters, .tbtns, .lnk, .cb-share, #tip, #toasts, [data-alerts], .alerts-panel, .coach-ed, .coach-head, .cb-bar, .cb-gal-sec, [data-pmore], .skip { display: none !important }
   .cb.editing { outline: 0 }
   .wrap { max-width: none; padding: 0 } .panel { box-shadow: none !important; break-inside: avoid } .scroll { overflow: visible; border: 0 }
 }
@@ -354,6 +354,7 @@ th[data-sort]:focus-visible { outline-offset: -2px }
 @media (max-width: 600px) { .toast { padding: 7px 10px; font-size: .82rem; gap: 8px } .toast .ti { font-size: 1.05rem } }
 @keyframes toast-in { from { transform: translateY(8px); opacity: 0 } }
 @media (prefers-reduced-motion: reduce) { .toast { animation: none } }
+.sec-h .cb-share { margin-left: auto; font-size: .78rem }
 .pill-btn { cursor: pointer; background: var(--surface); color: var(--ink-2); font: inherit; font-size: .75rem }
 .al-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 6px 10px; align-items: center; padding: 4px 0; border-bottom: 1px solid var(--line-2); font-size: .88rem }
 .al-row label { display: flex; gap: 6px; align-items: center; cursor: pointer; min-width: 0 }
@@ -2917,6 +2918,68 @@ function setAlertCfg(fn) {
   checkAlerts(true); render(true);
 }
 
+// ---------- Compartir un bloque como imagen ----------
+// El bloque se dibuja tal cual en una imagen SVG (foreignObject) con los estilos de la página y las tipografías
+// incrustadas, se pasa a PNG y se comparte (móvil) o se descarga (ordenador). Sin librerías externas.
+let FONT_CSS = null;
+async function embeddedFonts() {
+  if (FONT_CSS != null) return FONT_CSS;
+  let out = '';
+  try {
+    for (const l of document.querySelectorAll('link[rel="stylesheet"][href*="fonts.googleapis"]')) {
+      const css = await (await fetch(l.href)).text();
+      // Solo los alfabetos latinos (castellano y nombres de jugadores)
+      const faces = css.split('/*').filter(b => /^\s*latin(-ext)?\s*\*\//.test(b)).map(b => '/*' + b);
+      for (const f of faces) {
+        const m = f.match(/url\(([^)]+)\)/); if (!m) continue;
+        const blob = await (await fetch(m[1])).blob();
+        const data = await new Promise(r => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.readAsDataURL(blob); });
+        out += f.replace(m[1], data);
+      }
+    }
+  } catch (e) { }
+  FONT_CSS = out; return out;
+}
+async function blockPng(el, title) {
+  const view = $('#view'), r = el.getBoundingClientRect(), W = Math.ceil(r.width) + 32;
+  const clone = el.cloneNode(true);
+  clone.querySelectorAll('.cb-bar, .tbtns, [data-share], button.lnk').forEach(x => x.remove());
+  clone.querySelectorAll('textarea').forEach((t, i) => { const d = document.createElement('div'); d.textContent = el.querySelectorAll('textarea')[i].value; d.style.whiteSpace = 'pre-wrap'; t.replaceWith(d); });
+  const css = [...document.querySelectorAll('style')].map(x => x.textContent).join('\n') + await embeddedFonts();
+  const root = document.documentElement, skin = root.getAttribute('data-skin') || '', theme = root.getAttribute('data-theme') || '';
+  const bg = getComputedStyle(document.body).backgroundColor;
+  const body = `<div xmlns="http://www.w3.org/1999/xhtml" id="view" class="${view.className}" style="${esc(view.getAttribute('style') || '')};width:${W}px;padding:14px 16px 16px;background:${bg};color:var(--ink);font:14px/1.5 var(--f-body);box-sizing:border-box">
+    <div style="display:flex;justify-content:space-between;gap:12px;margin-bottom:10px;font-family:var(--f-display);font-size:1.1rem;font-weight:600"><span>${esc(title)}</span><span style="color:var(--ink-3);font-family:var(--f-body);font-size:.75rem;font-weight:400">StatsLAB</span></div>
+    ${new XMLSerializer().serializeToString(clone)}</div>`;
+  // Primero se mide la altura real con el mismo ancho
+  const probe = document.createElement('div'); probe.style.cssText = `position:absolute;left:-99999px;top:0;width:${W}px`; probe.innerHTML = body; document.body.appendChild(probe);
+  const H = Math.ceil(probe.firstElementChild.getBoundingClientRect().height) + 2; probe.remove();
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}"${skin ? ` data-skin="${skin}"` : ''}${theme ? ` data-theme="${theme}"` : ''}><foreignObject x="0" y="0" width="100%" height="100%"><style xmlns="http://www.w3.org/1999/xhtml">${css.replace(/<\/style/gi, '')}</style>${body}</foreignObject></svg>`;
+  const img = new Image(); img.decoding = 'sync';
+  img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+  await img.decode();
+  const k = Math.min(3, Math.max(2, devicePixelRatio || 1)), cv = document.createElement('canvas');
+  cv.width = W * k; cv.height = H * k;
+  const ctx = cv.getContext('2d'); ctx.scale(k, k);
+  ctx.drawImage(img, 0, 0); await new Promise(r => setTimeout(r, 60)); ctx.drawImage(img, 0, 0); // Safari: segunda pasada con las tipografías ya listas
+  return new Promise((res, rej) => cv.toBlob(b => b ? res(b) : rej(new Error('sin imagen')), 'image/png'));
+}
+async function shareBlock(id, btn) {
+  const el = $(`#view [data-block="${id}"]`); if (!el || !S.g) return;
+  const g = S.g, b = BLOCKS.find(x => x.id === id), old = btn.textContent;
+  btn.textContent = 'Creando imagen…'; btn.disabled = true;
+  const title = `${g.teams[0].abbr} ${g.final[0]}–${g.final[1]} ${g.teams[1].abbr} · ${boardStatus(g)} · ${b ? b.label : ''}`;
+  const name = ('statslab-' + g.teams[0].abbr + '-' + g.teams[1].abbr + '-' + id).replace(/[^\w-]+/g, '') + '.png';
+  try {
+    const blob = await blockPng(el, title), file = new File([blob], name, { type: 'image/png' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) { try { await navigator.share({ files: [file], title }); } catch (e) { if (e.name !== 'AbortError') throw e; } }
+    else if (DL) await DL.save({ filename: name, data: blob });
+    else { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); }
+    btn.textContent = '✓ Lista';
+  } catch (e) { btn.textContent = 'No se pudo crear'; }
+  setTimeout(() => { btn.textContent = old; btn.disabled = false; }, 1800);
+}
+
 // ---------- Colores de los equipos ----------
 // Cada fuente da un color por equipo (ACB: primaryColorHex/textColorHex; BCL: color del partido; Liga U: color del club).
 // Se ajusta para que se vea sobre el fondo del estilo y para que los dos equipos no se confundan.
@@ -3017,6 +3080,7 @@ function render(silent) {
   const tb = view.querySelector('.tabs'); if (tb && tabsX) tb.scrollLeft = tabsX;
   if (scrollX.some(Boolean)) view.querySelectorAll('.scroll').forEach((x, i) => { if (scrollX[i]) x.scrollLeft = scrollX[i]; });
   if (DL) view.querySelectorAll('.dl-only').forEach(b => b.hidden = false);
+  if (S.mode === 'match' && S.tab === 'entrenador' && !S.coachEdit) view.querySelectorAll('.coach-grid > .cb').forEach(cb => { const h = cb.querySelector('.sec-h'); if (h) h.insertAdjacentHTML('beforeend', `<button class="lnk cb-share" data-share="${cb.dataset.block}" title="Compartir este bloque como imagen">⤴ Compartir</button>`); });
   requestAnimationFrame(drawCharts);
 }
 
@@ -3071,6 +3135,7 @@ document.addEventListener('click', async e => {
     } catch (err) { $('#st-coach').textContent = 'Ese código no es válido. Cópialo de nuevo desde el otro dispositivo.'; }
   }
   else if (d.shotq) { S.shotQ = d.shotq; render(); }
+  else if (d.share) { shareBlock(d.share, b); }
   else if (d.alerts) { S.alertsOpen = !S.alertsOpen; render(); }
   else if (d.adefault) { store.set('alerts', alertCfg()); const st = $('#st-alerts'); if (st) st.textContent = 'Guardado: los próximos partidos empezarán con estos avisos.'; }
   else if (d.copy) {
