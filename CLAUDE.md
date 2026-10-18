@@ -37,6 +37,8 @@ Antes de publicar: `npm run build && npm test` sin errores (las pruebas imprimen
 
 ## Publicar
 
+**Erik no es programador y no revisa pull requests.** Cuando un cambio esté terminado y `npm run build && npm test` pase sin errores, haz commit y push **directamente a `main`** (si la sesión trabaja en otra rama, fusiónala en `main` y súbela). Después comprueba la web real y dile en una o dos frases qué ha cambiado, sin jerga técnica.
+
 Basta con hacer commit y push a `main` (después de `npm run build && npm test`):
 - GitHub Actions («Publicar web») regenera `site/index.html` y publica `site/` en GitHub Pages en 1-2 minutos.
 - Vercel (proyecto `laboratorio-acb`, equipo «Bilbao Basket», preset «Other», Root Directory `site`) redespliega solo el puente `site/api/bcl.js`.
