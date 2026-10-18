@@ -1,0 +1,4 @@
+node_modules/
+dist/
+*.png.tmp
+.DS_Store
