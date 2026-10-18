@@ -1,0 +1,24 @@
+name: Vigilar fuentes
+
+# Cada mañana comprueba que ACB, FIBA/BCL, el puente de Vercel, la Liga U y la web publicada responden
+# y que un partido de cada competición sigue cuadrando con el acta. Si algo falla, GitHub avisa por correo.
+on:
+  schedule:
+    - cron: '47 6 * * *'   # 06:47 UTC (08:47 en Bilbao en horario de verano)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  vigilar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Generar la web (para compararla con la publicada)
+        run: node build.js
+      - name: Comprobar las fuentes
+        run: node test/fuentes.js
