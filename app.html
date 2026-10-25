@@ -1368,7 +1368,7 @@ function scoreboard(g) {
     <div class="team r"><span class="ab">Visitante · ${esc(g.teams[1].abbr)}<i class="sw t1"></i></span><span class="nm">${esc(g.teams[1].name)}</span></div>
   </div><div class="boardfoot">${sm}${compTag}${val}${warn}<button class="pill pill-btn" data-alerts="1" aria-expanded="${!!S.alertsOpen}" title="Elegir avisos y ver el historial">🔔 Avisos${AL.list.length ? ' · ' + AL.list.length : ''}</button><span>${g.poss.filter(p => p.side === 0).length} posesiones por equipo</span><span>${g.events.length} jugadas</span></div></section>`;
 }
-const TABS = [['entrenador', 'Entrenador'], ['resumen', 'Resumen'], ['factores', 'Factores'], ['jugadores', 'Jugadores'], ['quintetos', 'Quintetos'], ['rotaciones', 'Rotaciones'], ['dinamica', 'Dinámica'], ['posesiones', 'Posesiones'], ['tiro', 'Tiro'], ['clutch', 'Clutch'], ['jugadas', 'Jugadas']];
+const TABS = [['entrenador', 'Entrenador'], ['resumen', 'Resumen'], ['factores', 'Factores'], ['jugadores', 'Jugadores'], ['quintetos', 'Quintetos'], ['cara', 'Cara a cara'], ['rotaciones', 'Rotaciones'], ['dinamica', 'Dinámica'], ['posesiones', 'Posesiones'], ['tiro', 'Tiro'], ['clutch', 'Clutch'], ['jugadas', 'Jugadas']];
 const STABS = [['informe', 'Informe del rival'], ['resumen', 'Resumen'], ['jugadores', 'Jugadores'], ['quintetos', 'Quintetos'], ['posesiones', 'Posesiones'], ['cierres', 'Clutch y cierres'], ['evolucion', 'Evolución'], ['liga', 'Liga'], ['partidos', 'Partidos']];
 function tabsBar(list, cur, attr) { return `<nav class="tabs" role="tablist" aria-label="Secciones del análisis">${list.map(([k, l]) => `<button role="tab" id="tab-${k}" ${attr}="${k}" aria-selected="${cur === k}" aria-controls="tabpanel" tabindex="${cur === k ? 0 : -1}">${l}</button>`).join('')}</nav>`; }
 
@@ -1778,6 +1778,56 @@ function vJugadores(g) {
     return `<section class="panel"><div class="sec-h"><h2>${tm(g, s)} ${esc(g.teams[s].name)}</h2></div>${tbl('pl' + s + S.pcols, playerCols(S.pcols, g), rows, { sort: { k: 'min', d: -1 }, footRow: foot })}</section>`;
   }).join('');
   return `<section class="panel stack" style="gap:8px">${filterBar(g)}${ctl}<p class="note" style="margin:0">Los porcentajes de uso, asistencia, rebote, robo y tapón se calculan con lo que pasó exactamente mientras el jugador estaba en pista. Pasa el cursor por la cabecera para ver cada definición.</p></section>${out}`;
+}
+// ---------- Cara a cara ----------
+// Números de un jugador mientras cada rival está en pista y mientras está en el banquillo (mismo filtro de tramo)
+const LIN_SET = new Map();
+const onCourt = (lin, pid) => { let set = LIN_SET.get(lin); if (!set) { set = new Set(String(lin || '').split(',').map(Number)); LIN_SET.set(lin, set); } return set.has(pid); };
+function vCara(g) {
+  const tf = filterFn(S.filt), adv = gameCtx(g).adv;
+  const played = adv.filter(p => p.min > 0).sort((a, b) => a.side - b.side || b.min - a.min);
+  if (!played.length) return '<div class="panel empty">Todavía no hay jugadores en pista.</div>';
+  // Jugador por defecto: el máximo anotador del rival de «mi equipo» (o del local)
+  const me = mySide(g), pick = played.find(p => p.pid === S.caraA);
+  const A0 = pick || adv.filter(p => p.side === (me >= 0 ? 1 - me : 0) && p.min > 0).sort((a, b) => b.box.pts - a.box.pts)[0] || played[0];
+  const a = A0.pid, sa = A0.side, sb = 1 - sa;
+  const stat = (f, pid) => A.playerAdvanced(g, f).find(p => p.pid === pid);
+  const per10 = (v, min) => min > 0 ? v * 10 / min : null;
+  const rival = played.filter(p => p.side === sb);
+  const rows = rival.map(b => {
+    const on = stat(x => onCourt(x.lin[sb], b.pid) && (!tf || tf(x)), a), off = stat(x => !onCourt(x.lin[sb], b.pid) && (!tf || tf(x)), a);
+    const o = on || { min: 0, box: A.newBox(), pm: 0 }, f = off || { min: 0, box: A.newBox(), pm: 0 };
+    return { pid: b.pid, name: b.name, num: b.num, min: o.min, pts: o.box.pts, p10: per10(o.box.pts, o.min), fgm: o.box.fgm, fga: o.box.fga, fg3m: o.box.fg3m, fg3a: o.box.fg3a, ftm: o.box.ftm, fta: o.box.fta,
+      reb: o.box.orb + o.box.drb, ast: o.box.ast, tov: o.box.tov, pm: o.pm, net: o.onNet, ts: o.ts,
+      offMin: f.min, offPts: f.box.pts, offP10: per10(f.box.pts, f.min), offPm: f.pm, offNet: f.onNet };
+  });
+  const sh = (m, at) => (r => `${r[m]}/${r[at]}`);
+  const cols = [{ k: 'name', label: 'Rival en pista', v: r => r.name, f: r => `${r.num ? '<span class="faint n">' + esc(r.num) + '</span> ' : ''}${esc(r.name)}` },
+    { k: 'min', label: 'Min juntos', num: true, f: r => mmss(r.min * 60), t: r => +r.min.toFixed(2) },
+    { k: 'pts', label: 'Pts', num: true, f: r => r.pts }, { k: 'p10', label: 'Pts/10 min', title: 'Puntos por cada 10 minutos en pista juntos', num: true, f: r => nf(r.p10, 1) },
+    { k: 'fgm', label: 'TC', num: true, v: r => div0(r.fgm, r.fga), f: sh('fgm', 'fga'), t: r => r.fgm + '/' + r.fga }, { k: 'fg3m', label: 'T3', num: true, v: r => div0(r.fg3m, r.fg3a), f: sh('fg3m', 'fg3a'), t: r => r.fg3m + '/' + r.fg3a },
+    { k: 'ftm', label: 'TL', num: true, v: r => div0(r.ftm, r.fta), f: sh('ftm', 'fta'), t: r => r.ftm + '/' + r.fta }, { k: 'ts', label: 'TS%', num: true, f: r => pct(r.ts, 0) },
+    { k: 'reb', label: 'Reb', num: true, f: r => r.reb }, { k: 'ast', label: 'Ast', num: true, f: r => r.ast }, { k: 'tov', label: 'Pér', num: true, f: r => r.tov },
+    { k: 'pm', label: '+/-', num: true, f: r => sgc(r.pm) }, { k: 'net', label: 'Net equipo', title: 'Diferencia por 100 posesiones del equipo del jugador en esos minutos', num: true, f: r => sgc(r.net, 1) },
+    { k: 'offMin', label: 'Sin él: min', title: 'Minutos del jugador con este rival en el banquillo', num: true, f: r => mmss(r.offMin * 60), t: r => +r.offMin.toFixed(2) },
+    { k: 'offP10', label: 'Sin él: pts/10', num: true, f: r => nf(r.offP10, 1) }, { k: 'offPm', label: 'Sin él: +/-', num: true, f: r => sgc(r.offPm) }];
+  // Resumen: contra quién produce más y menos (al menos 4 minutos juntos)
+  const enough = rows.filter(r => r.min >= 4 && r.p10 != null).sort((x, y) => y.p10 - x.p10);
+  const short2 = n => esc(short(n));
+  const ins = [];
+  if (enough.length >= 2) {
+    const hi = enough[0], lo = enough[enough.length - 1];
+    ins.push(`Con <b>${short2(hi.name)}</b> en pista es cuando más anota por minuto: ${nf(hi.p10, 1)} pts por 10 min (${hi.pts} en ${mmss(hi.min * 60)}).`);
+    ins.push(`Con <b>${short2(lo.name)}</b> en pista es cuando menos: ${nf(lo.p10, 1)} pts por 10 min (${lo.pts} en ${mmss(lo.min * 60)})${lo.offP10 != null ? `; con él en el banquillo, ${nf(lo.offP10, 1)}` : ''}.`);
+    const pmLo = rows.filter(r => r.min >= 4).sort((x, y) => x.pm - y.pm)[0];
+    if (pmLo && pmLo.pm < 0) ins.push(`Su peor +/- es con <b>${short2(pmLo.name)}</b> en pista: ${sg(pmLo.pm)} en ${mmss(pmLo.min * 60)}.`);
+  } else ins.push('Hacen falta al menos 4 minutos juntos en pista para comparar.');
+  const opts = [0, 1].map(s => `<optgroup label="${esc(g.teams[s].name)}">${played.filter(p => p.side === s).map(p => `<option value="${p.pid}" ${p.pid === a ? 'selected' : ''}>${esc(g.teams[s].abbr)} · ${esc(p.name)}</option>`).join('')}</optgroup>`).join('');
+  return `<section class="panel stack" style="gap:8px">${filterBar(g)}
+      <div class="row"><label class="lbl" for="sel-cara">Jugador</label><select id="sel-cara" style="max-width:340px">${opts}</select></div>
+      <p class="note" style="margin:0">Cada fila son sus números mientras ese jugador rival está en pista; a la derecha, mientras ese rival está en el banquillo.</p></section>
+    <section class="panel"><div class="sec-h"><h2>${tm(g, sa)} ${esc(A0.name)}</h2><span class="note">${mmss(A0.min * 60)} en pista · ${A0.box.pts} pts en el partido</span></div><ul class="ins">${ins.map(i => `<li>${i}</li>`).join('')}</ul></section>
+    <section class="panel"><div class="sec-h"><h2>Frente a cada jugador de ${tm(g, sb)}</h2></div>${tbl('cara' + a, cols, rows, { sort: { k: 'min', d: -1 }, empty: 'El rival no ha usado jugadores en este tramo.' })}</section>`;
 }
 function vQuintetos(g) {
   const f = filterFn(S.filt);
@@ -2404,7 +2454,7 @@ function render(silent) {
     const g = S.g;
     if (!g) { view.innerHTML = `<div class="panel empty">${S.waiting ? 'El partido aún no ha empezado: se abrirá solo en cuanto haya jugadas.' : S.booting ? 'Cargando partido…' : 'Carga un partido para empezar.'}</div>`; return; }
     if (!TABS.find(t => t[0] === S.tab)) S.tab = 'resumen';
-    const V = { entrenador: vEntrenador, resumen: vResumen, factores: vFactores, jugadores: vJugadores, quintetos: vQuintetos, rotaciones: vRotaciones, dinamica: vDinamica, posesiones: vPosesiones, tiro: vTiro, clutch: vClutch, jugadas: vJugadas }[S.tab];
+    const V = { entrenador: vEntrenador, resumen: vResumen, factores: vFactores, jugadores: vJugadores, quintetos: vQuintetos, cara: vCara, rotaciones: vRotaciones, dinamica: vDinamica, posesiones: vPosesiones, tiro: vTiro, clutch: vClutch, jugadas: vJugadas }[S.tab];
     html = scoreboard(g) + (S.alertsOpen ? alertsPanel(g) : '') + tabsBar(TABS, S.tab, 'data-tab') + `<div class="stack" id="tabpanel" role="tabpanel" aria-labelledby="tab-${S.tab}" style="margin-top:14px">${V(g)}</div>`;
   } else {
     const list = S.scout.list;
@@ -2415,7 +2465,9 @@ function render(silent) {
   }
   applyTeamColors(view);
   view.innerHTML = html;
-  const tb = view.querySelector('.tabs'); if (tb && tabsX) tb.scrollLeft = tabsX;
+  const tb = view.querySelector('.tabs');
+  if (tb && tabsX) tb.scrollLeft = tabsX;
+  else if (tb) { const sel = tb.querySelector('[aria-selected="true"]'); if (sel && sel.offsetLeft + sel.offsetWidth > tb.clientWidth) tb.scrollLeft = sel.offsetLeft - 8; } // pestaña elegida a la vista al entrar
   if (scrollX.some(Boolean)) view.querySelectorAll('.scroll').forEach((x, i) => { if (scrollX[i]) x.scrollLeft = scrollX[i]; });
   if (DL) view.querySelectorAll('.dl-only').forEach(b => b.hidden = false);
   if (S.mode === 'match' && S.tab === 'entrenador' && !S.coachEdit) view.querySelectorAll('.coach-grid > .cb').forEach(cb => { const h = cb.querySelector('.sec-h'); if (h) h.insertAdjacentHTML('beforeend', `<button class="lnk cb-share" data-share="${cb.dataset.block}" title="Compartir este bloque como imagen">⤴ Compartir</button>`); });
@@ -2506,6 +2558,7 @@ document.addEventListener('change', e => {
   else if (t.dataset && t.dataset.aside) setAlertCfg(c => { c.side[t.dataset.aside] = t.value; });
   else if (t.dataset && t.dataset.asound) setAlertCfg(c => { c.sound = t.checked; if (t.checked) beep(); });
   else if (t.id === 'sel-evop') { S.evoPlayer = Number(t.value); render(); }
+  else if (t.id === 'sel-cara') { S.caraA = Number(t.value); render(); }
   else if (t.id === 'sel-shotp') { S.shotPlayer = t.value; render(); }
   else if (t.id === 'in-tcolors') { store.set('teamcolors', t.checked); render(true); }
 });

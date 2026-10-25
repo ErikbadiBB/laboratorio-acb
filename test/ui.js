@@ -39,6 +39,6 @@ setTimeout(async () => {
   d.querySelector('#m-scout').click(); await new Promise(r => setTimeout(r, 30));
   console.log('scout view:', d.querySelector('#view').textContent.slice(0, 80));
   console.log('ERRORS', errors);
-  check(!errors.length, 'interfaz: errores de JavaScript'); check(tabs.length === 11, 'interfaz: faltan pestañas'); check(/✓ Cuadre/.test(boardTxt), 'interfaz: el ejemplo no cuadra con el acta');
+  check(!errors.length, 'interfaz: errores de JavaScript'); check(tabs.length === 12, 'interfaz: faltan pestañas'); check(/✓ Cuadre/.test(boardTxt), 'interfaz: el ejemplo no cuadra con el acta');
   done('interfaz (ejemplo ACB)');
 }, 400);
