@@ -347,6 +347,12 @@ th[data-sort]:focus-visible { outline-offset: -2px }
 .al-n input { width: 4.2em; padding: 3px 6px; background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r) }
 @media (max-width: 560px) { .al-row { grid-template-columns: minmax(0, 1fr) auto } .al-row > :last-child { grid-column: 1 / -1; justify-self: start } }
 .al-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 5px; font-size: .85rem; max-height: 340px; overflow: auto }
+.sm-live { color: var(--bad); font-weight: 600 } .sm-on { color: var(--good) }
+.sm-chips { display: flex; flex-wrap: wrap; gap: 6px } .sm-chip { display: inline-flex; align-items: center; gap: 2px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 20px; padding: 1px 4px 1px 2px; font-size: .84rem }
+.sm-chip .lnk { font-size: .95rem }
+.sm-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr)); gap: 6px; max-height: 360px; overflow: auto; padding: 2px }
+.sm-pl { display: flex; gap: 6px; align-items: baseline; text-align: left; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface-2); color: var(--ink); padding: 6px 9px; cursor: pointer; font-size: .86rem }
+.sm-pl[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); background: var(--surface) }
 .badge-ex { font-size: .72rem; background: var(--surface-2); border: 1px dashed var(--line); border-radius: 4px; padding: 1px 7px; color: var(--ink-2) }
 </style>
 
@@ -359,6 +365,7 @@ th[data-sort]:focus-visible { outline-offset: -2px }
         <button data-compet="acb" aria-pressed="true" title="Liga Endesa">ACB</button>
         <button data-compet="bcl" aria-pressed="false" title="Basketball Champions League">BCL</button>
         <button data-compet="lu" aria-pressed="false" title="Liga U (ACB U22)">U22</button>
+        <button data-smopen="1" aria-pressed="false" title="Mi Supermanager: sigue a tus jugadores de toda la Liga Endesa en directo">SM</button>
       </div>
       <div class="seg" role="group" aria-label="Modo">
         <button id="m-match" aria-pressed="true">Partido</button>
@@ -2428,6 +2435,149 @@ function applyTeamColors(view) {
   view.classList.toggle('tc', !!pal);
 }
 
+// ---------- Supermanager: mis equipos y la jornada en directo ----------
+// Se eligen jugadores de toda la Liga Endesa (la lista sale de los partidos ya jugados) y se agrupan en equipos propios.
+// Cada jornada se sigue en directo descargando solo los partidos de los equipos reales de esos jugadores.
+// Puntos SM = valoración ACB (la del acta); el capitán se multiplica por el factor elegido (×2 por defecto).
+const SM = { games: new Map(), matches: [], rounds: null, rid: null, on: false, busy: false, timer: 0, sig: '', err: '', msg: '', loading: false };
+const smNorm = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+function smCfg() {
+  const c = store.get('sm', null) || {};
+  const teams = Array.isArray(c.teams) && c.teams.length
+    ? c.teams.map((t, i) => ({ name: String(t.name || 'Equipo ' + (i + 1)).slice(0, 24), players: [...new Set((t.players || []).map(Number).filter(Boolean))], cap: t.cap ? Number(t.cap) : null }))
+    : [{ name: 'Mi equipo', players: [], cap: null }];
+  return { teams, cur: Math.min(Math.max(0, c.cur | 0), teams.length - 1), mult: [1, 1.5, 2].includes(Number(c.mult)) ? Number(c.mult) : 2 };
+}
+const smSave = c => store.set('sm', c);
+const smPoolData = () => store.get('sm-pool', {}) || {};
+// Añade (o actualiza de equipo) a los jugadores de un partido a la lista de la competición
+function smAddPool(g) {
+  const pl = smPoolData(); let ch = 0;
+  g.players.forEach((p, pid) => { const t = g.teams[p.side], o = pl[pid]; if (!o || o.t !== t.id || o.n !== p.name) { pl[pid] = { n: p.name, t: t.id, a: t.abbr, tn: t.name }; ch++; } });
+  if (ch) store.set('sm-pool', pl);
+  return ch;
+}
+// Filas por jugador de un partido (en directo o terminado)
+function smGameRows(g) {
+  const last = g.events[g.events.length - 1], on = new Set();
+  if (last) last.linAfter.forEach(l => String(l || '').split(',').forEach(x => x && on.add(Number(x))));
+  const by = new Map();
+  A.playerAdvanced(g).forEach(p => by.set(p.pid, { min: p.min, pts: p.box.pts, reb: p.box.orb + p.box.drb, ast: p.box.ast, stl: p.box.stl, blk: p.box.blk, tov: p.box.tov, pf: p.box.pf, val: p.pir, pm: p.pm, on: !g.finished && on.has(p.pid) }));
+  return by;
+}
+async function smRefresh() {
+  if (SM.busy) return; SM.busy = true;
+  try {
+    const c = await loadComp(); SM.rounds = c.rounds; if (SM.rid == null) SM.rid = c.cur.id;
+    const ml = await api('/matchdata/Menu/matchlist?roundId=' + SM.rid);
+    SM.matches = ((ml && ml.matches) || []).map(acbGame);
+    const cfg = smCfg(), pl = smPoolData(), teamIds = new Set();
+    cfg.teams.forEach(t => t.players.forEach(pid => { if (pl[pid]) teamIds.add(pl[pid].t); }));
+    const todo = SM.matches.filter(m => m.status !== 'SCH' && (teamIds.has(m.home.id) || teamIds.has(m.away.id)) && !(SM.games.get(m.id) || {}).done);
+    await pool(todo, 4, async m => {
+      const res = await fetchGame('acb', m.id); if (!res) return;
+      const g = A.parseGame(res.raw, { id: m.id, header: res.header });
+      smAddPool(g);
+      SM.games.set(m.id, { by: smGameRows(g), hdr: res.header, sig: res.sig, done: m.status === 'FIN' && g.finished });
+    });
+    SM.err = '';
+  } catch (e) { SM.err = e.auth ? e.message : isNet(e) ? 'Sin conexión con la API de la ACB. Se reintenta.' : e.message; }
+  SM.busy = false; SM.at = new Date();
+  const sig = SM.err + '|' + SM.rid + '|' + SM.matches.map(m => m.id + m.status + m.hs + m.as).join() + '|' + [...SM.games.entries()].map(([k, g]) => k + g.sig).join();
+  if (sig !== SM.sig) { SM.sig = sig; if (S.mode === 'sm') render(true); }
+}
+async function smTick(first) {
+  clearTimeout(SM.timer);
+  if (!SM.on) return;
+  if (first || !document.hidden) await smRefresh();
+  const live = SM.matches.filter(m => m.status === 'LIVE').length;
+  if (SM.on) SM.timer = setTimeout(smTick, live ? Math.max(S.every, live > 3 ? 6 : 3) * 1000 : 60000);
+}
+function smStart() { SM.on = true; smTick(true); if (!Object.keys(smPoolData()).length) smLoadRoster(); }
+function smStop() { SM.on = false; clearTimeout(SM.timer); }
+// Lista de jugadores de la competición: partidos terminados de las últimas jornadas (se completa sola con los partidos que se siguen)
+async function smLoadRoster(rounds = 4) {
+  if (SM.loading) return; SM.loading = true; SM.msg = 'Buscando partidos de las últimas jornadas…'; smStatus();
+  try {
+    const c = await loadComp(), cur = c.cur.roundNumber;
+    const ids = [];
+    for (const r of c.rounds.filter(r => r.roundNumber <= cur && r.roundNumber > cur - rounds).sort((a, b) => a.roundNumber - b.roundNumber))
+      (await roundMatches(r.id)).forEach(m => { if (m.matchStatus === 'FINALIZED') ids.push(m.id); });
+    const games = []; let done = 0;
+    await pool(ids, 4, async (id, i) => {
+      try { const res = await fetchGame('acb', id); if (res) games[ids.indexOf(id)] = A.parseGame(res.raw, { id }); } catch (e) { if (e.auth) throw e; }
+      SM.msg = `Cargando jugadores: ${++done} de ${ids.length} partidos…`; smStatus();
+    });
+    games.filter(Boolean).forEach(smAddPool); // en orden: si un jugador cambió de equipo, vale el último
+    SM.msg = Object.keys(smPoolData()).length + ' jugadores disponibles';
+  } catch (e) { SM.msg = isNet(e) ? 'Sin conexión con la API de la ACB.' : e.message; }
+  SM.loading = false; if (S.mode === 'sm') render(true);
+}
+const smStatus = () => { const el = $('#st-sm'); if (el) el.textContent = SM.msg || ''; };
+
+function smTable(team, cfg) {
+  const pl = smPoolData(), rows = team.players.map(pid => {
+    const p = pl[pid] || { n: 'Jugador ' + pid, t: 0, a: '?' };
+    const m = SM.matches.find(x => x.home.id === p.t || x.away.id === p.t), gm = m && SM.games.get(m.id), s = gm && gm.by.get(pid);
+    const cap = team.cap === pid, mult = cap ? cfg.mult : 1, home = m && m.home.id === p.t, riv = m ? (home ? m.away : m.home).abbr : '';
+    const sc = m && m.status !== 'SCH' ? (home ? `${m.hs}–${m.as}` : `${m.as}–${m.hs}`) : '', vs = `<span class="faint">${home ? 'vs' : '@'} ${esc(riv)}</span>`;
+    let state, ord;
+    if (!m) { state = '<span class="faint">Sin partido</span>'; ord = 3; }
+    else if (m.status === 'SCH') { state = `${esc(fmtWhen(m.when))} ${vs}`; ord = 2; }
+    else if (m.status === 'LIVE') { const h = gm && gm.hdr; state = `<span class="sm-live">● ${h && h.period ? esc(qLabel(h.period) + ' ' + (h.clock || '')) : 'En juego'}</span> ${sc} ${vs}`; ord = 0; }
+    else { state = `Final ${sc} ${vs}`; ord = 1; }
+    const fin = m && m.status === 'FIN' && gm;
+    return { pid, name: p.n, team: p.a, cap, on: !!(s && s.on), state, ord, st: m ? m.status : 'NONE', played: !!s,
+      min: s ? s.min : null, pts: s ? s.pts : null, reb: s ? s.reb : null, ast: s ? s.ast : null, stl: s ? s.stl : null, blk: s ? s.blk : null, tov: s ? s.tov : null, pf: s ? s.pf : null,
+      val: s ? s.val : null, sm: s ? s.val * mult : fin ? 0 : null };
+  });
+  const tot = k => rows.reduce((a, r) => a + (r[k] || 0), 0);
+  const N = (k, label, title) => ({ k, label, title, num: true, v: r => r[k], f: r => r[k] == null ? '<span class="faint">–</span>' : String(r[k]) });
+  const cols = [{ k: 'name', label: 'Jugador', v: r => r.name, f: r => `${r.on ? '<span class="sm-on" title="En pista ahora" aria-label="En pista ahora">●</span> ' : ''}${r.cap ? '<span title="Capitán" aria-label="Capitán">★</span> ' : ''}${esc(r.name)} <span class="faint">${esc(r.team)}</span>` },
+    { k: 'ord', label: 'Partido', v: r => r.ord, f: r => r.state },
+    { k: 'min', label: 'Min', num: true, v: r => r.min, f: r => r.min == null ? '<span class="faint">–</span>' : mmss(r.min * 60), t: r => r.min == null ? '' : +r.min.toFixed(2) },
+    N('pts', 'Pts'), N('reb', 'Reb'), N('ast', 'Ast'), N('stl', 'Rob', 'Recuperaciones'), N('blk', 'Tap', 'Tapones'), N('tov', 'Pér', 'Pérdidas'), N('pf', 'FP', 'Faltas personales'), N('val', 'Val', 'Valoración ACB'),
+    { k: 'sm', label: 'Puntos SM', title: 'Valoración ACB; el capitán se multiplica', num: true, v: r => r.sm, f: r => r.sm == null ? '<span class="faint">–</span>' : `<b>${nf(r.sm, r.cap && cfg.mult % 1 ? 1 : 0)}</b>` }];
+  const foot = { name: 'Total', team: '', cap: false, on: false, state: '', ord: null, min: null, pts: tot('pts'), reb: tot('reb'), ast: tot('ast'), stl: tot('stl'), blk: tot('blk'), tov: tot('tov'), pf: tot('pf'), val: tot('val'), sm: tot('sm') };
+  return { rows, cols, foot, total: foot.sm, live: rows.filter(r => r.st === 'LIVE').length, onCourt: rows.filter(r => r.on).length, fin: rows.filter(r => r.st === 'FIN').length, pend: rows.filter(r => r.st === 'SCH').length, none: rows.filter(r => r.st === 'NONE').length };
+}
+function smPoolList(team) {
+  const pl = smPoolData(), q = smNorm(S.smQ), t = S.smT || '';
+  let arr = Object.entries(pl).map(([pid, o]) => Object.assign({ pid: Number(pid) }, o));
+  const n = arr.length;
+  if (t) arr = arr.filter(x => String(x.t) === t);
+  if (q) arr = arr.filter(x => smNorm(x.n + ' ' + x.a + ' ' + x.tn).includes(q));
+  arr.sort((a, b) => a.n.localeCompare(b.n, 'es'));
+  if (!arr.length) return `<p class="empty">${n ? 'Ningún jugador coincide.' : SM.loading ? 'Cargando jugadores…' : 'Todavía no hay jugadores: pulsa «Cargar jugadores».'}</p>`;
+  const sel = new Set(team.players);
+  return `<div class="sm-list">${arr.slice(0, 80).map(x => `<button class="sm-pl" data-smtoggle="${x.pid}" aria-pressed="${sel.has(x.pid)}"><b aria-hidden="true">${sel.has(x.pid) ? '✓' : '+'}</b> ${esc(x.n)} <span class="faint">${esc(x.a)}</span></button>`).join('')}</div>${arr.length > 80 ? `<p class="note">Se muestran 80 de ${arr.length}: escribe o elige un equipo para filtrar.</p>` : ''}`;
+}
+function vSM() {
+  const cfg = smCfg(), team = cfg.teams[cfg.cur], ed = !!S.smEdit, pl = smPoolData();
+  const T = smTable(team, cfg), rIdx = SM.rounds ? SM.rounds.findIndex(r => r.id === SM.rid) : -1, rd = rIdx >= 0 ? SM.rounds[rIdx] : null;
+  const teamsOpts = [...new Map(Object.values(pl).map(o => [o.t, o])).values()].sort((a, b) => a.tn.localeCompare(b.tn, 'es'));
+  const chips = cfg.teams.map((t, i) => `<button class="chipbtn" data-smteam="${i}" aria-pressed="${i === cfg.cur}">${esc(t.name)} <span class="faint">${t.players.length}</span></button>`).join('');
+  const sel = team.players.map(pid => { const o = pl[pid] || { n: 'Jugador ' + pid, a: '?' }; return `<span class="sm-chip"><button class="lnk" data-smcap="${pid}" aria-pressed="${team.cap === pid}" title="${team.cap === pid ? 'Quitar capitán' : 'Hacer capitán'}" aria-label="${team.cap === pid ? 'Quitar capitán a ' : 'Hacer capitán a '}${esc(o.n)}">${team.cap === pid ? '★' : '☆'}</button>${esc(o.n)} <span class="faint">${esc(o.a)}</span><button class="lnk" data-smrm="${pid}" aria-label="Quitar a ${esc(o.n)}">✕</button></span>`; }).join('');
+  const edit = ed ? `<div class="coach-ed">
+      <div class="row"><div class="field" style="flex:1 1 200px"><label for="in-smname">Nombre del equipo</label><input type="text" id="in-smname" value="${esc(team.name)}" maxlength="24"></div>
+        <div class="field" style="flex:0 1 190px"><label for="sel-smmult">Capitán suma</label><select id="sel-smmult">${[[1, '×1 (sin extra)'], [1.5, '×1,5'], [2, '×2']].map(([v, l]) => `<option value="${v}" ${cfg.mult === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+        <button class="btn ghost" data-smdel="1" ${cfg.teams.length > 1 ? '' : 'disabled'}>Borrar este equipo</button></div>
+      <div><div class="lbl" style="margin-bottom:4px">En «${esc(team.name)}» (${team.players.length}) · toca ☆ para elegir capitán</div><div class="sm-chips">${sel || '<span class="faint">Todavía no has añadido a nadie.</span>'}</div></div>
+      <div class="row"><input type="text" id="in-smq" value="${esc(S.smQ || '')}" placeholder="Buscar jugador o equipo…" aria-label="Buscar jugador" style="flex:1 1 200px;width:auto">
+        <select id="sel-smt" aria-label="Filtrar por equipo" style="width:auto;max-width:220px"><option value="">Todos los equipos</option>${teamsOpts.map(o => `<option value="${o.t}" ${String(o.t) === (S.smT || '') ? 'selected' : ''}>${esc(o.tn)}</option>`).join('')}</select>
+        <button class="btn ghost" data-smload="1" ${SM.loading ? 'disabled' : ''}>↻ Cargar jugadores</button></div>
+      <div id="sm-plist">${smPoolList(team)}</div></div>` : '';
+  const kv = `<div class="kv"><div><b>${nf(T.total, cfg.mult % 1 && team.cap ? 1 : 0)}</b><span>Puntos SM ${T.live ? '(en directo)' : ''}</span></div><div><b>${T.onCourt}</b><span>En pista ahora</span></div><div><b>${T.live}</b><span>Jugando</span></div><div><b>${T.fin}</b><span>Han terminado</span></div><div><b>${T.pend}</b><span>Pendientes</span></div></div>`;
+  const body = !team.players.length ? `<div class="panel empty">Este equipo no tiene jugadores. Pulsa «✎ Editar equipo» y añádelos desde la lista de la competición.</div>`
+    : `<section class="panel">${kv}</section><section class="panel"><div class="sec-h"><h2>${esc(team.name)}</h2><span class="note">${SM.err ? '' : SM.at ? 'Actualizado ' + SM.at.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + (T.live ? ' · se actualiza solo' : '') : 'Cargando…'}</span></div>${tbl('smt', T.cols, T.rows, { sort: { k: 'sm', d: -1 }, footRow: T.foot })}${T.none ? `<p class="note">${T.none} jugador${T.none > 1 ? 'es' : ''} sin partido esta jornada.</p>` : ''}</section>`;
+  return `<div class="stack"><section class="panel stack" style="gap:8px">
+      <div class="row" style="justify-content:space-between"><div class="filters" role="group" aria-label="Mis equipos"><span class="lbl">Equipo</span>${chips}${ed ? '<button class="chipbtn" data-smnew="1">+ Nuevo equipo</button>' : ''}</div>
+        <button class="btn ${ed ? '' : 'ghost'}" data-smedit="1" aria-expanded="${ed}">${ed ? '✓ Listo' : '✎ Editar equipo'}</button></div>
+      <div class="row"><div class="pk-nav" style="flex:0 1 320px"><button class="pk-arrow" data-smround="-1" aria-label="Jornada anterior" ${rIdx > 0 ? '' : 'disabled'}>‹</button><div class="pk-round">${rd ? 'Jornada ' + rd.roundNumber : 'Jornada…'}</div><button class="pk-arrow" data-smround="1" aria-label="Jornada siguiente" ${rIdx >= 0 && rIdx < SM.rounds.length - 1 ? '' : 'disabled'}>›</button></div>
+        <span class="status ${SM.err ? 'err' : ''}" id="st-sm" role="status">${esc(SM.err || SM.msg)}</span></div>
+      ${edit}</section>${body}</div>`;
+}
+
 // ---------- Render ----------
 // Actualizaciones en segundo plano (directo): como mucho un redibujado por fotograma y ninguno con la pestaña oculta
 function scheduleRender() {
@@ -2448,9 +2598,13 @@ function render(silent) {
   S.vkey = vkey;
   CHARTS.length = 0; hideTip();
   $('#m-match').setAttribute('aria-pressed', S.mode === 'match'); $('#m-scout').setAttribute('aria-pressed', S.mode === 'scout');
+  document.querySelectorAll('[data-compet]').forEach(b => b.setAttribute('aria-pressed', S.mode !== 'sm' && b.dataset.compet === S.compet));
+  document.querySelector('[data-smopen]').setAttribute('aria-pressed', S.mode === 'sm');
   $('#loader-match').hidden = S.mode !== 'match'; $('#loader-scout').hidden = S.mode !== 'scout';
   let html = '';
-  if (S.mode === 'match') {
+  if (S.mode === 'sm') {
+    html = vSM();
+  } else if (S.mode === 'match') {
     const g = S.g;
     if (!g) { view.innerHTML = `<div class="panel empty">${S.waiting ? 'El partido aún no ha empezado: se abrirá solo en cuanto haya jugadas.' : S.booting ? 'Cargando partido…' : 'Carga un partido para empezar.'}</div>`; return; }
     if (!TABS.find(t => t[0] === S.tab)) S.tab = 'resumen';
@@ -2497,7 +2651,16 @@ document.addEventListener('click', async e => {
   else if (d.pmore) { S.pbpMax += 400; render(); }
   else if (d.open) { setMode('match'); loadMatch({ comp: S.compet, id: Number(d.open) }); }
   else if (d.skin != null && b.classList.contains('skin-opt')) { applySkin(d.skin); }
-  else if (d.compet) { setCompet(d.compet); setPick(true); }
+  else if (d.smopen) { setMode('sm'); }
+  else if (d.smteam) { const c = smCfg(); c.cur = Number(d.smteam); smSave(c); render(); }
+  else if (d.smnew) { const c = smCfg(); c.teams.push({ name: 'Equipo ' + (c.teams.length + 1), players: [], cap: null }); c.cur = c.teams.length - 1; smSave(c); render(); const n = $('#in-smname'); if (n) { n.focus(); n.select(); } }
+  else if (d.smdel) { const c = smCfg(); if (c.teams.length > 1) { c.teams.splice(c.cur, 1); c.cur = Math.max(0, c.cur - 1); smSave(c); render(); } }
+  else if (d.smedit) { S.smEdit = !S.smEdit; render(); }
+  else if (d.smload) { smLoadRoster(); }
+  else if (d.smtoggle || d.smrm) { const c = smCfg(), t = c.teams[c.cur], pid = Number(d.smtoggle || d.smrm), i = t.players.indexOf(pid); if (i >= 0) { t.players.splice(i, 1); if (t.cap === pid) t.cap = null; } else t.players.push(pid); smSave(c); render(); smRefresh(); }
+  else if (d.smcap) { const c = smCfg(), t = c.teams[c.cur], pid = Number(d.smcap); t.cap = t.cap === pid ? null : pid; smSave(c); render(); }
+  else if (d.smround) { const i = SM.rounds ? SM.rounds.findIndex(r => r.id === SM.rid) + Number(d.smround) : -1; if (SM.rounds && i >= 0 && i < SM.rounds.length) { SM.rid = SM.rounds[i].id; SM.matches = []; SM.sig = ''; render(); smRefresh(); } }
+  else if (d.compet) { if (S.mode === 'sm') setMode('match'); setCompet(d.compet); setPick(true); }
   else if (d.pk) { loadMatch(parseLink(d.pk)); }
   else if (d.cfocus) { const c = coachCfg(); c.focus = d.cfocus; saveCoach(c, false); }
   else if (d.cpanel) { const c = coachCfg(); c.cur = Number(d.cpanel); saveCoach(c, false); }
@@ -2548,7 +2711,7 @@ document.addEventListener('click', e => {
   S.sort[id] = cur && cur.k === k ? { k, d: -cur.d } : { k, d: typeof sample === 'string' ? 1 : -1 };
   render();
 });
-function setMode(m) { S.mode = m; render(); }
+function setMode(m) { if (S.mode === 'sm' && m !== 'sm') smStop(); S.mode = m; store.set('area', m === 'sm' ? 'sm' : ''); if (m === 'sm') smStart(); render(); }
 document.addEventListener('change', e => {
   const t = e.target;
   if (t.id === 'in-cpname') { const c = coachCfg(); curPanel(c).name = t.value.trim().slice(0, 24) || 'Panel'; saveCoach(c, false); }
@@ -2557,12 +2720,15 @@ document.addEventListener('change', e => {
   else if (t.dataset && t.dataset.an) setAlertCfg(c => { c.n[t.dataset.an] = Math.max(1, Math.min(40, Number(t.value) || 1)); });
   else if (t.dataset && t.dataset.aside) setAlertCfg(c => { c.side[t.dataset.aside] = t.value; });
   else if (t.dataset && t.dataset.asound) setAlertCfg(c => { c.sound = t.checked; if (t.checked) beep(); });
+  else if (t.id === 'in-smname') { const c = smCfg(); c.teams[c.cur].name = t.value.trim().slice(0, 24) || 'Equipo ' + (c.cur + 1); smSave(c); render(true); }
+  else if (t.id === 'sel-smmult') { const c = smCfg(); c.mult = Number(t.value); smSave(c); render(true); }
+  else if (t.id === 'sel-smt') { S.smT = t.value; const l = $('#sm-plist'); if (l) { const c = smCfg(); l.innerHTML = smPoolList(c.teams[c.cur]); } }
   else if (t.id === 'sel-evop') { S.evoPlayer = Number(t.value); render(); }
   else if (t.id === 'sel-cara') { S.caraA = Number(t.value); render(); }
   else if (t.id === 'sel-shotp') { S.shotPlayer = t.value; render(); }
   else if (t.id === 'in-tcolors') { store.set('teamcolors', t.checked); render(true); }
 });
-document.addEventListener('input', e => { const t = e.target; if (t.dataset && t.dataset.notes) store.set(t.dataset.notes, t.value); });
+document.addEventListener('input', e => { const t = e.target; if (t.id === 'in-smq') { S.smQ = t.value; const l = $('#sm-plist'); if (l) { const c = smCfg(); l.innerHTML = smPoolList(c.teams[c.cur]); } return; } if (t.dataset && t.dataset.notes) store.set(t.dataset.notes, t.value); });
 document.addEventListener('focusout', () => { if (S.pendingRender) setTimeout(() => { if (S.pendingRender) render(true); }, 0); });
 $('#m-match').onclick = () => setMode('match');
 $('#m-scout').onclick = () => setMode('scout');
@@ -2586,6 +2752,7 @@ $('#b-proxy').onclick = () => { PROXY = $('#in-proxy').value.trim().replace(/\/+
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) return;
   if (S.dirty) render(true);
+  if (S.mode === 'sm') smTick(true);
   if (S.g && !S.g.finished && S.matchId && S.timer) loadMatch({ comp: S.g.comp, id: S.matchId }, { silent: true });
 });
 $('#b-scout').onclick = loadScout;
@@ -2650,6 +2817,7 @@ applySkin(store.get('skin', ''));
   try { if ('serviceWorker' in navigator && (location.protocol === 'https:' || /^(localhost|127\.)/.test(location.hostname))) navigator.serviceWorker.register('sw.js').catch(() => { }); } catch (e) { }
   const h = (location.hash || '').replace('#', '');
   let link = /^(acb|bcl|lu)-\d{5,8}$/.test(h) ? parseLink(h) : /^\d{5,7}$/.test(h) ? { comp: 'acb', id: +h } : null;
+  if (!link && store.get('area', '') === 'sm') { initRounds(); loadSample(); setMode('sm'); return; } // se vuelve a abrir en el Supermanager si se cerró ahí
   if (!link && favOf(S.compet)) {
     updateFavBtn(); initRounds(); S.booting = true; render();
     const ok = await openFav(true); S.booting = false;
