@@ -105,9 +105,9 @@ const login = async pass => { d.querySelector('#in-smuser').value = 'erik'; d.qu
   d.querySelector('#view [data-smlayout="tarjetas"]').click();
   await until(() => d.querySelectorAll('#view .sm-pos').length === 3 && d.querySelector(`#view .sm-card[data-pid="${H}"] .sm-gold`));
   const pos = [...d.querySelectorAll('#view .sm-pos')].map(x => x.textContent.replace(/\s+/g, ' ').trim());
-  console.log('grupos:', pos.join(' · '), '|', d.querySelector('#view .sm-conn').textContent.replace(/\s+/g, ' ').trim());
+  console.log('grupos:', pos.join(' · '), '|', d.querySelector('#view .sm-top').textContent.replace(/\s+/g, ' ').trim());
   check(pos.join() === 'Bases 1,Aleros 1,Pívots 1', 'SM: la jornada debe agrupar por posición');
-  check(/Conectado con Supermanager/.test(d.querySelector('#view .sm-conn').textContent), 'SM: debe indicar que está conectado');
+  check(/Conectado con Supermanager/.test(d.querySelector('#view .sm-conn').textContent) && /enlazar 1 jugador/.test(d.querySelector('#view .sm-top').textContent), 'SM: debe indicar que está conectado y avisar del jugador por enlazar');
   // 3) Plantilla del equipo enlazado: sin añadir ni quitar a mano, y enlace del dudoso
   d.querySelector('#view [data-smview="plantilla"]').click(); await wait(40);
   check(!d.querySelector('#in-smq') && !d.querySelector('#view [data-smrm]') && d.querySelector('#in-smname').disabled, 'SM: la plantilla de Supermanager no se edita aquí');
@@ -119,7 +119,7 @@ const login = async pass => { d.querySelector('#in-smuser').value = 'erik'; d.qu
   check(at(team(), 1).includes(F) && !at(team(), 2).includes(F), 'SM: el jugador enlazado a mano solo entra en las jornadas en que estaba');
   // 4) La sesión caduca: se renueva sola
   smx.jwt = 'J2'; d.querySelector('#view [data-smsync]').click();
-  await until(() => JSON.parse(w.localStorage.getItem('lab-acb:sm-auth') || '{}').jwt === 'J2' && !/Sincronizando/.test(d.querySelector('#view .sm-conn').textContent));
+  await until(() => JSON.parse(w.localStorage.getItem('lab-acb:sm-auth') || '{}').jwt === 'J2' && !/Sincronizando/.test(d.querySelector('#view .sm-top').textContent));
   check(JSON.parse(w.localStorage.getItem('lab-acb:sm-auth')).jwt === 'J2' && smx.calls.includes('/oauth/V2/open/refresh'), 'SM: la sesión debe renovarse sola');
   // 5) Fichaje en Supermanager con la jornada 3 ya empezada: vale desde la 4 y la 3 no cambia
   const base = smx.players; smx.players = () => base().filter(p => p.idPlayer !== 9003).concat([{ position: 5, statusTeamSquad: 'full', idPlayer: 9005, fullName: 'Eric Vila' }]);

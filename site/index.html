@@ -370,10 +370,8 @@ th[data-sort]:focus-visible { outline-offset: -2px }
 .sm-gold.is-low { background: var(--surface-2); color: var(--ink); box-shadow: inset 0 0 0 1px var(--line) }
 .sm-badge { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 7px; background: #F6BE00; color: #1b1b1b; font: 700 .7rem/1 var(--f-body); letter-spacing: .02em; flex: none }
 .sm-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #F6BE00; box-shadow: 0 0 0 1px #1b1b1b55; margin-right: 6px; vertical-align: 1px }
-.sm-top { display: grid; gap: 12px }
-.sm-conn { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding-bottom: 12px; border-bottom: 1px solid var(--line) }
-.sm-conn > span:nth-child(2) { flex: 1 1 220px; font-size: .9rem }
-.sm-login { display: grid; gap: 10px; padding-bottom: 12px; border-bottom: 1px solid var(--line) } .sm-login .row { align-items: flex-end }
+.sm-top { display: grid; gap: 10px }
+.sm-login { display: grid; gap: 10px; padding-top: 12px; border-top: 1px solid var(--line) } .sm-login .row { align-items: flex-end }
 .sm-linknote { display: flex; gap: 10px; align-items: center; margin: 0; font-size: .88rem; color: var(--ink-2) }
 .sm-pos { margin: 14px 0 6px; font-size: .78rem; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-2) } .sm-pos:first-of-type { margin-top: 2px }
 .sm-ph { grid-column: 1; grid-row: 1 / span 3; position: relative; width: 44px; height: 44px; border-radius: 50%; overflow: hidden; background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--line); display: grid; place-items: center; align-self: center; flex: none }
@@ -402,11 +400,21 @@ th[data-sort]:focus-visible { outline-offset: -2px }
 .sm-p1 { --pcol: #3fa34d } .sm-p3 { --pcol: #2a8fd6 } .sm-p5 { --pcol: #e8892b }
 @media (max-width: 520px) { .sm-tile { flex: 0 0 calc((100% - 15px) / 4) } .sm-crow { gap: 5px } .sm-tname { font-size: .74rem } .sm-tbar { font-size: .92rem } .sm-court { min-height: 0; padding: 12px 5px } }
 .sm-fix { align-items: center } .sm-fix > span { flex: 1 1 160px } .sm-fix select { flex: 1 1 220px; width: auto }
-.sm-head { display: grid; gap: 12px } .sm-nav { max-width: 360px }
-.sm-total { display: flex; flex-wrap: wrap; gap: 10px 28px; align-items: flex-end }
-.sm-total div { display: grid; gap: 1px } .sm-total span { font-size: .72rem; color: var(--ink-3); text-transform: uppercase; letter-spacing: .06em }
-.sm-total b { font-family: var(--f-display); font-size: 1.6rem; font-weight: 600; line-height: 1.1; font-variant-numeric: tabular-nums } .sm-total b small { font-size: .9rem; color: var(--ink-3); font-weight: 400 }
-.sm-total div:first-child b { font-size: 3rem; background: #F6BE00; color: #1b1b1b; border-radius: 14px; padding: 4px 16px 2px; justify-self: start }
+.sm-head { display: grid; gap: 14px; justify-items: center; text-align: center } .sm-nav { max-width: 360px } .sm-head .sm-nav { width: 100%; max-width: 320px }
+.sm-total { display: grid; gap: 10px; justify-items: center }
+.sm-big { display: grid; gap: 6px; justify-items: center } .sm-big span { font-size: .74rem; color: var(--ink-3); text-transform: uppercase; letter-spacing: .08em } .sm-big em { font-style: normal; color: var(--bad); font-weight: 600 }
+.sm-acc { display: flex; gap: 6px; align-items: baseline; font-size: .82rem; color: var(--ink-3) } .sm-acc b { font: 600 1.15rem/1 var(--f-display); color: var(--ink); font-variant-numeric: tabular-nums }
+.sm-prog { display: flex; gap: 4px; width: 100%; max-width: 360px } .sm-seg { flex: 1; height: 8px; border-radius: 4px; background: var(--line) }
+.sm-seg.is-fin { background: var(--good) } .sm-seg.is-live { background: var(--bad); animation: smblink 1.6s ease-in-out infinite } @media (prefers-reduced-motion: reduce) { .sm-seg.is-live { animation: none } }
+.sm-leg { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 16px; font-size: .78rem; color: var(--ink-2) } .sm-leg span { display: inline-flex; align-items: center; gap: 6px } .sm-leg .sm-seg { flex: none; width: 14px; height: 6px; animation: none }
+.sm-upd { font-size: .74rem; color: var(--ink-3); margin: 0 }
+.sm-toprow { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px }
+.sm-conn { display: inline-flex; align-items: center; gap: 8px; font-size: .8rem; color: var(--ink-3); margin-left: auto }
+.sm-conn .sm-badge { width: 22px; height: 22px; font-size: .6rem; border-radius: 6px }
+.sm-ibtn { width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font-size: 1rem; line-height: 1; cursor: pointer; display: grid; place-items: center }
+.sm-ibtn:hover:not(:disabled) { border-color: var(--accent) } .sm-ibtn:disabled { opacity: .5; cursor: default } .sm-out { font-size: .78rem }
+.sm-cbtn { display: inline-flex; align-items: center; gap: 8px } .sm-msg { margin: 0 }
+.sm-big b { font: 700 clamp(3.4rem, 9vw, 4.6rem)/1 var(--f-display); font-variant-numeric: tabular-nums; background: #F6BE00; color: #1b1b1b; border-radius: 20px; padding: 10px 28px 6px; min-width: 2.2em; box-shadow: 0 6px 18px rgba(246, 190, 0, .25) }
 .sm-slot .sm-ph { grid-column: auto; grid-row: auto; width: 30px; height: 30px } .sm-slot .sm-ph span { font-size: .7rem } .sm-slot-n { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
 ul.sm-slots { list-style: none }
 .sm-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: 8px }
@@ -3617,18 +3625,21 @@ async function smSync(quiet) {
     smSave(cfg); store.set('sm-sync', Date.now()); if (poolCh) store.set('sm-pool', pool);
     // Algún jugador sin reconocer puede ser de jornadas antiguas que aún no se han mirado: se busca en toda la temporada y se repite (una vez)
     if (miss && !SMX.full) { SMX.full = true; SMX.msg = 'Buscando jugadores de jornadas anteriores…'; render(true); await smLoadRoster(0); SMX.busy = false; return smSync(quiet); }
-    SMX.msg = `Sincronizado con Supermanager: ${teams.length === 1 ? '1 equipo' : teams.length + ' equipos'}` + (miss ? ` · ${miss === 1 ? 'falta enlazar 1 jugador' : 'faltan por enlazar ' + miss + ' jugadores'} (en «Plantilla»)` : '') + (started ? `. Los cambios cuentan desde la jornada ${cur + 1}.` : '.');
+    SMX.msg = miss ? `${miss === 1 ? 'Falta enlazar 1 jugador' : 'Faltan por enlazar ' + miss + ' jugadores'} de Supermanager: elígelos en «Plantilla».` : '';
   } catch (e) { SMX.err = true; SMX.msg = e.smAuth ? e.message : isNet(e) ? 'No se pudo conectar con Supermanager. Se reintentará al volver a abrir.' : e.message; }
   SMX.busy = false; if (S.mode === 'sm') { render(true); await smRefresh(); smFill(); }
 }
 const smAgo = t => { const m = Math.round((Date.now() - t) / 60000); return m < 1 ? 'ahora mismo' : m < 60 ? 'hace ' + m + ' min' : m < 1440 ? 'hace ' + Math.round(m / 60) + ' h' : 'hace ' + Math.round(m / 1440) + ' d'; };
-function smConnBar() {
+// Conexión con Supermanager en pequeño (a la derecha de los equipos) y, debajo, el formulario o los avisos
+function smConnMini() {
   const a = smAuth(), last = store.get('sm-sync', 0);
-  if (a) return `<div class="sm-conn"><span class="sm-badge" aria-hidden="true">SM</span><span>Conectado con Supermanager${last ? ` · sincronizado ${smAgo(last)}` : ''}</span>
-    <button class="btn ghost" data-smsync="1" ${SMX.busy ? 'disabled' : ''}>↻ Sincronizar</button><button class="lnk" data-smout="1">Desconectar</button>
-    ${SMX.msg ? `<div class="status ${SMX.err ? 'err' : ''}" role="status" style="flex-basis:100%">${esc(SMX.msg)}</div>` : ''}</div>`;
-  if (!S.smLogin) return `<div class="sm-conn"><span class="sm-badge" aria-hidden="true">SM</span><span>Trae tus equipos de Supermanager: los cambios los haces allí y aquí se actualizan solos.</span><button class="btn" data-smlogin="1">Conectar con Supermanager</button>
-    ${SMX.msg ? `<div class="status ${SMX.err ? 'err' : ''}" role="status" style="flex-basis:100%">${esc(SMX.msg)}</div>` : ''}</div>`;
+  if (a) return `<div class="sm-conn" title="Conectado con Supermanager"><span class="sm-badge" aria-hidden="true">SM</span><span class="sr-only">Conectado con Supermanager.</span>
+    <span class="sm-conn-t">${SMX.busy ? 'Sincronizando…' : last ? smAgo(last) : 'conectado'}</span>
+    <button class="sm-ibtn" data-smsync="1" ${SMX.busy ? 'disabled' : ''} aria-label="Sincronizar con Supermanager" title="Sincronizar con Supermanager">↻</button><button class="lnk sm-out" data-smout="1">Desconectar</button></div>`;
+  return S.smLogin ? '' : `<div class="sm-conn"><button class="btn ghost sm-cbtn" data-smlogin="1"><span class="sm-badge" aria-hidden="true">SM</span>Conectar con Supermanager</button></div>`;
+}
+function smConnMsg() {
+  if (!S.smLogin || smAuth()) return SMX.msg ? `<div class="status sm-msg ${SMX.err ? 'err' : ''}" role="status">${esc(SMX.msg)}</div>` : '';
   return `<form id="sm-login" class="sm-login">
     <p class="note" style="margin:0">Entra con tu cuenta de Supermanager (ACB ID). La contraseña va directamente de este dispositivo a la ACB y <b>no se guarda</b>: solo queda abierta la sesión en este dispositivo.</p>
     <div class="row"><div class="field" style="flex:1 1 200px"><label for="in-smuser">Correo o usuario</label><input type="text" id="in-smuser" name="username" autocomplete="username" value="${esc(S.smUser || '')}" required></div>
@@ -3761,11 +3772,16 @@ function vSMJornada(cfg, t, rn) {
   const J = smJornada(t, rn), acc = smR(SM.rounds ? SM.rounds.filter(r => r.roundNumber >= (t.start || rn) && r.roundNumber <= rn).reduce((a, r) => a + smWeek(t, r.roundNumber), 0) : J.sum);
   const order = S.smSort || 'pts', rank = r => r.st === 'LIVE' ? 0 : r.st === 'FIN' ? 1 : r.st === 'SCH' ? 2 : 3;
   const rows = J.rows.slice().sort(order === 'pts' ? (a, b) => (b.pts ?? -999) - (a.pts ?? -999) || rank(a) - rank(b) : (a, b) => rank(a) - rank(b) || (a.m && b.m ? a.m.when - b.m.when : 0) || (b.pts ?? -999) - (a.pts ?? -999));
+  // Barra con un tramo por jugador: terminado, en juego o por jugar
+  const segs = J.rows.slice().sort((a, b) => ['FIN', 'LIVE', 'SCH', 'NONE'].indexOf(a.st) - ['FIN', 'LIVE', 'SCH', 'NONE'].indexOf(b.st))
+    .map(r => `<i class="sm-seg is-${r.st === 'FIN' ? 'fin' : r.st === 'LIVE' ? 'live' : 'wait'}" title="${esc(r.name)}: ${r.st === 'FIN' ? 'terminado' : r.st === 'LIVE' ? 'en juego' : r.st === 'NONE' ? 'sin partido' : 'por jugar'}"></i>`).join('');
+  const leg = [[J.done, J.done === 1 ? 'terminado' : 'terminados', 'fin'], [J.live, 'en juego', 'live'], [J.pend + J.none, 'por jugar', 'wait']].filter(x => x[0]).map(([n, l, c]) => `<span><i class="sm-seg is-${c}"></i>${n} ${l}</span>`).join('');
+  const upd = SM.err || ((SM.loading || SM.filling) && SM.msg) || (SM.at ? 'Actualizado ' + SM.at.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) + (J.live ? ' · se actualiza solo' : '') : 'Cargando…');
   const head = `<section class="panel sm-head">${smRoundNav(rn)}
-    <div class="sm-total"><div><b>${smFmt(J.sum)}</b><span>Puntos de la jornada${J.live ? ' · provisional' : ''}</span></div>
-      <div><b>${smFmt(acc)}</b><span>Acumulado desde la J${t.start || rn}</span></div>
-      <div><b>${J.done}<small>/${J.rows.length}</small></b><span>Terminados</span></div>${J.live ? `<div><b class="sm-live">${J.live}</b><span>En juego</span></div>` : ''}<div><b>${J.pend}</b><span>Pendientes</span></div></div>
-    <div class="status ${SM.err ? 'err' : ''}" id="st-sm" role="status">${esc(SM.err || SM.msg || (SM.at ? 'Actualizado ' + SM.at.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + (J.live ? ' · se actualiza solo' : '') : 'Cargando…'))}</div></section>`;
+    <div class="sm-total"><div class="sm-big"><b>${smFmt(J.sum)}</b><span>puntos de la jornada${J.live ? ' · <em>provisional</em>' : ''}</span></div>
+      <div class="sm-acc"><span>Acumulado</span> <b>${smFmt(acc)}</b> <span>desde la J${t.start || rn}</span></div></div>
+    ${J.rows.length ? `<div class="sm-prog" role="img" aria-label="${J.done} terminados, ${J.live} en juego, ${J.pend + J.none} por jugar">${segs}</div><div class="sm-leg">${leg}</div>` : ''}
+    <div class="status sm-upd ${SM.err ? 'err' : ''}" id="st-sm" role="status">${esc(upd)}</div></section>`;
   if (!J.rows.length) return head + `<div class="panel empty">«${esc(t.name)}» no tiene jugadores en la jornada ${rn}. ${t.link ? (rn < (t.start || rn) ? 'Este equipo se sigue desde la jornada ' + t.start + '.' : '<button class="btn" data-smview="plantilla">Ver plantilla</button>') : '<button class="btn" data-smview="plantilla">Elegir jugadores</button>'}</div>`;
   const lay = S.smLayout === 'tarjetas' ? 'tarjetas' : 'pista';
   const layBtns = `<div class="filters" role="group" aria-label="Vista"><span class="lbl">Vista</span><button class="chipbtn" data-smlayout="pista" aria-pressed="${lay === 'pista'}">Pista + estadística</button><button class="chipbtn" data-smlayout="tarjetas" aria-pressed="${lay === 'tarjetas'}">Tarjetas</button>${lay === 'pista' ? `<span class="lbl" style="margin-left:10px">Columna «Partido»</span><button class="chipbtn" data-smgame="1" aria-pressed="${!!S.smGame}" title="Muestra u oculta la columna «Partido» de la tabla">${S.smGame ? 'Visible' : 'Oculta'}</button>` : ''}</div>`;
@@ -3829,7 +3845,7 @@ function vSM() {
   const cfg = smCfg(), t = cfg.teams[cfg.cur], rn = smRn(), view = ['jornada', 'temporada', 'plantilla'].includes(S.smView) ? S.smView : 'jornada';
   const chips = cfg.teams.map((x, i) => `<button class="chipbtn" data-smteam="${i}" aria-pressed="${i === cfg.cur}">${x.link ? '<span class="sm-dot" title="De Supermanager"></span>' : ''}${esc(x.name)}</button>`).join('');
   const V = view === 'temporada' ? vSMTemporada(cfg) : view === 'plantilla' ? vSMPlantilla(cfg, t, rn) : vSMJornada(cfg, t, rn);
-  return `<section class="panel sm-top">${smConnBar()}<div class="row" style="justify-content:space-between"><div class="filters" role="group" aria-label="Mis equipos"><span class="lbl">Mis equipos</span>${chips}<button class="chipbtn" data-smnew="1" title="Equipo hecho a mano, sin Supermanager">+ Nuevo equipo</button></div></div></section>`
+  return `<section class="panel sm-top"><div class="sm-toprow"><div class="filters" role="group" aria-label="Mis equipos">${chips}<button class="chipbtn" data-smnew="1" title="Equipo hecho a mano, sin Supermanager">+ Nuevo</button></div>${smConnMini()}</div>${smConnMsg()}</section>`
     + tabsBar([['jornada', 'Jornada'], ['temporada', 'Temporada'], ['plantilla', 'Plantilla']], view, 'data-smview')
     + `<div class="stack" id="tabpanel" role="tabpanel" aria-labelledby="tab-${view}" style="margin-top:14px">${V}</div>`;
 }
