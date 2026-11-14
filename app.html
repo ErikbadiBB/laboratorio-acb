@@ -348,20 +348,40 @@ th[data-sort]:focus-visible { outline-offset: -2px }
 @media (max-width: 560px) { .al-row { grid-template-columns: minmax(0, 1fr) auto } .al-row > :last-child { grid-column: 1 / -1; justify-self: start } }
 .al-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 5px; font-size: .85rem; max-height: 340px; overflow: auto }
 .sm-live { color: var(--bad); font-weight: 600 } .sm-on { color: var(--good) }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap }
+/* Supermanager: puntos en pastilla dorada, fotos y jugadores por posición (inspirado en supermanager.acb.com) */
+.sm-gold { display: inline-block; min-width: 2.4em; text-align: center; background: #F6BE00; color: #1b1b1b; border-radius: 9px; padding: 3px 9px 2px }
+.sm-gold.is-low { background: var(--surface-2); color: var(--ink); box-shadow: inset 0 0 0 1px var(--line) }
+.sm-badge { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 7px; background: #F6BE00; color: #1b1b1b; font: 700 .7rem/1 var(--f-body); letter-spacing: .02em; flex: none }
+.sm-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #F6BE00; box-shadow: 0 0 0 1px #1b1b1b55; margin-right: 6px; vertical-align: 1px }
+.sm-top { display: grid; gap: 12px }
+.sm-conn { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding-bottom: 12px; border-bottom: 1px solid var(--line) }
+.sm-conn > span:nth-child(2) { flex: 1 1 220px; font-size: .9rem }
+.sm-login { display: grid; gap: 10px; padding-bottom: 12px; border-bottom: 1px solid var(--line) } .sm-login .row { align-items: flex-end }
+.sm-linknote { display: flex; gap: 10px; align-items: center; margin: 0; font-size: .88rem; color: var(--ink-2) }
+.sm-pos { margin: 14px 0 6px; font-size: .78rem; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-2) } .sm-pos:first-of-type { margin-top: 2px }
+.sm-ph { grid-column: 1; grid-row: 1 / span 3; position: relative; width: 44px; height: 44px; border-radius: 50%; overflow: hidden; background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--line); display: grid; place-items: center; align-self: center; flex: none }
+.sm-ph img { width: 100%; height: 100%; object-fit: cover; object-position: top }
+.sm-ph span { font: 600 .8rem/1 var(--f-body); color: var(--ink-2) }
+.sm-onpip { position: absolute; right: 1px; bottom: 1px; width: 11px; height: 11px; border-radius: 50%; background: var(--good); box-shadow: 0 0 0 2px var(--surface) }
+.sm-miss { border: 1px dashed var(--warn); border-radius: var(--r); padding: 10px 12px; display: grid; gap: 6px } .sm-miss h3 { margin: 0; font-size: .95rem }
+.sm-fix { align-items: center } .sm-fix > span { flex: 1 1 160px } .sm-fix select { flex: 1 1 220px; width: auto }
 .sm-head { display: grid; gap: 12px } .sm-nav { max-width: 360px }
 .sm-total { display: flex; flex-wrap: wrap; gap: 10px 28px; align-items: flex-end }
 .sm-total div { display: grid; gap: 1px } .sm-total span { font-size: .72rem; color: var(--ink-3); text-transform: uppercase; letter-spacing: .06em }
 .sm-total b { font-family: var(--f-display); font-size: 1.6rem; font-weight: 600; line-height: 1.1; font-variant-numeric: tabular-nums } .sm-total b small { font-size: .9rem; color: var(--ink-3); font-weight: 400 }
-.sm-total div:first-child b { font-size: 3rem }
+.sm-total div:first-child b { font-size: 3rem; background: #F6BE00; color: #1b1b1b; border-radius: 14px; padding: 4px 16px 2px; justify-self: start }
+.sm-slot .sm-ph { grid-column: auto; grid-row: auto; width: 30px; height: 30px } .sm-slot .sm-ph span { font-size: .7rem } .sm-slot-n { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+ul.sm-slots { list-style: none }
 .sm-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: 8px }
-.sm-card { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; align-items: start; border: 1px solid var(--line); border-left: 4px solid var(--line); border-radius: var(--r); padding: 9px 12px; background: var(--surface) }
+.sm-card { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 2px 12px; align-items: start; border: 1px solid var(--line); border-left: 4px solid var(--line); border-radius: var(--r); padding: 9px 12px; background: var(--surface) }
 .sm-card.is-live { border-left-color: var(--bad) } .sm-card.is-wait { background: var(--surface-2) }
-.sm-who { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
-.sm-pts { grid-row: span 3; text-align: right; font-family: var(--f-display); font-size: 1.7rem; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; display: grid; justify-items: end; gap: 3px }
+.sm-who { grid-column: 2; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+.sm-pts { grid-column: 3; grid-row: 1 / span 3; text-align: right; font-family: var(--f-display); font-size: 1.7rem; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; display: grid; justify-items: end; gap: 3px }
 .sm-bonus { font-family: var(--f-body); font-size: .68rem; font-weight: 600; color: var(--good); border: 1px solid color-mix(in srgb, var(--good) 45%, transparent); border-radius: 20px; padding: 0 6px }
-.sm-state { font-size: .8rem } .sm-line { font-size: .78rem; color: var(--ink-2) }
+.sm-state { grid-column: 2; font-size: .8rem } .sm-line { grid-column: 2; font-size: .78rem; color: var(--ink-2) }
 .sm-slots { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 6px }
-.sm-slot { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px; align-items: center; border: 1px solid var(--line); border-radius: var(--r); padding: 5px 6px 5px 10px; background: var(--surface-2); font-size: .88rem }
+.sm-slot { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; gap: 8px; align-items: center; border: 1px solid var(--line); border-radius: var(--r); padding: 5px 6px 5px 10px; background: var(--surface-2); font-size: .88rem }
 .sm-slot.empty-slot { border-style: dashed; background: none; padding: 8px 10px }
 .sm-avg { font-family: var(--f-data); font-size: .78rem; color: var(--ink-2) }
 .sm-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr)); gap: 6px; max-height: 420px; overflow: auto; padding: 2px }
@@ -2456,7 +2476,10 @@ function applyTeamColors(view) {
 // Los partidos terminados se resumen (valoración y estadística por jugador) y se guardan en el dispositivo (lab-acb:sm-games).
 const SM_MAX = 10;
 const SM = { live: new Map(), cache: null, matches: [], rounds: null, rid: null, cur: null, meta: new Map(), on: false, busy: false, filling: false, timer: 0, sig: '', err: '', msg: '', loading: false, at: null };
-const smNorm = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+// Texto para buscar: sin acentos, en minúsculas y con guiones, puntos o apóstrofos como espacios («López-Aróstegui» → «lopez arostegui»)
+const smNorm = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9ñ]+/g, ' ').trim();
+// Coincide si cada palabra buscada está en el nombre o el equipo (en cualquier orden); también vale escribirlo todo junto
+const smMatch = (txt, q) => { const t = smNorm(txt); return q.split(' ').every(w => t.includes(w)) || t.replace(/ /g, '').includes(q.replace(/ /g, '')); };
 const smR = v => Math.round(v * 10) / 10;
 const smFmt = v => v == null ? '–' : nf(smR(v), Math.round(v * 10) % 10 ? 1 : 0);
 function smCfg() {
@@ -2464,6 +2487,7 @@ function smCfg() {
   let teams = (Array.isArray(c.teams) ? c.teams : []).map((t, i) => {
     const hist = Array.isArray(t.hist) ? t.hist : [{ from: 1, players: t.players || [] }]; // versión anterior: una sola plantilla
     return { name: String(t.name || 'Equipo ' + (i + 1)).slice(0, 24), start: Number(t.start) || null,
+      link: t.link && t.link.id != null ? { id: String(t.link.id) } : undefined, pos: t.pos && typeof t.pos === 'object' ? t.pos : undefined, miss: Array.isArray(t.miss) ? t.miss : undefined,
       hist: hist.map(h => ({ from: Math.max(1, Number(h.from) || 1), players: [...new Set((h.players || []).map(Number).filter(Boolean))].slice(0, SM_MAX) })).sort((a, b) => a.from - b.from) };
   });
   if (!teams.length) teams = [{ name: 'Mi equipo', start: null, hist: [{ from: 1, players: [] }] }];
@@ -2476,7 +2500,7 @@ function smSetRoster(t, rn, players) { const h = t.hist.find(x => x.from === rn)
 const smPool = () => store.get('sm-pool', {}) || {};
 function smAddPool(g) {
   const pl = smPool(); let ch = 0;
-  g.players.forEach((p, pid) => { const t = g.teams[p.side], o = pl[pid]; if (!o || o.t !== t.id || o.n !== p.name) { pl[pid] = { n: p.name, t: t.id, a: t.abbr, tn: t.name }; ch++; } });
+  g.players.forEach((p, pid) => { const t = g.teams[p.side], o = pl[pid]; if (!o || o.t !== t.id || o.n !== p.name || (!o.i && p.img)) { pl[pid] = { n: p.name, t: t.id, a: t.abbr, tn: t.name }; if (p.img) pl[pid].i = p.img; ch++; } });
   if (ch) store.set('sm-pool', pl);
 }
 const smCache = () => SM.cache || (SM.cache = store.get('sm-games', {}) || {});
@@ -2538,7 +2562,12 @@ async function smTick(first) {
   const live = SM.matches.filter(m => m.status === 'LIVE').length;
   if (SM.on) SM.timer = setTimeout(smTick, live ? Math.max(S.every, live > 3 ? 6 : 3) * 1000 : 60000);
 }
-async function smStart() { SM.on = true; await smTick(true); if (!SM.on) return; if (!Object.keys(smPool()).length) await smLoadRoster(); smFill(); }
+async function smStart() {
+  SM.on = true; await smTick(true); if (!SM.on) return;
+  if (!Object.keys(smPool()).length) await smLoadRoster();
+  if (smAuth() && Date.now() - (store.get('sm-sync', 0) || 0) > 5 * 60000) await smSync(true); // tus equipos de Supermanager, al día
+  smFill();
+}
 function smStop() { SM.on = false; clearTimeout(SM.timer); }
 const smStatus = () => { const el = $('#st-sm'); if (el) el.textContent = SM.err || SM.msg || ''; };
 // Descarga partidos terminados (en paralelo), los resume y añade sus jugadores a la lista
@@ -2578,6 +2607,165 @@ async function smFill() {
   SM.filling = false; if (S.mode === 'sm') render(true);
 }
 
+// ---------- Conexión con Supermanager (supermanager.acb.com) ----------
+// Se entra con la cuenta ACB ID: la contraseña va directa de este dispositivo a la ACB (id.acb.com) y no se guarda.
+// Solo se guarda la sesión de Supermanager (lab-acb:sm-auth). Tus equipos y plantillas se copian de allí: los cambios se hacen en Supermanager.
+// Cada jugador de Supermanager se enlaza con el de la API de la ACB por nombre (y equipo); si no está claro, se elige a mano (lab-acb:sm-links).
+const SMX = { id: 'https://id.acb.com/api', oauth: 'https://supermanager.acb.com/oauth/V2', api: 'https://supermanager.acb.com/api', web: 'https://supermanager.acb.com/', busy: false, msg: '', err: false };
+const smAuth = () => store.get('sm-auth', null);
+const smLinks = () => store.get('sm-links', {}) || {};
+const smLogout = () => { try { localStorage.removeItem('lab-acb:sm-auth'); } catch (e) { } };
+const smxBody = async r => { const t = await r.text(); try { return JSON.parse(t); } catch (e) { return t; } };
+async function smLogin(user, pass) {
+  let r, t;
+  try { r = await fetch(SMX.id + '/signIn', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ username: user, password: pass }).toString() }); }
+  catch (e) { throw new Error('No se pudo conectar con la ACB: comprueba la conexión.'); }
+  const j = await smxBody(r);
+  if (r.status === 401) throw new Error('Usuario o contraseña incorrectos.');
+  if (r.status === 403) throw new Error('Tu cuenta ACB ID todavía no está verificada: revisa tu correo.');
+  const code = j && typeof j === 'object' && (j.code || (j.data && j.data.code));
+  if (!r.ok || !code) throw new Error('La ACB no ha aceptado el inicio de sesión (HTTP ' + r.status + ').');
+  try { t = await fetch(SMX.oauth + '/open/accounttoken/getTokens', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ uuid: code, deviceId: '' }) }); }
+  catch (e) { throw new Error('No se pudo conectar con Supermanager: comprueba la conexión.'); }
+  const k = await smxBody(t);
+  if (!t.ok || !k || !k.jwt) throw new Error('Supermanager no ha abierto la sesión (HTTP ' + t.status + ').');
+  store.set('sm-auth', { type: k.type || 'Bearer', jwt: k.jwt, refresh: k.refresh || null, at: Date.now() });
+}
+async function smRenew(a) { // la sesión caduca: se renueva con el código de refresco
+  if (!a || !a.refresh) return null;
+  try {
+    const r = await fetch(SMX.oauth + '/open/refresh', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: a.refresh }) });
+    const k = r.ok ? await smxBody(r) : null;
+    if (!k || !k.jwt) return null;
+    const n = { type: k.type || a.type, jwt: k.jwt, refresh: k.refresh || a.refresh, at: Date.now() }; store.set('sm-auth', n); return n;
+  } catch (e) { return null; }
+}
+async function smGet(path) {
+  let a = smAuth(); if (!a) throw Object.assign(new Error('Conecta con Supermanager para traer tus equipos.'), { smAuth: true });
+  const go = a => fetch(SMX.api + path, { headers: { Authorization: a.type + ' ' + a.jwt, Accept: 'application/json' }, cache: 'no-cache' });
+  let r = await go(a);
+  if (r.status === 401 || r.status === 403) { a = await smRenew(a); if (a) r = await go(a); }
+  if (r.status === 401 || r.status === 403) { smLogout(); throw Object.assign(new Error('La sesión de Supermanager ha caducado: vuelve a conectar.'), { smAuth: true }); }
+  if (!r.ok) throw new Error('Supermanager respondió HTTP ' + r.status + '.');
+  return r.json();
+}
+// Lo que trae Supermanager de un jugador: su id, sus nombres, números (por si coinciden con la ACB), equipo y posición (1 base, 3 alero, 5 pívot)
+function smxPlayer(o) {
+  const ip = o.idPlayer && typeof o.idPlayer === 'object' ? o.idPlayer : null, sp = o.sPlayer && typeof o.sPlayer === 'object' ? o.sPlayer : null, src = [o, ip, sp].filter(Boolean);
+  const id = [ip && ip.idPlayer, sp && sp.idPlayer, ip ? null : o.idPlayer].find(v => v != null && typeof v !== 'object');
+  const names = [], nums = new Set(), teams = [];
+  src.forEach(x => {
+    ['fullName', 'name', 'playerName', 'nick', 'nickName', 'shortName', 'alias'].forEach(k => { if (typeof x[k] === 'string' && x[k].trim()) names.push(x[k].trim()); });
+    ['teamName', 'teamShortName', 'teamAbbr', 'abbreviation', 'nameTeamPlayer'].forEach(k => { if (typeof x[k] === 'string') teams.push(x[k]); });
+    Object.entries(x).forEach(([k, v]) => {
+      if (/price|valor|amount|points|average|stat/i.test(k)) return;
+      if (typeof v === 'number' && v > 999) nums.add(v); else if (typeof v === 'string' && /^\d{4,9}$/.test(v)) nums.add(Number(v));
+      else if (v && typeof v === 'object' && !Array.isArray(v) && /team|equipo|club/i.test(k)) ['shortName', 'abbreviation', 'abbr', 'name', 'fullName'].forEach(q => { if (typeof v[q] === 'string') teams.push(v[q]); });
+    });
+  });
+  const pos = [o.position, ip && ip.position, sp && sp.position].map(Number).find(v => v === 1 || v === 3 || v === 5) || null;
+  return { id: id != null ? String(id) : null, names: [...new Set(names)], nums, teams, pos, empty: o.statusTeamSquad === 'empty' || !!(ip && ip.statusTeamSquad === 'empty') };
+}
+const smTok = s => smNorm(s).split(' ').filter(Boolean);
+// Parecido entre un jugador de Supermanager y uno de la ACB: apellidos y nombre que coinciden, y su equipo
+function smxScore(x, p) {
+  const pt = smTok(p.n); let best = 0;
+  for (const nm of x.names) {
+    const t = smTok(nm), long = t.filter(w => w.length > 2), ini = t.filter(w => w.length === 1);
+    const hit = long.filter(w => pt.includes(w)).length; if (!hit) continue;
+    let sc = hit * 2 - (long.length - hit);
+    if (smNorm(nm) === smNorm(p.n)) sc += 3;
+    if (ini.length && ini.every(i => pt.some(w => w[0] === i))) sc += 1;
+    best = Math.max(best, sc);
+  }
+  if (best > 0) { const a = smNorm(p.a), tn = smNorm(p.tn); if (x.nums.has(p.t) || x.teams.some(s => { const n = smNorm(s); return n && (n === a || (tn && (tn.includes(n) || n.includes(tn)))); })) best += 2; }
+  return best;
+}
+function smxResolve(x, pool, links) {
+  for (const k of [x.id, ...x.names.map(n => 'n:' + smNorm(n))]) if (k && links[k] && pool[links[k]]) return Number(links[k]); // enlazado a mano
+  for (const v of x.nums) if (pool[v]) return v; // mismo número que en la ACB
+  let top = null, s1 = 0, s2 = 0;
+  for (const [pid, p] of Object.entries(pool)) { const sc = smxScore(x, p); if (sc > s1) { s2 = s1; s1 = sc; top = Number(pid); } else if (sc > s2) s2 = sc; }
+  return s1 >= 2 && s1 > s2 ? top : null;
+}
+// Jugadores de la ACB que se parecen a un nombre (para enlazarlo a mano)
+function smxCands(name) {
+  const x = { names: [name], nums: new Set(), teams: [] }, pl = smPool();
+  return Object.entries(pl).map(([pid, p]) => ({ pid: Number(pid), p, sc: smxScore(x, p) })).filter(c => c.sc > 0).sort((a, b) => b.sc - a.sc || a.p.n.localeCompare(b.p.n, 'es')).slice(0, 12);
+}
+// Copia tus equipos de Supermanager. La plantilla nueva vale desde la jornada actual si aún no ha empezado; si ya empezó, desde la siguiente
+async function smSync(quiet) {
+  if (SMX.busy) return; if (!smAuth()) return;
+  SMX.busy = true; SMX.err = false; SMX.msg = 'Sincronizando con Supermanager…'; if (!quiet) render(true);
+  try {
+    const all = await smGet('/basic/userteam/all');
+    const comps = (Array.isArray(all) ? all : []).filter(c => c && c.name && Array.isArray(c.userTeamList));
+    const liga = comps.filter(c => /liga|endesa|acb/i.test(c.name)), use = liga.length ? liga : comps, teams = [];
+    use.forEach(c => c.userTeamList.forEach(t => { if (t && t.idUserTeam != null) teams.push({ id: String(t.idUserTeam), name: String(t.nameTeam || t.name || 'Mi equipo').trim().slice(0, 24) }); }));
+    if (!teams.length) throw new Error('Tu cuenta de Supermanager no tiene equipos en la Liga Endesa.');
+    if (!Object.keys(smPool()).length) await smLoadRoster();
+    if (!SM.rounds) await smRefresh();
+    const cur = SM.cur || smRn(), curR = (SM.rounds || []).find(r => r.roundNumber === cur);
+    const ms = curR && curR.id === SM.rid && SM.matches.length ? SM.matches : curR ? ((((await api('/matchdata/Menu/matchlist?roundId=' + curR.id)) || {}).matches) || []).map(acbGame) : [];
+    const started = ms.some(m => m.status !== 'SCH'), cfg = smCfg(), pool = smPool(), links = smLinks();
+    let miss = 0;
+    for (const tm of teams) {
+      const rows = await smGet('/basic/userteamplayer/' + encodeURIComponent(tm.id));
+      const list = (Array.isArray(rows) ? rows : []).map(smxPlayer).filter(x => !x.empty && x.names.length);
+      let t = cfg.teams.find(x => x.link && x.link.id === tm.id);
+      if (!t) { // equipo nuevo; ocupa el sitio de un equipo vacío que no venga de Supermanager
+        t = { name: tm.name, start: cur, hist: [] };
+        const blank = cfg.teams.findIndex(x => !x.link && x.hist.every(h => !h.players.length));
+        if (blank >= 0) cfg.teams[blank] = t; else cfg.teams.push(t);
+      }
+      const from = !smRoster(t, cur).length ? cur : started ? cur + 1 : cur, was = new Map((t.miss || []).map(m => [m.id, m.from]));
+      t.link = { id: tm.id }; t.name = tm.name; t.pos = t.pos || {}; t.miss = [];
+      const pids = [];
+      list.forEach(x => { const pid = smxResolve(x, pool, links); if (pid && !pids.includes(pid)) { pids.push(pid); if (x.pos) t.pos[pid] = x.pos; }
+        else if (!pid) { const n = x.names.slice().sort((a, b) => b.length - a.length)[0], id = x.id || 'n:' + smNorm(n); t.miss.push({ id, n, pos: x.pos, from: Math.min(was.get(id) || from, from) }); } });
+      miss += t.miss.length;
+      const next = pids.slice(0, SM_MAX);
+      if (smRoster(t, from).slice().sort().join() !== next.slice().sort().join()) smSetRoster(t, from, next);
+    }
+    const ix = cfg.teams.findIndex(x => x.link); if (ix >= 0 && !(cfg.teams[cfg.cur] || {}).link) cfg.cur = ix;
+    smSave(cfg); store.set('sm-sync', Date.now());
+    SMX.msg = `Sincronizado con Supermanager: ${teams.length === 1 ? '1 equipo' : teams.length + ' equipos'}` + (miss ? ` · ${miss === 1 ? 'falta enlazar 1 jugador' : 'faltan por enlazar ' + miss + ' jugadores'} (en «Plantilla»)` : '') + (started ? `. Los cambios cuentan desde la jornada ${cur + 1}.` : '.');
+  } catch (e) { SMX.err = true; SMX.msg = e.smAuth ? e.message : isNet(e) ? 'No se pudo conectar con Supermanager. Se reintentará al volver a abrir.' : e.message; }
+  SMX.busy = false; if (S.mode === 'sm') { render(true); smRefresh(); }
+}
+const smAgo = t => { const m = Math.round((Date.now() - t) / 60000); return m < 1 ? 'ahora mismo' : m < 60 ? 'hace ' + m + ' min' : m < 1440 ? 'hace ' + Math.round(m / 60) + ' h' : 'hace ' + Math.round(m / 1440) + ' d'; };
+function smConnBar() {
+  const a = smAuth(), last = store.get('sm-sync', 0);
+  if (a) return `<div class="sm-conn"><span class="sm-badge" aria-hidden="true">SM</span><span>Conectado con Supermanager${last ? ` · sincronizado ${smAgo(last)}` : ''}</span>
+    <button class="btn ghost" data-smsync="1" ${SMX.busy ? 'disabled' : ''}>↻ Sincronizar</button><button class="lnk" data-smout="1">Desconectar</button>
+    ${SMX.msg ? `<div class="status ${SMX.err ? 'err' : ''}" role="status" style="flex-basis:100%">${esc(SMX.msg)}</div>` : ''}</div>`;
+  if (!S.smLogin) return `<div class="sm-conn"><span class="sm-badge" aria-hidden="true">SM</span><span>Trae tus equipos de Supermanager: los cambios los haces allí y aquí se actualizan solos.</span><button class="btn" data-smlogin="1">Conectar con Supermanager</button>
+    ${SMX.msg ? `<div class="status ${SMX.err ? 'err' : ''}" role="status" style="flex-basis:100%">${esc(SMX.msg)}</div>` : ''}</div>`;
+  return `<form id="sm-login" class="sm-login">
+    <p class="note" style="margin:0">Entra con tu cuenta de Supermanager (ACB ID). La contraseña va directamente de este dispositivo a la ACB y <b>no se guarda</b>: solo queda abierta la sesión en este dispositivo.</p>
+    <div class="row"><div class="field" style="flex:1 1 200px"><label for="in-smuser">Correo o usuario</label><input type="text" id="in-smuser" name="username" autocomplete="username" value="${esc(S.smUser || '')}" required></div>
+      <div class="field" style="flex:1 1 160px"><label for="in-smpass">Contraseña</label><input type="password" id="in-smpass" name="password" autocomplete="current-password" required></div>
+      <button class="btn" type="submit" ${SMX.busy ? 'disabled' : ''}>Conectar</button><button class="btn ghost" type="button" data-smlogin="0">Cancelar</button></div>
+    <div class="status ${SMX.err ? 'err' : ''}" id="st-smlogin" role="status">${esc(SMX.msg || '')}</div></form>`;
+}
+// Enlaza a mano un jugador de Supermanager: se recuerda y entra en la plantilla desde la jornada en que faltaba
+function smFix(id, pid) {
+  const l = smLinks(); l[id] = pid; store.set('sm-links', l);
+  const c = smCfg(), t = c.teams[c.cur], m = (t.miss || []).find(x => x.id === id); if (!m) return;
+  const from = m.from || t.start || smRn();
+  if (!t.hist.some(h => h.from === from)) smSetRoster(t, from, smRoster(t, from).slice());
+  t.hist.forEach(h => { if (h.from >= from && !h.players.includes(pid) && h.players.length < SM_MAX) h.players.push(pid); });
+  if (m.pos) (t.pos = t.pos || {})[pid] = m.pos;
+  t.miss = t.miss.filter(x => x !== m); smSave(c); render(); smRefresh();
+}
+async function smDoLogin(form) {
+  const u = form.querySelector('#in-smuser'), p = form.querySelector('#in-smpass'), st = form.querySelector('#st-smlogin'), b = form.querySelector('[type=submit]');
+  const user = u.value.trim(), pass = p.value; if (!user || !pass) return;
+  S.smUser = user; SMX.busy = true; SMX.err = false; b.disabled = true; st.className = 'status'; st.textContent = 'Conectando…';
+  try { await smLogin(user, pass); p.value = ''; S.smLogin = false; SMX.busy = false; SMX.msg = ''; if (form.contains(document.activeElement)) document.activeElement.blur(); render(); await smSync(); }
+  catch (e) { p.value = ''; SMX.busy = false; SMX.err = true; SMX.msg = e.message; b.disabled = false; st.className = 'status err'; st.textContent = e.message; p.focus(); }
+}
+
 // Filas de la jornada para un equipo
 function smJornada(t, rn) {
   const pl = smPool(), ids = SM.matches.map(m => m.id);
@@ -2587,7 +2775,7 @@ function smJornada(t, rn) {
     const st = m ? m.status : 'NONE', data = m && smData(m.id), row = f && f.row, home = m && m.home.id === tid;
     const pts = (st === 'FIN' || st === 'LIVE') && data ? smPts(row, data) : null;
     const lead = data ? (data.w != null ? data.w : data.l) : null;
-    return { pid, name: p.n, abbr: p.a, m, st, home, row, pts, played: !!row && row[2] > 0,
+    return { pid, name: p.n, abbr: p.a, img: p.i, pos: (t.pos || {})[pid] || null, m, st, home, row, pts, played: !!row && row[2] > 0,
       bonus: !!row && row[0] > 0 && lead === tid, prov: st === 'LIVE', on: st === 'LIVE' && data && (data.on || []).includes(pid),
       sc: m && st !== 'SCH' ? (home ? `${m.hs}–${m.as}` : `${m.as}–${m.hs}`) : '', riv: m ? (home ? m.away : m.home).abbr : '' };
   });
@@ -2602,16 +2790,28 @@ function smCard(r) {
     : r.st === 'FIN' ? 'No jugó: 0 puntos' : r.st === 'LIVE' ? 'Todavía no ha jugado' : '';
   const bonus = r.bonus ? `<span class="sm-bonus" title="${r.prov ? 'Su equipo va ganando: el 20 % es provisional' : 'Victoria de su equipo: +20 %'}">+20 %${r.prov ? '?' : ''}</span>` : '';
   return `<div class="sm-card ${r.st === 'LIVE' ? 'is-live' : ''} ${r.st === 'SCH' || r.st === 'NONE' ? 'is-wait' : ''}" data-pid="${r.pid}">
-    <div class="sm-who">${r.on ? '<span class="sm-on" title="En pista ahora" aria-label="En pista ahora">●</span> ' : ''}<b>${esc(r.name)}</b> <span class="faint">${esc(r.abbr)}</span></div>
-    <div class="sm-pts">${r.pts == null ? '<span class="faint">–</span>' : smFmt(r.pts)}${bonus}</div>
+    ${smPhoto(r.img, r.name, r.on)}
+    <div class="sm-who"><b>${esc(r.name)}</b> <span class="faint">${esc(r.abbr)}</span></div>
+    <div class="sm-pts">${r.pts == null ? '<span class="faint">–</span>' : `<span class="sm-gold ${r.pts > 0 ? '' : 'is-low'}">${smFmt(r.pts)}</span>`}${bonus}</div>
     <div class="sm-state">${state}</div>${line ? `<div class="sm-line">${line}</div>` : ''}</div>`;
+}
+// Foto del jugador (la de la ACB) o sus iniciales; punto verde si está en pista
+function smPhoto(img, name, on) {
+  const ini = esc(smTok(name).filter(w => w.length > 1).slice(0, 2).map(w => w[0].toUpperCase()).join(''));
+  return `<div class="sm-ph" aria-hidden="true">${img ? `<img src="${esc(img)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">` : `<span>${ini}</span>`}${on ? '<i class="sm-onpip" title="En pista ahora"></i>' : ''}</div>${on ? '<span class="sr-only">En pista ahora.</span>' : ''}`;
+}
+const SM_POS = [[1, 'Bases'], [3, 'Aleros'], [5, 'Pívots'], [0, 'Sin posición']];
+// Agrupa por posición (como en Supermanager) si se conoce; si no, una sola lista
+function smGroups(rows, posOf, draw, cls, tag = 'div') {
+  if (!rows.some(r => posOf(r))) return `<${tag} class="${cls}">${rows.map(draw).join('')}</${tag}>`;
+  return SM_POS.map(([k, l]) => { const g = rows.filter(r => (posOf(r) || 0) === k); return g.length ? `<h3 class="sm-pos">${l} <span class="faint">${g.length}</span></h3><${tag} class="${cls}">${g.map(draw).join('')}</${tag}>` : ''; }).join('');
 }
 function smPoolList(t, rn) {
   const pl = smPool(), q = smNorm(S.smQ), tf = S.smT || '', roster = smRoster(t, rn), full = roster.length >= SM_MAX, avg = smAverages();
   let arr = Object.entries(pl).map(([pid, o]) => Object.assign({ pid: Number(pid) }, o));
   const n = arr.length;
   if (tf) arr = arr.filter(x => String(x.t) === tf);
-  if (q) arr = arr.filter(x => smNorm(x.n + ' ' + x.a + ' ' + x.tn).includes(q));
+  if (q) arr = arr.filter(x => smMatch(x.n + ' ' + x.a + ' ' + x.tn, q));
   const inRound = new Set(); smRoundIds(rn).forEach(id => Object.keys(smData(id).p).forEach(p => inRound.add(+p)));
   arr = arr.filter(x => !roster.includes(x.pid)).sort((a, b) => (inRound.has(b.pid) - inRound.has(a.pid)) || (avg.get(b.pid) ?? -99) - (avg.get(a.pid) ?? -99) || a.n.localeCompare(b.n, 'es'));
   if (!arr.length) return `<p class="empty">${n ? 'Ningún jugador coincide. Si jugó hace tiempo, pulsa «↻ Buscar en toda la temporada».' : SM.loading ? 'Cargando jugadores…' : 'Todavía no hay jugadores: pulsa «↻ Buscar en toda la temporada».'}</p>`;
@@ -2636,10 +2836,10 @@ function vSMJornada(cfg, t, rn) {
       <div><b>${smFmt(acc)}</b><span>Acumulado desde la J${t.start || rn}</span></div>
       <div><b>${J.done}<small>/${J.rows.length}</small></b><span>Terminados</span></div>${J.live ? `<div><b class="sm-live">${J.live}</b><span>En juego</span></div>` : ''}<div><b>${J.pend}</b><span>Pendientes</span></div></div>
     <div class="status ${SM.err ? 'err' : ''}" id="st-sm" role="status">${esc(SM.err || SM.msg || (SM.at ? 'Actualizado ' + SM.at.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + (J.live ? ' · se actualiza solo' : '') : 'Cargando…'))}</div></section>`;
-  if (!J.rows.length) return head + `<div class="panel empty">«${esc(t.name)}» no tiene jugadores en la jornada ${rn}. <button class="btn" data-smview="plantilla">Elegir jugadores</button></div>`;
+  if (!J.rows.length) return head + `<div class="panel empty">«${esc(t.name)}» no tiene jugadores en la jornada ${rn}. ${t.link ? (rn < (t.start || rn) ? 'Este equipo se sigue desde la jornada ' + t.start + '.' : '<button class="btn" data-smview="plantilla">Ver plantilla</button>') : '<button class="btn" data-smview="plantilla">Elegir jugadores</button>'}</div>`;
   return head + `<section class="panel"><div class="row" style="justify-content:space-between;margin-bottom:10px"><div class="filters" role="group" aria-label="Orden"><span class="lbl">Orden</span><button class="chipbtn" data-smsort="pts" aria-pressed="${order === 'pts'}">Puntos</button><button class="chipbtn" data-smsort="partido" aria-pressed="${order === 'partido'}">Partido</button></div>
-      ${J.rows.length < SM_MAX ? `<button class="lnk" data-smview="plantilla">${SM_MAX - J.rows.length === 1 ? 'Falta 1 jugador' : 'Faltan ' + (SM_MAX - J.rows.length) + ' jugadores'}</button>` : ''}</div>
-    <div class="sm-cards">${rows.map(smCard).join('')}</div>
+      ${J.rows.length < SM_MAX ? `<button class="lnk" data-smview="plantilla">${SM_MAX - J.rows.length === 1 ? 'Falta 1 jugador' : 'Faltan ' + (SM_MAX - J.rows.length) + ' jugadores'}${t.link && (t.miss || []).length ? ' por enlazar' : ''}</button>` : ''}</div>
+    ${smGroups(rows, r => r.pos, smCard, 'sm-cards')}
     ${J.live ? '<p class="note">«+20 %?»: su equipo va ganando ahora; el bonus solo cuenta si gana el partido.</p>' : ''}</section>`;
 }
 function vSMTemporada(cfg) {
@@ -2661,18 +2861,28 @@ function vSMTemporada(cfg) {
     <section class="panel"><div class="sec-h"><h2>${esc(t.name)}: aportación de cada jugador</h2></div>${tbl('smplay', pcols, prow, { sort: { k: 'pts', d: -1 }, empty: 'Todavía no hay jornadas jugadas.' })}</section>`;
 }
 function vSMPlantilla(cfg, t, rn) {
-  const pl = smPool(), roster = smRoster(t, rn), avg = smAverages();
+  const pl = smPool(), roster = smRoster(t, rn), avg = smAverages(), linked = !!t.link, pos = t.pos || {};
   const teamsOpts = [...new Map(Object.values(pl).map(o => [o.t, o])).values()].sort((a, b) => a.tn.localeCompare(b.tn, 'es'));
-  const slots = Array.from({ length: SM_MAX }, (_, i) => { const pid = roster[i]; if (!pid) return `<li class="sm-slot empty-slot"><span class="faint">${i + 1}. Hueco libre</span></li>`; const o = pl[pid] || { n: 'Jugador ' + pid, a: '?' };
-    return `<li class="sm-slot"><span>${i + 1}. <b>${esc(o.n)}</b> <span class="faint">${esc(o.a)}</span></span><span class="sm-avg" title="Media de puntos SM por partido jugado">${avg.has(pid) ? smFmt(avg.get(pid)) : ''}</span><button class="lnk" data-smrm="${pid}" aria-label="Quitar a ${esc(o.n)}">✕</button></li>`; }).join('');
+  const slot = pid => { const o = pl[pid] || { n: 'Jugador ' + pid, a: '?' };
+    return `<li class="sm-slot">${smPhoto(o.i, o.n)}<span class="sm-slot-n"><b>${esc(o.n)}</b> <span class="faint">${esc(o.a)}</span></span><span class="sm-avg" title="Media de puntos SM por partido jugado">${avg.has(pid) ? smFmt(avg.get(pid)) : ''}</span>${linked ? '' : `<button class="lnk" data-smrm="${pid}" aria-label="Quitar a ${esc(o.n)}">✕</button>`}</li>`; };
+  const empty = n => Array.from({ length: n }, () => `<li class="sm-slot empty-slot"><span class="faint">Hueco libre</span></li>`).join('');
+  const slots = linked ? smGroups(roster, pid => pos[pid], slot, 'sm-slots', 'ul') : `<ol class="sm-slots">${roster.map(slot).join('')}${empty(SM_MAX - roster.length)}</ol>`;
   const startOpts = (SM.rounds || []).filter(r => r.roundNumber <= (SM.cur || rn)).map(r => `<option value="${r.roundNumber}" ${r.roundNumber === (t.start || SM.cur) ? 'selected' : ''}>Jornada ${r.roundNumber}</option>`).join('');
-  return `<section class="panel stack" style="gap:12px">
-    <div class="row"><div class="field" style="flex:1 1 200px"><label for="in-smname">Nombre del equipo</label><input type="text" id="in-smname" value="${esc(t.name)}" maxlength="24"></div>
+  // Jugadores de Supermanager que no se han podido reconocer con seguridad: se eligen a mano una vez
+  const miss = linked ? (t.miss || []) : [];
+  const fix = miss.length ? `<div class="sm-miss"><h3>${miss.length === 1 ? 'Falta enlazar 1 jugador' : 'Faltan por enlazar ' + miss.length + ' jugadores'}</h3>
+      <p class="note" style="margin:0 0 6px">No he podido saber con seguridad quién es en la estadística de la ACB. Elígelo una vez y se recordará.</p>
+      ${miss.map(m => { const c = smxCands(m.n); return `<div class="row sm-fix"><span><b>${esc(m.n)}</b></span><select data-smfix="${esc(m.id || '')}" aria-label="Quién es ${esc(m.n)}"><option value="">${c.length ? 'Elige quién es…' : 'Sin parecidos: pulsa «Buscar en toda la temporada»'}</option>${c.map(x => `<option value="${x.pid}">${esc(x.p.n)} · ${esc(x.p.a)}</option>`).join('')}</select></div>`; }).join('')}
+      <button class="btn ghost" data-smload="1" ${SM.loading ? 'disabled' : ''}>↻ Buscar en toda la temporada</button></div>` : '';
+  const head = `<section class="panel stack" style="gap:12px">
+    <div class="row"><div class="field" style="flex:1 1 200px"><label for="in-smname">Nombre del equipo</label><input type="text" id="in-smname" value="${esc(t.name)}" maxlength="24" ${linked ? 'disabled title="El nombre viene de Supermanager"' : ''}></div>
       <div class="field" style="flex:0 1 190px"><label for="sel-smstart">El acumulado empieza en</label><select id="sel-smstart">${startOpts}</select></div>
-      <button class="btn ghost" data-smdel="1" ${cfg.teams.length > 1 ? '' : 'disabled'}>${S.smDelArm ? '¿Seguro? Pulsa otra vez' : 'Borrar equipo'}</button></div>
-    <div>${smRoundNav(rn)}<div class="sec-h" style="margin-top:8px"><h3>Plantilla en la jornada ${rn} · ${roster.length}/${SM_MAX}</h3><span class="note">Los cambios valen desde esta jornada; las anteriores no se tocan. El número es su media de puntos SM por partido.</span></div>
-      <ol class="sm-slots">${slots}</ol></div></section>
-  <section class="panel stack" style="gap:8px"><div class="sec-h"><h2>Añadir jugadores</h2><span class="note">${roster.length >= SM_MAX ? 'Plantilla completa: quita a alguien para añadir.' : `Primero los que jugaron la jornada ${rn}; después, por media de puntos SM`}</span></div>
+      ${linked ? '' : `<button class="btn ghost" data-smdel="1" ${cfg.teams.length > 1 ? '' : 'disabled'}>${S.smDelArm ? '¿Seguro? Pulsa otra vez' : 'Borrar equipo'}</button>`}</div>
+    ${linked ? `<p class="sm-linknote"><span class="sm-badge" aria-hidden="true">SM</span> Este equipo viene de Supermanager: los fichajes se hacen en <a href="${SMX.web}" target="_blank" rel="noopener">supermanager.acb.com</a> y aquí se copian solos (o con «↻ Sincronizar»).</p>` : ''}
+    <div>${smRoundNav(rn)}<div class="sec-h" style="margin-top:8px"><h3>Plantilla en la jornada ${rn} · ${roster.length}/${SM_MAX}</h3><span class="note">${linked ? 'El número es su media de puntos SM por partido.' : 'Los cambios valen desde esta jornada; las anteriores no se tocan. El número es su media de puntos SM por partido.'}</span></div>
+      ${slots}</div>${fix}</section>`;
+  if (linked) return head;
+  return head + `<section class="panel stack" style="gap:8px"><div class="sec-h"><h2>Añadir jugadores</h2><span class="note">${roster.length >= SM_MAX ? 'Plantilla completa: quita a alguien para añadir.' : `Primero los que jugaron la jornada ${rn}; después, por media de puntos SM`}</span></div>
     <div class="row"><input type="text" id="in-smq" value="${esc(S.smQ || '')}" placeholder="Buscar jugador o equipo…" aria-label="Buscar jugador" style="flex:1 1 200px;width:auto">
       <select id="sel-smt" aria-label="Filtrar por equipo" style="width:auto;max-width:220px"><option value="">Todos los equipos</option>${teamsOpts.map(o => `<option value="${o.t}" ${String(o.t) === (S.smT || '') ? 'selected' : ''}>${esc(o.tn)}</option>`).join('')}</select>
       <button class="btn ghost" data-smload="1" ${SM.loading ? 'disabled' : ''} title="Mira todas las jornadas ya jugadas (solo descarga lo que falte)">↻ Buscar en toda la temporada</button></div>
@@ -2681,9 +2891,9 @@ function vSMPlantilla(cfg, t, rn) {
 }
 function vSM() {
   const cfg = smCfg(), t = cfg.teams[cfg.cur], rn = smRn(), view = ['jornada', 'temporada', 'plantilla'].includes(S.smView) ? S.smView : 'jornada';
-  const chips = cfg.teams.map((x, i) => `<button class="chipbtn" data-smteam="${i}" aria-pressed="${i === cfg.cur}">${esc(x.name)}</button>`).join('');
+  const chips = cfg.teams.map((x, i) => `<button class="chipbtn" data-smteam="${i}" aria-pressed="${i === cfg.cur}">${x.link ? '<span class="sm-dot" title="De Supermanager"></span>' : ''}${esc(x.name)}</button>`).join('');
   const V = view === 'temporada' ? vSMTemporada(cfg) : view === 'plantilla' ? vSMPlantilla(cfg, t, rn) : vSMJornada(cfg, t, rn);
-  return `<section class="panel"><div class="row" style="justify-content:space-between"><div class="filters" role="group" aria-label="Mis equipos"><span class="lbl">Supermanager</span>${chips}<button class="chipbtn" data-smnew="1">+ Nuevo equipo</button></div></div></section>`
+  return `<section class="panel sm-top">${smConnBar()}<div class="row" style="justify-content:space-between"><div class="filters" role="group" aria-label="Mis equipos"><span class="lbl">Mis equipos</span>${chips}<button class="chipbtn" data-smnew="1" title="Equipo hecho a mano, sin Supermanager">+ Nuevo equipo</button></div></div></section>`
     + tabsBar([['jornada', 'Jornada'], ['temporada', 'Temporada'], ['plantilla', 'Plantilla']], view, 'data-smview')
     + `<div class="stack" id="tabpanel" role="tabpanel" aria-labelledby="tab-${view}" style="margin-top:14px">${V}</div>`;
 }
@@ -2767,6 +2977,9 @@ document.addEventListener('click', async e => {
   else if (d.smnew) { const c = smCfg(), rn = smRn(); c.teams.push({ name: 'Equipo ' + (c.teams.length + 1), start: rn, hist: [{ from: rn, players: [] }] }); c.cur = c.teams.length - 1; smSave(c); S.smView = 'plantilla'; render(); const n = $('#in-smname'); if (n) { n.focus(); n.select(); } }
   else if (d.smdel) { if (!S.smDelArm) { S.smDelArm = true; render(); } else { const c = smCfg(); if (c.teams.length > 1) { c.teams.splice(c.cur, 1); c.cur = Math.max(0, c.cur - 1); smSave(c); } S.smDelArm = false; S.smView = 'jornada'; render(); } }
   else if (d.smload) { smLoadRoster(0); }
+  else if (d.smlogin) { S.smLogin = d.smlogin === '1'; SMX.msg = ''; SMX.err = false; render(); const u = $(S.smUser ? '#in-smpass' : '#in-smuser'); if (u) u.focus(); }
+  else if (d.smsync) { smSync(); }
+  else if (d.smout) { smLogout(); SMX.msg = 'Desconectado. Tus equipos se quedan como estaban; ya no se actualizan desde Supermanager.'; SMX.err = false; render(); }
   else if (d.smfill) { smFill(); render(); }
   else if (d.smsort) { S.smSort = d.smsort; render(); }
   else if (d.smadd || d.smrm) { const c = smCfg(), t = c.teams[c.cur], rn = smRn(), pid = Number(d.smadd || d.smrm), r = smRoster(t, rn).slice(), i = r.indexOf(pid); if (d.smrm && i >= 0) r.splice(i, 1); else if (d.smadd && i < 0 && r.length < SM_MAX) r.push(pid); smSetRoster(t, rn, r); smSave(c); const y = scrollY; render(); if (y) scrollTo(0, y); smRefresh(); }
@@ -2832,6 +3045,7 @@ document.addEventListener('change', e => {
   else if (t.dataset && t.dataset.aside) setAlertCfg(c => { c.side[t.dataset.aside] = t.value; });
   else if (t.dataset && t.dataset.asound) setAlertCfg(c => { c.sound = t.checked; if (t.checked) beep(); });
   else if (t.id === 'in-smname') { const c = smCfg(); c.teams[c.cur].name = t.value.trim().slice(0, 24) || 'Equipo ' + (c.cur + 1); smSave(c); render(true); }
+  else if (t.dataset && t.dataset.smfix != null) { if (t.value && t.dataset.smfix) smFix(t.dataset.smfix, Number(t.value)); }
   else if (t.id === 'sel-smstart') { const c = smCfg(); c.teams[c.cur].start = Number(t.value); smSave(c); render(true); smFill(); }
   else if (t.id === 'sel-smt') { S.smT = t.value; const l = $('#sm-plist'); if (l) { const c = smCfg(); l.innerHTML = smPoolList(c.teams[c.cur], smRn()); } }
   else if (t.id === 'sel-evop') { S.evoPlayer = Number(t.value); render(); }
@@ -2839,7 +3053,8 @@ document.addEventListener('change', e => {
   else if (t.id === 'sel-shotp') { S.shotPlayer = t.value; render(); }
   else if (t.id === 'in-tcolors') { store.set('teamcolors', t.checked); render(true); }
 });
-document.addEventListener('input', e => { const t = e.target; if (t.id === 'in-smq') { S.smQ = t.value; const l = $('#sm-plist'); if (l) { const c = smCfg(); l.innerHTML = smPoolList(c.teams[c.cur], smRn()); } return; } if (t.dataset && t.dataset.notes) store.set(t.dataset.notes, t.value); });
+document.addEventListener('submit', e => { if (e.target.id === 'sm-login') { e.preventDefault(); smDoLogin(e.target); } });
+document.addEventListener('input', e => { const t = e.target; if (t.id === 'in-smuser') { S.smUser = t.value; return; } if (t.id === 'in-smq') { S.smQ = t.value; const l = $('#sm-plist'); if (l) { const c = smCfg(); l.innerHTML = smPoolList(c.teams[c.cur], smRn()); } return; } if (t.dataset && t.dataset.notes) store.set(t.dataset.notes, t.value); });
 document.addEventListener('focusout', () => { if (S.pendingRender) setTimeout(() => { if (S.pendingRender) render(true); }, 0); });
 $('#m-match').onclick = () => setMode('match');
 $('#m-scout').onclick = () => setMode('scout');
