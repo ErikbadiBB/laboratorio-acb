@@ -399,7 +399,17 @@ th[data-sort]:focus-visible { outline-offset: -2px }
 .sm-tbar.is-wait { background: var(--surface-2); color: var(--ink-2) } .sm-tbar.is-live { background: var(--surface-2); color: var(--bad) }
 .sm-p1 { --pcol: #3fa34d } .sm-p3 { --pcol: #2a8fd6 } .sm-p5 { --pcol: #e8892b }
 @media (max-width: 520px) { .sm-tile { flex: 0 0 calc((100% - 15px) / 4) } .sm-crow { gap: 5px } .sm-tname { font-size: .74rem } .sm-tbar { font-size: .92rem } .sm-court { min-height: 0; padding: 12px 5px } }
-.sm-fix { align-items: center } .sm-fix > span { flex: 1 1 160px } .sm-fix select { flex: 1 1 220px; width: auto }
+.sm-fix { align-items: center }
+/* Supermanager: conmutador Puntos SM | Broker, gráficas y colores de cada equipo (orden fijo) */
+.sm-tabsrow { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 6px 12px } .sm-tabsrow .tabs { flex: 1 1 auto; min-width: 0 } .sm-metric { margin-bottom: 6px }
+#view { --sm-c1: #2a78d6; --sm-c2: #eb6834; --sm-c3: #1baf7a; --sm-c4: #d99a00; --sm-c5: #d55181; --sm-c6: #6250d6 }
+.sm-legend { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: .8rem; color: var(--ink-2); margin: 0 0 6px } .sm-legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: -1px }
+.sm-hbars { display: grid; gap: 6px } .sm-hb { display: grid; grid-template-columns: minmax(110px, 34%) minmax(0, 1fr) auto; gap: 10px; align-items: center; font-size: .84rem }
+.sm-hbl { white-space: nowrap; overflow: hidden; text-overflow: ellipsis } .sm-hbt { position: relative; height: 14px; border-radius: 7px; background: var(--surface-2) }
+.sm-hbf { position: absolute; top: 0; bottom: 0; border-radius: 7px; min-width: 3px } .sm-hbz { position: absolute; left: 50%; top: -3px; bottom: -3px; width: 1px; background: var(--ink-3) }
+.sm-hbv { font-family: var(--f-data); font-size: .8rem; color: var(--ink); min-width: 4.5em; text-align: right }
+.sm-more summary { cursor: pointer; color: var(--accent); font-size: .88rem } .sm-more[open] summary { margin-bottom: 10px }
+.sm-big.is-up b { box-shadow: 0 0 0 3px var(--good) } .sm-big.is-down b { box-shadow: 0 0 0 3px var(--bad) } .sm-tot { color: var(--ink) } .sm-fix > span { flex: 1 1 160px } .sm-fix select { flex: 1 1 220px; width: auto }
 .sm-head { display: grid; gap: 14px } .sm-nav { max-width: 360px }
 .sm-total { display: grid; gap: 10px; justify-items: center }
 .sm-big { display: grid; gap: 6px; justify-items: center } .sm-big span { font-size: .74rem; color: var(--ink-3); text-transform: uppercase; letter-spacing: .08em } .sm-big em { font-style: normal; color: var(--bad); font-weight: 600 }
@@ -2259,7 +2269,7 @@ function drawHist(el, P0, P1, names) {
 const CHARTS = [];
 function drawCharts() { document.querySelectorAll('[data-chart]').forEach(el => { const fn = CHARTS[Number(el.dataset.chart)]; if (fn) fn(el); }); }
 function chart(fn, minH) { CHARTS.push(fn); return `<div class="chart" data-chart="${CHARTS.length - 1}" style="min-height:${minH || 120}px"></div>`; }
-let rz; addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(drawCharts, 150); });
+let rz; addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { if (S.mode === 'sm') render(true); else drawCharts(); }, 150); });
 
 // ---------- Vista: partido ----------
 function boardStatus(g) {
@@ -3350,6 +3360,8 @@ function applyTeamColors(view) {
 // Los partidos terminados se resumen (valoración y estadística por jugador) y se guardan en el dispositivo (lab-acb:sm-games).
 const SM_MAX = 10;
 S.smLayout = store.get('sm-layout', 'pista');
+S.smMetric = store.get('sm-metric', 'sm') === 'broker' ? 'broker' : 'sm'; // «Puntos SM» o «Broker»
+const smBk = () => S.smMetric === 'broker';
 S.smGame = store.get('sm-game', true) !== false; // columna «Partido» en la tabla de la vista Pista
 const SM = { live: new Map(), cache: null, matches: [], rounds: null, rid: null, cur: null, meta: new Map(), on: false, busy: false, filling: false, timer: 0, sig: '', err: '', msg: '', loading: false, at: null };
 // Texto para buscar: sin acentos, en minúsculas y con guiones, puntos o apóstrofos como espacios («López-Aróstegui» → «lopez arostegui»)
@@ -3363,7 +3375,7 @@ function smCfg() {
   let teams = (Array.isArray(c.teams) ? c.teams : []).map((t, i) => {
     const hist = Array.isArray(t.hist) ? t.hist : [{ from: 1, players: t.players || [] }]; // versión anterior: una sola plantilla
     return { name: String(t.name || 'Equipo ' + (i + 1)).slice(0, 24), start: Number(t.start) || null,
-      link: t.link && t.link.id != null ? { id: String(t.link.id) } : undefined, pos: t.pos && typeof t.pos === 'object' ? t.pos : undefined, miss: Array.isArray(t.miss) ? t.miss : undefined,
+      link: t.link && t.link.id != null ? { id: String(t.link.id) } : undefined, cash: isFinite(t.cash) ? Number(t.cash) : undefined, bval: isFinite(t.bval) ? Number(t.bval) : undefined, pos: t.pos && typeof t.pos === 'object' ? t.pos : undefined, miss: Array.isArray(t.miss) ? t.miss : undefined,
       hist: hist.map(h => ({ from: Math.max(1, Number(h.from) || 1), players: [...new Set((h.players || []).map(Number).filter(Boolean))].slice(0, SM_MAX) })).sort((a, b) => a.from - b.from) };
   });
   if (!teams.length) teams = [{ name: 'Mi equipo', start: null, hist: [{ from: 1, players: [] }] }];
@@ -3590,7 +3602,9 @@ async function smSync(quiet) {
     const all = await smGet('/basic/userteam/all');
     const comps = (Array.isArray(all) ? all : []).filter(c => c && c.name && Array.isArray(c.userTeamList));
     const liga = comps.filter(c => /liga|endesa|acb/i.test(c.name)), use = liga.length ? liga : comps, teams = [];
-    use.forEach(c => c.userTeamList.forEach(t => { if (t && t.idUserTeam != null) teams.push({ id: String(t.idUserTeam), name: String(t.nameTeam || t.name || 'Mi equipo').trim().slice(0, 24) }); }));
+    use.forEach(c => c.userTeamList.forEach(t => { if (t && t.idUserTeam != null) teams.push({ id: String(t.idUserTeam), name: String(t.nameTeam || t.name || 'Mi equipo').trim().slice(0, 24), cash: Number(t.amount), bval: Number(t.brokerValor) }); }));
+    const c0 = use[0] || {}; // competición de Supermanager (para el mercado y los precios) y jornada en la que está
+    store.set('sm-comp', { id: c0.idCompetition != null ? c0.idCompetition : null, j: c0.journeyActual && Number(c0.journeyActual.number) || null });
     if (!teams.length) throw new Error('Tu cuenta de Supermanager no tiene equipos en la Liga Endesa.');
     if (!Object.keys(smPool()).length) await smLoadRoster();
     if (!SM.rounds) await smRefresh();
@@ -3608,6 +3622,7 @@ async function smSync(quiet) {
         if (blank >= 0) cfg.teams[blank] = t; else cfg.teams.push(t);
       }
       t.link = { id: tm.id }; t.name = tm.name; t.pos = t.pos || {};
+      if (isFinite(tm.cash)) t.cash = tm.cash; if (isFinite(tm.bval)) t.bval = tm.bval;
       const missing = new Map(); // jugadores sin reconocer: en qué jornadas estaban
       const resolve = (lst, rn) => { const pids = [];
         lst.forEach(x => { const pid = smxResolve(x, pool, links);
@@ -3632,12 +3647,74 @@ async function smSync(quiet) {
     }
     const ix = cfg.teams.findIndex(x => x.link); if (ix >= 0 && !(cfg.teams[cfg.cur] || {}).link) cfg.cur = ix;
     smSave(cfg); store.set('sm-sync', Date.now()); if (poolCh) store.set('sm-pool', pool);
+    try { await smLoadMarket(pool, links); } catch (e) { if (e.smAuth) throw e; }
     // Algún jugador sin reconocer puede ser de jornadas antiguas que aún no se han mirado: se busca en toda la temporada y se repite (una vez)
     if (miss && !SMX.full) { SMX.full = true; SMX.msg = 'Buscando jugadores de jornadas anteriores…'; render(true); await smLoadRoster(0); SMX.busy = false; return smSync(quiet); }
     SMX.msg = miss ? `${miss === 1 ? 'Falta enlazar 1 jugador' : 'Faltan por enlazar ' + miss + ' jugadores'} de Supermanager: elígelos en «Plantilla».` : '';
   } catch (e) { SMX.err = true; SMX.msg = e.smAuth ? e.message : isNet(e) ? 'No se pudo conectar con Supermanager. Se reintentará al volver a abrir.' : e.message; }
   SMX.busy = false; if (S.mode === 'sm') { render(true); await smRefresh(); smFill(); }
 }
+// ---------- Broker (BrokerBasket) ----------
+// Precio de cada jugador: lo da el mercado de Supermanager (GET /basic/player con _filters). Tras cada jornada:
+// precio nuevo = 50.000 × (SM acumulado + SM de la jornada) ÷ (partidos + 1), sin subir ni bajar más de un 15 %; si no juega, no cambia.
+// Valor del equipo (BrokerBasket) = precio de los 10 jugadores + dinero en caja.
+const SMB = { busy: false, hist: false };
+const smMarket = () => store.get('sm-market', {}) || {};
+const smCompInfo = () => store.get('sm-comp', {}) || {};
+async function smLoadMarket(pl, links) {
+  const ci = smCompInfo(); if (ci.id == null) return;
+  const q = new URLSearchParams({ _filters: JSON.stringify([{ field: 'competition.idCompetition', value: ci.id, operator: '=', condition: 'AND' }, { field: 'edition.isActive', value: true, operator: '=', condition: 'AND' }]), _page: '1', _perPage: '1000', _sort: JSON.stringify([{ field: 'price', type: 'DESC' }]) });
+  const list = await smGet('/basic/player?' + q.toString()), mk = {};
+  (Array.isArray(list) ? list : (list && list.body) || []).forEach(o => {
+    const x = smxPlayer(o), pid = smxResolve(x, pl || smPool(), links || smLinks()); if (!pid) return;
+    const src = [o, o.idPlayer && typeof o.idPlayer === 'object' ? o.idPlayer : null].filter(Boolean), num = k => { for (const z of src) if (z[k] != null && isFinite(z[k])) return Number(z[k]); return null; };
+    mk[pid] = { id: x.id, p: num('price'), ip: num('initialPrice'), a: num('competitionAverage'), pos: x.pos };
+  });
+  if (Object.keys(mk).length) store.set('sm-market', Object.assign({}, mk, { _at: Date.now(), _j: ci.j || SM.cur }));
+}
+// Historial de precios (por jornada) de los jugadores de tus equipos: GET /basic/playerstats/{competición}/{jugador}
+const smPHist = () => store.get('sm-ph', {}) || {};
+async function smLoadPriceHist(force) {
+  const ci = smCompInfo(), mk = smMarket(); if (SMB.busy || ci.id == null || !smAuth()) return;
+  const ph = smPHist(), want = new Set(); smCfg().teams.forEach(t => t.hist.forEach(h => h.players.forEach(p => want.add(p))));
+  const todo = [...want].filter(pid => mk[pid] && mk[pid].id && (force || !ph[pid] || ph[pid].j !== mk._j));
+  if (!todo.length) return;
+  SMB.busy = true; render(true);
+  try {
+    await pool(todo, 4, async pid => {
+      try { const d = await smGet('/basic/playerstats/' + encodeURIComponent(ci.id) + '/' + encodeURIComponent(mk[pid].id)), h = {};
+        ((d && d.playerStats) || []).forEach(e => { if (e && e.numberJourney != null && e.playerPrice != null) h[e.numberJourney] = Number(e.playerPrice); });
+        ph[pid] = { j: mk._j, ip: d && d.initialPrice != null ? Number(d.initialPrice) : null, p: d && d.price != null ? Number(d.price) : null, h };
+      } catch (e) { if (e.smAuth) throw e; }
+    });
+    store.set('sm-ph', ph);
+  } catch (e) { SMX.err = true; SMX.msg = e.message; }
+  SMB.busy = false; if (S.mode === 'sm') render(true);
+}
+// Precio antes y después de una jornada ya procesada por Supermanager (historial)
+function smPriceAt(pid, rn) {
+  const h = smPHist()[pid]; if (!h) return { b: null, a: null };
+  let b = null; for (let r = rn - 1; r >= 1 && b == null; r--) if (h.h[r] != null) b = h.h[r];
+  if (b == null) b = h.ip; return { b, a: h.h[rn] != null ? h.h[rn] : null };
+}
+// Partidos jugados y puntos SM acumulados de un jugador antes de una jornada (con los partidos guardados)
+function smSeason(pid, beforeRn) {
+  let n = 0, acc = 0; const c = smCache();
+  for (const id in c) { const s = c[id], row = s.p[pid]; if (s.r < beforeRn && row && row[2] > 0) { n++; acc += smPts(row, s); } }
+  return { n, acc: smR(acc) };
+}
+const SM_BK = 50000, SM_CAP = .15;
+// Broker de un jugador en una jornada: precio de partida, precio nuevo (si ha jugado) y puntos SM para subir al máximo, quedarse igual o bajar al máximo
+function smBroker(pid, rn, pts, played) {
+  const mk = smMarket(), base = mk._j || SM.cur, m = mk[pid];
+  if (rn < base) { const { b, a } = smPriceAt(pid, rn); if (b == null) return null; return { P: b, np: a, d: a != null ? a - b : null, past: true }; }
+  if (!m || !m.p) return null;
+  const P = m.p, { n, acc } = smSeason(pid, rn), k = (n + 1) / SM_BK;
+  const np = played ? Math.round(Math.min(P * (1 + SM_CAP), Math.max(P * (1 - SM_CAP), SM_BK * (acc + pts) / (n + 1)))) : P;
+  return { P, np, d: np - P, up: smR(P * (1 + SM_CAP) * k - acc), eq: smR(P * k - acc), dn: smR(P * (1 - SM_CAP) * k - acc), n, acc };
+}
+const smEur = v => v == null || !isFinite(v) ? '–' : nf(Math.round(v), 0) + ' €';
+const smK = (v, sign) => { if (v == null || !isFinite(v)) return '–'; const a = Math.abs(v), s = sign ? (v > 0 ? '+' : v < 0 ? '−' : '') : v < 0 ? '−' : ''; return s + (a >= 1e6 ? nf(a / 1e6, a >= 1e7 ? 1 : 2) + ' M' : a >= 1000 ? nf(a / 1000, a >= 1e4 || a % 1000 === 0 ? 0 : 1) + ' k' : nf(a, 0)) ; };
 const smAgo = t => { const m = Math.round((Date.now() - t) / 60000); return m < 1 ? 'ahora mismo' : m < 60 ? 'hace ' + m + ' min' : m < 1440 ? 'hace ' + Math.round(m / 60) + ' h' : 'hace ' + Math.round(m / 1440) + ' d'; };
 // Conexión con Supermanager en pequeño (a la derecha de los equipos) y, debajo, el formulario o los avisos
 function smConnMini() {
@@ -3688,8 +3765,10 @@ function smJornada(t, rn) {
       bonus: !!row && row[0] > 0 && lead === tid, prov: st === 'LIVE', on: st === 'LIVE' && data && (data.on || []).includes(pid),
       sc: m && st !== 'SCH' ? (home ? `${m.hs}–${m.as}` : `${m.as}–${m.hs}`) : '', riv: m ? (home ? m.away : m.home).abbr : '' };
   });
-  const sum = smR(rows.reduce((a, r) => a + (r.pts || 0), 0));
-  return { rows, sum, live: rows.filter(r => r.st === 'LIVE').length, done: rows.filter(r => r.st === 'FIN').length, pend: rows.filter(r => r.st === 'SCH').length, none: rows.filter(r => r.st === 'NONE').length };
+  rows.forEach(r => { r.bk = smBroker(r.pid, rn, r.pts || 0, r.played); });
+  const sum = smR(rows.reduce((a, r) => a + (r.pts || 0), 0)), bks = rows.filter(r => r.bk);
+  const bsum = bks.reduce((a, r) => a + (r.bk.d || 0), 0), bval = bks.reduce((a, r) => a + (r.bk.np != null ? r.bk.np : r.bk.P), 0);
+  return { rows, sum, bsum, bval, bn: bks.length, live: rows.filter(r => r.st === 'LIVE').length, done: rows.filter(r => r.st === 'FIN').length, pend: rows.filter(r => r.st === 'SCH').length, none: rows.filter(r => r.st === 'NONE').length };
 }
 function smCard(r) {
   const h = r.st === 'LIVE' && smData(r.m.id) ? smData(r.m.id).hdr : null, vs = r.m ? `<span class="faint">${r.home ? 'vs' : '@'} ${esc(r.riv)}</span>` : '';
@@ -3702,7 +3781,7 @@ function smCard(r) {
     ${smPhoto(r.img, r.name, r.on)}
     <div class="sm-who"><b>${esc(r.name)}</b> <span class="faint">${esc(r.abbr)}</span></div>
     <div class="sm-pts">${r.pts == null ? '<span class="faint">–</span>' : `<span class="sm-gold ${r.pts > 0 ? '' : 'is-low'}">${smFmt(r.pts)}</span>`}${bonus}</div>
-    <div class="sm-state">${state}</div>${line ? `<div class="sm-line">${line}</div>` : ''}</div>`;
+    <div class="sm-state">${state}</div>${line ? `<div class="sm-line">${line}</div>` : ''}${smBk() && r.bk ? `<div class="sm-line">Broker: ${smK(r.bk.P)} € ${(r.played || r.bk.past) && r.bk.np != null ? `→ ${smK(r.bk.np)} € <b class="${r.bk.d > 0 ? 'pos' : r.bk.d < 0 ? 'neg' : ''}">(${smK(r.bk.d, true)})</b>` : r.bk.past ? '' : `· sube máx con ${smFmt(Math.max(0, r.bk.up))} SM`}</div>` : ''}</div>`;
 }
 // Foto del jugador (la de la ACB) o sus iniciales; punto verde si está en pista
 function smPhoto(img, name, on) {
@@ -3726,14 +3805,16 @@ function smStateTxt(r) {
 }
 function smTile(r) {
   const ti = smTeamsInfo()[r.tid] || {}, x = r.row, played = x && x[2] > 0;
-  const cls = r.pts == null ? (r.st === 'LIVE' ? 'live' : 'wait') : r.pts > 0 ? 'good' : 'bad';
-  const tip = `${r.name} (${r.abbr}) · ${smStateTxt(r)}${played ? ` · val ${x[0]}, ${x[3]} pts, ${x[4]} reb, ${x[5]} ast` : r.st === 'FIN' ? ' · no jugó' : ''}${r.pts != null ? ` · ${smFmt(r.pts)} puntos SM` : ''}`;
+  const bk = smBk() && r.bk, bkPlayed = bk && (r.played || r.bk.past) && r.bk.np != null;
+  const cls = smBk() ? (!bkPlayed ? (r.st === 'LIVE' ? 'live' : 'wait') : r.bk.d > 0 ? 'good' : r.bk.d < 0 ? 'bad' : 'wait') : r.pts == null ? (r.st === 'LIVE' ? 'live' : 'wait') : r.pts > 0 ? 'good' : 'bad';
+  const bkTip = bk ? (r.bk.past ? ` · precio ${smEur(r.bk.P)} → ${smEur(r.bk.np)}` : ` · precio ${smEur(r.bk.P)}${bkPlayed ? ' → ' + smEur(r.bk.np) : ''} · sube al máximo con ${smFmt(Math.max(0, r.bk.up))} SM, igual con ${smFmt(r.bk.eq)}, baja al máximo con ${smFmt(r.bk.dn)} o menos`) : '';
+  const tip = `${r.name} (${r.abbr}) · ${smStateTxt(r)}${played ? ` · val ${x[0]}, ${x[3]} pts, ${x[4]} reb, ${x[5]} ast` : r.st === 'FIN' ? ' · no jugó' : ''}${r.pts != null ? ` · ${smFmt(r.pts)} puntos SM` : ''}${bkTip}`;
   const ini = esc(smTok(r.name).filter(w => w.length > 1).slice(0, 2).map(w => w[0].toUpperCase()).join(''));
   return `<div class="sm-tile sm-p${r.pos || 0} ${r.st === 'LIVE' ? 'is-on' : ''}" data-pid="${r.pid}" title="${esc(tip)}" role="listitem" aria-label="${esc(tip)}">
     <div class="sm-tph">${r.img ? `<img class="ph" src="${esc(r.img)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">` : `<span class="ini">${ini}</span>`}
       ${ti.l ? `<img class="sm-tlogo" src="${esc(ti.l)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : `<span class="sm-tlogo">${esc(r.abbr)}</span>`}${r.st === 'LIVE' ? '<i class="sm-tlive"></i>' : ''}${r.on ? '<i class="sm-onpip"></i>' : ''}</div>
     <div class="sm-tname">${esc(smSurname(r.name))}</div>
-    <div class="sm-tbar is-${cls}"><span class="sm-tpts">${r.pts == null ? (r.st === 'LIVE' ? '●' : '—') : smFmt(r.pts)}</span></div></div>`;
+    <div class="sm-tbar is-${cls}"><span class="sm-tpts">${smBk() ? (bkPlayed ? smK(r.bk.d, true) : r.st === 'LIVE' ? '●' : '—') : r.pts == null ? (r.st === 'LIVE' ? '●' : '—') : smFmt(r.pts)}</span></div></div>`;
 }
 function smCourt(rows) {
   const lines = rows.some(r => r.pos) ? [1, 3, 5, 0].map(k => rows.filter(r => (r.pos || 0) === k)).filter(l => l.length) : [rows.slice(0, 2), rows.slice(2, 6), rows.slice(6)].filter(l => l.length);
@@ -3746,15 +3827,21 @@ function smCourt(rows) {
 function smStatTable(J) {
   const z = v => v == null ? null : v;
   const rows = J.rows.map(r => { const x = r.row || [], has = x.length > 2;
-    return { pid: r.pid, name: r.name, abbr: r.abbr, r, sm: r.pts, min: has ? x[2] : null, pir: has ? x[0] : null, pm: z(x[19]),
+    return { pid: r.pid, name: r.name, abbr: r.abbr, r, bk: r.bk, sm: r.pts, min: has ? x[2] : null, pir: has ? x[0] : null, pm: z(x[19]),
       box: { pts: z(x[3]), fg2m: z(x[10]), fg2a: z(x[11]), fg3m: z(x[12]), fg3a: z(x[13]), ftm: z(x[14]), fta: z(x[15]), orb: z(x[16]), drb: z(x[17]), ast: z(x[5]), stl: z(x[6]), tov: z(x[8]), blk: z(x[7]), pf: z(x[9]), fd: z(x[18]) } }; });
-  const tot = { name: 'Total', abbr: '', foot: true, sm: J.sum, min: 0, pir: 0, pm: null, box: {} };
+  const tot = { name: 'Total', abbr: '', foot: true, sm: J.sum, bd: J.bn ? J.bsum : null, min: 0, pir: 0, pm: null, box: {} };
   rows.forEach(r => { tot.min += r.min || 0; tot.pir += r.pir || 0; Object.keys(r.box).forEach(k => { if (r.box[k] != null) tot.box[k] = (tot.box[k] || 0) + r.box[k]; }); });
   const cols = [{ k: 'name', label: 'Jugador', v: r => r.name, f: r => r.foot ? '<b>Total</b>' : `${esc(r.name)} <span class="faint">${esc(r.abbr)}</span>` },
     { k: 'sm', label: 'SM', title: 'Puntos Supermanager (valoración, +20 % si gana su equipo)', num: true, v: r => r.sm, f: r => r.sm == null ? '<span class="faint">–</span>' : `<b>${smFmt(r.sm)}</b>` },
+    ...(smBk() ? [{ k: 'bp', label: 'Precio', title: 'Precio antes de la jornada', num: true, v: r => r.bk && r.bk.P, f: r => r.foot ? '' : smK(r.bk && r.bk.P) },
+      { k: 'bn', label: 'Nuevo', title: 'Precio nuevo con los puntos SM de esta jornada (si ha jugado)', num: true, v: r => r.bk && r.bk.np, f: r => r.foot ? '' : r.bk && (r.r.played || r.bk.past) && r.bk.np != null ? smK(r.bk.np) : '<span class="faint">–</span>' },
+      { k: 'bd', label: 'Var.', title: 'Variación del precio en la jornada (BrokerBasket)', num: true, v: r => r.foot ? r.bd : r.bk && r.bk.d, f: r => { const v = r.foot ? r.bd : r.bk && (r.r.played || r.bk.past) ? r.bk.d : null; return v == null ? '<span class="faint">–</span>' : `<b class="${v > 0 ? 'pos' : v < 0 ? 'neg' : ''}">${smK(v, true)}</b>`; } },
+      { k: 'bu', label: 'Sube máx', title: 'Puntos SM con los que sube el máximo (15 %)', num: true, v: r => r.bk && r.bk.up, f: r => r.foot || !r.bk || r.bk.past ? '' : smFmt(Math.max(0, r.bk.up)) },
+      { k: 'be', label: 'Igual', title: 'Puntos SM con los que su precio se queda igual', num: true, v: r => r.bk && r.bk.eq, f: r => r.foot || !r.bk || r.bk.past ? '' : smFmt(r.bk.eq) },
+      { k: 'bb', label: 'Baja máx', title: 'Con estos puntos SM o menos baja el máximo (15 %)', num: true, v: r => r.bk && r.bk.dn, f: r => r.foot || !r.bk || r.bk.past ? '' : smFmt(r.bk.dn) }] : []),
     S.smGame && { k: 'game', label: 'Partido', v: r => r.r ? ['LIVE', 'FIN', 'SCH', 'NONE'].indexOf(r.r.st) : 9, f: r => r.foot ? '' : `<span class="${r.r.st === 'LIVE' ? 'sm-live' : 'faint'}" style="white-space:nowrap">${r.r.st === 'LIVE' ? '● ' : ''}${esc(smStateTxt(r.r))}</span>` },
     ...playerCols('basic', null).slice(1).map(c => Object.assign({}, c, { f: r => r.min == null && !r.foot ? '<span class="faint">–</span>' : c.f(r) }))].filter(Boolean);
-  return `<div class="sm-stats">${tbl('smjor', cols, rows, { sort: { k: 'sm', d: -1 }, footRow: tot, cap: 'Estadística de la jornada' })}${J.rows.some(r => r.row && r.row.length < 11) ? '<p class="note">Algunos partidos se guardaron antes con menos estadística (–): se completan al volver a abrir su jornada.</p>' : ''}</div>`;
+  return `<div class="sm-stats">${tbl('smjor' + (smBk() ? 'b' : ''), cols, rows, { sort: smBk() ? { k: 'bd', d: -1 } : { k: 'sm', d: -1 }, footRow: tot, cap: 'Estadística de la jornada' })}${J.rows.some(r => r.row && r.row.length < 11) ? '<p class="note">Algunos partidos se guardaron antes con menos estadística (–): se completan al volver a abrir su jornada.</p>' : ''}</div>`;
 }
 function smPoolList(t, rn) {
   const pl = smPool(), q = smNorm(S.smQ), tf = S.smT || '', roster = smRoster(t, rn), full = roster.length >= SM_MAX, avg = smAverages();
@@ -3779,8 +3866,11 @@ function smRoundNav(rn, short) {
 }
 // Cabecera de la jornada: el total a la izquierda, en medio acumulado y partidos, y la jornada a la derecha del todo
 function smHero(J, acc, t, rn, segs, leg, upd) {
-  const big = `<div class="sm-big"><b>${smFmt(J.sum)}</b><span>puntos${J.live ? ' · <em>provisional</em>' : ''}</span></div>`;
-  const accH = `<div class="sm-acc"><span>Acumulado</span> <b>${smFmt(acc)}</b> <span>desde la J${t.start || rn}</span></div>`;
+  const bk = smBk(), noBk = bk && !J.bn;
+  const big = bk ? `<div class="sm-big ${J.bsum > 0 ? 'is-up' : J.bsum < 0 ? 'is-down' : ''}"><b>${noBk ? '–' : smK(J.bsum, true) + ' €'}</b><span>broker de la jornada${J.live ? ' · <em>provisional</em>' : ''}</span></div>`
+    : `<div class="sm-big"><b>${smFmt(J.sum)}</b><span>puntos${J.live ? ' · <em>provisional</em>' : ''}</span></div>`;
+  const accH = bk ? `<div class="sm-acc">${noBk ? '<span>' + (smAuth() ? 'Sin precios todavía: pulsa ↻ para sincronizar con Supermanager.' : 'Conecta con Supermanager para ver los precios del broker.') + '</span>' : `<span>Valor de los ${J.bn}</span> <b>${smK(J.bval)} €</b>${t.cash != null && isFinite(t.cash) ? ` <span>+ caja ${smK(t.cash)} € = <b class="sm-tot">${smK(J.bval + t.cash)} €</b></span>` : ''}`}</div>`
+    : `<div class="sm-acc"><span>Acumulado</span> <b>${smFmt(acc)}</b> <span>desde la J${t.start || rn}</span></div>`;
   const bar = J.rows.length ? `<div class="sm-prog" role="img" aria-label="${J.done} terminados, ${J.live} en juego, ${J.pend + J.none} por jugar">${segs}</div><div class="sm-leg">${leg}</div>` : '';
   return `<section class="panel sm-head"><div class="sm-total">${big}<div class="sm-hr">${accH}${bar}<div class="status sm-upd ${SM.err ? 'err' : ''}" id="st-sm" role="status">${esc(upd)}</div></div>${smRoundNav(rn, true)}</div></section>`;
 }
@@ -3806,6 +3896,62 @@ function vSMJornada(cfg, t, rn) {
     ${smGroups(rows, r => r.pos, smCard, 'sm-cards')}
     </section>`;
 }
+// ---------- Gráficas del Supermanager (SVG en línea, al ancho real; colores por equipo en orden fijo) ----------
+const SM_COL = ['var(--sm-c1)', 'var(--sm-c2)', 'var(--sm-c3)', 'var(--sm-c4)', 'var(--sm-c5)', 'var(--sm-c6)'];
+const smW = () => { const v = document.getElementById('view'); return Math.max(300, Math.min(1100, ((v && v.clientWidth) || 800) - 34)); };
+function smTicks(lo, hi) { const raw = (hi - lo) / 4 || 1, p10 = Math.pow(10, Math.floor(Math.log10(raw))), st = [1, 2, 5, 10].map(k => k * p10).find(k => k >= raw); return { lo: Math.floor(lo / st) * st, hi: Math.ceil(hi / st) * st, st }; }
+function smLegend(series) { return series.length > 1 ? `<div class="sm-legend">${series.map(x => `<span><i style="background:${x.color}"></i>${esc(x.name)}</span>`).join('')}</div>` : ''; }
+// Barras agrupadas por jornada (una por equipo)
+function smChartBars(labels, series, fmt, title) {
+  const W = smW(), H = 230, L = 48, R = 8, T = 10, B = 26;
+  const all = series.flatMap(x => x.vals).filter(v => v != null); if (!all.length) return '<p class="empty">Sin datos todavía.</p>';
+  const tk = smTicks(Math.min(0, ...all), Math.max(0, ...all)), y = v => T + (H - T - B) * (1 - (v - tk.lo) / (tk.hi - tk.lo || 1));
+  const gw = (W - L - R) / labels.length, inner = Math.max(2, Math.min(26, (gw - 6) / series.length - 2));
+  let g = '';
+  for (let v = tk.lo; v <= tk.hi + tk.st / 2; v += tk.st) g += `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)"/><text x="${L - 6}" y="${y(v) + 4}" text-anchor="end">${esc(fmt(v))}</text>`;
+  const every = Math.ceil(labels.length / Math.max(1, Math.floor((W - L - R) / 30)));
+  labels.forEach((lb, i) => {
+    const x0 = L + gw * i + (gw - series.length * (inner + 2)) / 2;
+    series.forEach((x, k) => { const v = x.vals[i]; if (v == null) return; const ya = y(Math.max(0, v)), h = Math.abs(y(v) - y(0));
+      g += `<rect x="${(x0 + k * (inner + 2)).toFixed(1)}" y="${ya.toFixed(1)}" width="${inner.toFixed(1)}" height="${Math.max(1, h).toFixed(1)}" rx="3" fill="${x.color}" data-tip="${esc(`<b>${esc(x.name)}</b> · ${lb}<br>${fmt(v)}`)}"/>`; });
+    if (i % every === 0 || i === labels.length - 1) g += `<text x="${(L + gw * (i + .5)).toFixed(1)}" y="${H - 8}" text-anchor="middle">${esc(lb)}</text>`;
+  });
+  return smLegend(series) + `<div class="chart"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(title)}">${g}</svg></div>`;
+}
+// Líneas (acumulado o valor), con la última cifra rotulada al final de cada línea
+function smChartLines(labels, series, fmt, title) {
+  const W = smW(), H = 230, L = 52, R = 70, T = 12, B = 26;
+  const all = series.flatMap(x => x.vals).filter(v => v != null); if (!all.length) return '<p class="empty">Sin datos todavía.</p>';
+  const lo0 = Math.min(...all), hi0 = Math.max(...all), pad = (hi0 - lo0) * .08 || Math.abs(hi0) * .1 || 1;
+  const tk = smTicks(lo0 >= 0 && lo0 < (hi0 - lo0) ? 0 : lo0 - pad, hi0 + pad), x = i => L + (labels.length < 2 ? (W - L - R) / 2 : (W - L - R) * i / (labels.length - 1)), y = v => T + (H - T - B) * (1 - (v - tk.lo) / (tk.hi - tk.lo || 1));
+  let g = '';
+  for (let v = tk.lo; v <= tk.hi + tk.st / 2; v += tk.st) g += `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)"/><text x="${L - 6}" y="${y(v) + 4}" text-anchor="end">${esc(fmt(v))}</text>`;
+  const every = Math.ceil(labels.length / Math.max(1, Math.floor((W - L - R) / 30)));
+  labels.forEach((lb, i) => { if (i % every === 0 || i === labels.length - 1) g += `<text x="${x(i).toFixed(1)}" y="${H - 8}" text-anchor="middle">${esc(lb)}</text>`; });
+  const ends = [];
+  series.forEach(sr => {
+    let d = '', open = false, last = null;
+    sr.vals.forEach((v, i) => { if (v == null) { open = false; return; } d += (open ? 'L' : 'M') + x(i).toFixed(1) + ',' + y(v).toFixed(1); open = true; last = i; });
+    g += `<path d="${d}" fill="none" stroke="${sr.color}" stroke-width="2.5" stroke-linejoin="round"/>`;
+    sr.vals.forEach((v, i) => { if (v != null) g += `<circle cx="${x(i).toFixed(1)}" cy="${y(v).toFixed(1)}" r="4" fill="${sr.color}" stroke="var(--surface)" stroke-width="1.5" data-tip="${esc(`<b>${esc(sr.name)}</b> · ${labels[i]}<br>${fmt(v)}`)}"/>`; });
+    if (last != null) ends.push({ x: x(last) + 8, y: y(sr.vals[last]) + 4, t: fmt(sr.vals[last]) });
+  });
+  // Cifra final de cada línea, separadas para que no se monten
+  ends.sort((a, b) => a.y - b.y).forEach((e, i, a) => { if (i && e.y - a[i - 1].y < 13) e.y = a[i - 1].y + 13; g += `<text class="lab" x="${e.x.toFixed(1)}" y="${e.y.toFixed(1)}">${esc(e.t)}</text>`; });
+  return smLegend(series) + `<div class="chart"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(title)}">${g}</svg></div>`;
+}
+// Barras horizontales (jugadores): positivas y negativas desde el cero
+function smChartH(items, fmt, title, color) {
+  if (!items.length) return '<p class="empty">Sin datos todavía.</p>';
+  const max = Math.max(...items.map(i => Math.abs(i.v)), 1), neg = items.some(i => i.v < 0);
+  return `<div class="sm-hbars" role="img" aria-label="${esc(title)}">${items.map(i => { const w = Math.abs(i.v) / max * (neg ? 50 : 100);
+    return `<div class="sm-hb"><span class="sm-hbl">${esc(i.label)}${i.sub ? ` <span class="faint">${esc(i.sub)}</span>` : ''}</span><span class="sm-hbt"><span class="sm-hbf" style="${neg ? (i.v >= 0 ? 'left:50%' : 'right:50%') : 'left:0'};width:${w.toFixed(1)}%;background:${i.v < 0 ? 'var(--bad)' : color || 'var(--sm-c1)'}" data-tip="${esc(`<b>${esc(i.label)}</b><br>${fmt(i.v)}${i.tip ? '<br>' + i.tip : ''}`)}"></span>${neg ? '<span class="sm-hbz"></span>' : ''}</span><span class="sm-hbv">${esc(fmt(i.v))}</span></div>`; }).join('')}</div>`;
+}
+// Valor de la plantilla y broker de cada jornada (con el historial de precios de Supermanager)
+function smBrokerWeek(t, rn) {
+  let d = 0, v = 0, n = 0; smRoster(t, rn).forEach(pid => { const { b, a } = smPriceAt(pid, rn); if (b != null && a != null) { d += a - b; v += a; n++; } });
+  return n ? { d, v, n } : null;
+}
 function vSMTemporada(cfg) {
   if (!SM.rounds) return '<div class="panel empty">Cargando jornadas…</div>';
   const from = Math.min(...cfg.teams.map(t => t.start || SM.cur)), rs = SM.rounds.filter(r => r.roundNumber >= from && r.roundNumber <= SM.cur);
@@ -3819,10 +3965,57 @@ function vSMTemporada(cfg) {
   const prow = [...per.values()].map(o => Object.assign(o, { name: (pl[o.pid] || {}).n || 'Jugador ' + o.pid, abbr: (pl[o.pid] || {}).a || '', avg: o.gp ? o.pts / o.gp : null }));
   const pcols = [{ k: 'name', label: 'Jugador', v: r => r.name, f: r => `${esc(r.name)} <span class="faint">${esc(r.abbr)}</span>` }, { k: 'j', label: 'Jornadas', num: true, f: r => r.j }, { k: 'gp', label: 'Jugó', num: true, f: r => r.gp },
     { k: 'pts', label: 'Puntos', num: true, f: r => '<b>' + smFmt(r.pts) + '</b>' }, { k: 'avg', label: 'Media', num: true, f: r => smFmt(r.avg) }, { k: 'best', label: 'Mejor', num: true, f: r => smFmt(r.best) }];
-  return `<section class="panel"><div class="sec-h"><h2>Puntos por jornada</h2><button class="btn ghost" data-smfill="1" ${SM.filling ? 'disabled' : ''}>↻ Completar jornadas</button></div>
-      <p class="note" style="margin-top:0">Cada equipo cuenta desde su jornada de inicio (se cambia en «Plantilla»). <span id="st-sm" role="status">${esc(SM.msg || '')}</span></p>
-      ${tbl('smseason', cols, rows.slice().reverse(), { footRow: foot })}</section>
-    <section class="panel"><div class="sec-h"><h2>${esc(t.name)}: aportación de cada jugador</h2></div>${tbl('smplay', pcols, prow, { sort: { k: 'pts', d: -1 }, empty: 'Todavía no hay jornadas jugadas.' })}</section>`;
+  const labels = rows.map(r => 'J' + r.rn), teams = cfg.teams.map((x, i) => ({ x, i, color: SM_COL[i % SM_COL.length] }));
+  const tables = `<details class="sm-more"><summary>Ver en tablas</summary>${tbl('smseason', cols, rows.slice().reverse(), { footRow: foot })}${tbl('smplay', pcols, prow, { sort: { k: 'pts', d: -1 }, empty: 'Todavía no hay jornadas jugadas.' })}</details>`;
+  const status = `<p class="note" style="margin:0">Cada equipo cuenta desde su jornada de inicio. <span id="st-sm" role="status">${esc(SM.msg || '')}</span></p>`;
+  if (smBk()) {
+    const has = Object.keys(smPHist()).length, wk = teams.map(o => ({ name: o.x.name, color: o.color, w: rows.map(r => r.rn >= (o.x.start || SM.cur) ? smBrokerWeek(o.x, r.rn) : null) }));
+    const pPl = [...per.keys()].map(pid => { const h = smPHist()[pid], m = smMarket()[pid], now = (m && m.p) || (h && h.p), ini = h && h.ip; return now != null && ini != null ? { label: (pl[pid] || {}).n || 'Jugador ' + pid, sub: (pl[pid] || {}).a || '', v: now - ini, tip: `${smEur(ini)} → ${smEur(now)}` } : null; }).filter(Boolean).sort((a, b) => b.v - a.v);
+    const msg = !smAuth() ? 'Conecta con Supermanager para ver el broker de la temporada.' : SMB.busy ? 'Descargando el historial de precios de tus jugadores…' : !has ? 'Todavía no hay historial de precios: pulsa «↻ Precios».' : '';
+    return `<section class="panel"><div class="sec-h"><h2>Broker por jornada</h2><button class="btn ghost" data-smph="1" ${SMB.busy || !smAuth() ? 'disabled' : ''}>↻ Precios</button></div>
+        ${msg ? `<p class="note" style="margin:0 0 8px">${esc(msg)}</p>` : '<p class="note" style="margin:0 0 8px">Cuánto subió o bajó el precio de tus 10 jugadores en cada jornada.</p>'}
+        ${smChartBars(labels, wk.map(o => ({ name: o.name, color: o.color, vals: o.w.map(w => w ? w.d : null) })), v => smK(v, true) + ' €', 'Variación del broker por jornada')}</section>
+      <section class="panel"><div class="sec-h"><h2>Valor de la plantilla</h2></div><p class="note" style="margin:0 0 8px">Suma del precio de tus 10 jugadores al acabar cada jornada (sin la caja).</p>
+        ${smChartLines(labels, wk.map(o => ({ name: o.name, color: o.color, vals: o.w.map(w => w ? w.v : null) })), v => smK(v) + ' €', 'Valor de la plantilla por jornada')}</section>
+      <section class="panel"><div class="sec-h"><h2>${esc(t.name)}: cuánto ha subido o bajado cada jugador</h2></div><p class="note" style="margin:0 0 8px">Precio de ahora frente al de inicio de temporada.</p>
+        ${smChartH(pPl, v => smK(v, true) + ' €', 'Variación de precio de cada jugador', 'var(--good)')}</section>`;
+  }
+  let run = teams.map(() => 0);
+  const accS = teams.map(o => ({ name: o.x.name, color: o.color, vals: rows.map(r => { const v = r['t' + o.i]; if (v == null) return null; run[o.i] = smR(run[o.i] + v); return run[o.i]; }) }));
+  const best = prow.slice().sort((a, b) => b.pts - a.pts).map(o => ({ label: o.name, sub: o.abbr, v: o.pts, tip: `${o.gp} partidos · media ${smFmt(o.avg)} · mejor ${smFmt(o.best)}` }));
+  return `<section class="panel"><div class="sec-h"><h2>Puntos por jornada</h2><button class="btn ghost" data-smfill="1" ${SM.filling ? 'disabled' : ''}>↻ Completar jornadas</button></div>${status}
+      ${smChartBars(labels, teams.map(o => ({ name: o.x.name, color: o.color, vals: rows.map(r => r['t' + o.i]) })), v => smFmt(v), 'Puntos SM por jornada')}</section>
+    <section class="panel"><div class="sec-h"><h2>Acumulado</h2></div>${smChartLines(labels, accS, v => smFmt(v), 'Puntos SM acumulados')}</section>
+    <section class="panel"><div class="sec-h"><h2>${esc(t.name)}: aportación de cada jugador</h2></div>${smChartH(best, v => smFmt(v), 'Puntos SM de cada jugador')}</section>
+    <section class="panel">${tables}</section>`;
+}
+// Todos los jugadores de la Liga Endesa: estadística de la temporada, puntos SM y su broker (precio y cómo varía)
+function smSeasonTotals() {
+  const c = smCache(), out = new Map();
+  for (const id in c) { const s = c[id]; for (const pid in s.p) { const r = s.p[pid]; if (!(r[2] > 0)) continue; const o = out.get(+pid) || { gp: 0, min: 0, pts: 0, reb: 0, ast: 0, val: 0, sm: 0 };
+    o.gp++; o.min += r[2]; o.pts += r[3]; o.reb += r[4]; o.ast += r[5]; o.val += r[0]; o.sm += smPts(r, s); out.set(+pid, o); } }
+  return out;
+}
+function smAllTable(rn) {
+  const pl = smPool(), mk = smMarket(), tot = smSeasonTotals(), cur = SM.cur || rn, ids = smRoundIds(cur), q = smNorm(S.smAllQ);
+  let rows = [...tot.entries()].map(([pid, o]) => { const p = pl[pid] || { n: 'Jugador ' + pid, a: '' }, m = mk[pid] || {}, f = smFind(pid, ids), played = !!(f && f.row[2] > 0);
+    const bk = m.p ? smBroker(pid, cur, f ? smPts(f.row, f.s) : 0, played) : null;
+    return { pid, name: p.n, abbr: p.a || '', gp: o.gp, min: o.min / o.gp, pts: o.pts / o.gp, reb: o.reb / o.gp, ast: o.ast / o.gp, val: o.val / o.gp, sma: o.sm / o.gp, smt: o.sm,
+      price: m.p || null, season: m.p && m.ip ? m.p - m.ip : null, d: bk && played ? bk.d : null, bk }; });
+  if (q) rows = rows.filter(r => smMatch(r.name + ' ' + r.abbr, q));
+  const N = (k, label, title, f) => ({ k, label, title, num: true, f });
+  const cols = [{ k: 'name', label: 'Jugador', v: r => r.name, f: r => `${esc(r.name)} <span class="faint">${esc(r.abbr)}</span>` },
+    N('gp', 'PJ', 'Partidos jugados', r => r.gp), N('min', 'Min', 'Minutos por partido', r => nf(r.min, 1)), N('pts', 'Pts', 'Puntos por partido', r => nf(r.pts, 1)), N('reb', 'Reb', 'Rebotes por partido', r => nf(r.reb, 1)),
+    N('ast', 'Ast', 'Asistencias por partido', r => nf(r.ast, 1)), N('val', 'Val', 'Valoración por partido', r => nf(r.val, 1)),
+    N('sma', 'SM media', 'Puntos SM por partido (con el +20 % por victoria)', r => '<b>' + nf(r.sma, 1) + '</b>'), N('smt', 'SM total', 'Puntos SM de la temporada', r => nf(r.smt, 1)),
+    N('price', 'Precio', 'Precio en Supermanager', r => r.price ? smK(r.price) : '<span class="faint">–</span>'),
+    N('season', 'Var. temp.', 'Cuánto ha subido o bajado desde el inicio de la temporada', r => r.season == null ? '<span class="faint">–</span>' : `<span class="${r.season > 0 ? 'pos' : r.season < 0 ? 'neg' : ''}">${smK(r.season, true)}</span>`),
+    N('d', 'Var. J' + cur, 'Cómo varía su precio con los puntos SM de esta jornada (en directo)', r => r.d == null ? '<span class="faint">–</span>' : `<b class="${r.d > 0 ? 'pos' : r.d < 0 ? 'neg' : ''}">${smK(r.d, true)}</b>`),
+    N('up', 'Sube máx', 'Puntos SM con los que sube el máximo (15 %) esta jornada', r => r.bk && !r.bk.past ? smFmt(Math.max(0, r.bk.up)) : '<span class="faint">–</span>'),
+    N('eq', 'Igual', 'Puntos SM con los que su precio no cambia', r => r.bk && !r.bk.past ? smFmt(r.bk.eq) : '<span class="faint">–</span>'),
+    N('dn', 'Baja máx', 'Con estos puntos SM o menos baja el máximo (15 %)', r => r.bk && !r.bk.past ? smFmt(r.bk.dn) : '<span class="faint">–</span>')];
+  cols.slice(-4).forEach(c => { c.v = r => c.k === 'up' ? r.bk && r.bk.up : c.k === 'eq' ? r.bk && r.bk.eq : c.k === 'dn' ? r.bk && r.bk.dn : r.d; });
+  return tbl('small', cols, rows, { sort: { k: 'sma', d: -1 }, empty: 'Todavía no hay partidos guardados: abre «Temporada» o pulsa «↻ Buscar en toda la temporada».', cap: rows.length + ' jugadores' });
 }
 function vSMPlantilla(cfg, t, rn) {
   const pl = smPool(), roster = smRoster(t, rn), avg = smAverages(), linked = !!t.link, pos = t.pos || {};
@@ -3845,20 +4038,23 @@ function vSMPlantilla(cfg, t, rn) {
     ${linked ? `<p class="sm-linknote"><span class="sm-badge" aria-hidden="true">SM</span> Este equipo viene de Supermanager: los fichajes se hacen en <a href="${SMX.web}" target="_blank" rel="noopener">supermanager.acb.com</a> y aquí se copian solos (o con «↻ Sincronizar»).</p>` : ''}
     <div>${smRoundNav(rn)}<div class="sec-h" style="margin-top:8px"><h3>Plantilla en la jornada ${rn} · ${roster.length}/${SM_MAX}</h3><span class="note">${linked ? 'El número es su media de puntos SM por partido.' : 'Los cambios valen desde esta jornada; las anteriores no se tocan. El número es su media de puntos SM por partido.'}</span></div>
       ${slots}</div>${fix}</section>`;
-  if (linked) return head;
+  const all = `<section class="panel stack" style="gap:8px"><div class="sec-h"><h2>Todos los jugadores</h2><span class="note">Estadística por partido, puntos SM y broker${Object.keys(smMarket()).length ? '' : ' (los precios aparecen al conectar con Supermanager)'}</span></div>
+    <div class="row"><input type="text" id="in-small" value="${esc(S.smAllQ || '')}" placeholder="Buscar jugador o equipo…" aria-label="Buscar en todos los jugadores" style="flex:1 1 200px;width:auto"><button class="btn ghost" data-smload="1" ${SM.loading ? 'disabled' : ''}>↻ Buscar en toda la temporada</button></div>
+    <div id="sm-all">${smAllTable(rn)}</div></section>`;
+  if (linked) return head + all;
   return head + `<section class="panel stack" style="gap:8px"><div class="sec-h"><h2>Añadir jugadores</h2><span class="note">${roster.length >= SM_MAX ? 'Plantilla completa: quita a alguien para añadir.' : `Primero los que jugaron la jornada ${rn}; después, por media de puntos SM`}</span></div>
     <div class="row"><input type="text" id="in-smq" value="${esc(S.smQ || '')}" placeholder="Buscar jugador o equipo…" aria-label="Buscar jugador" style="flex:1 1 200px;width:auto">
       <select id="sel-smt" aria-label="Filtrar por equipo" style="width:auto;max-width:220px"><option value="">Todos los equipos</option>${teamsOpts.map(o => `<option value="${o.t}" ${String(o.t) === (S.smT || '') ? 'selected' : ''}>${esc(o.tn)}</option>`).join('')}</select>
       <button class="btn ghost" data-smload="1" ${SM.loading ? 'disabled' : ''} title="Mira todas las jornadas ya jugadas (solo descarga lo que falte)">↻ Buscar en toda la temporada</button></div>
     <div class="status" id="st-sm" role="status">${esc(SM.err || SM.msg || '')}</div>
-    <div id="sm-plist">${smPoolList(t, rn)}</div></section>`;
+    <div id="sm-plist">${smPoolList(t, rn)}</div></section>` + all;
 }
 function vSM() {
   const cfg = smCfg(), t = cfg.teams[cfg.cur], rn = smRn(), view = ['jornada', 'temporada', 'plantilla'].includes(S.smView) ? S.smView : 'jornada';
   const chips = cfg.teams.map((x, i) => `<button class="chipbtn" data-smteam="${i}" aria-pressed="${i === cfg.cur}">${x.link ? '<span class="sm-dot" title="De Supermanager"></span>' : ''}${esc(x.name)}</button>`).join('');
   const V = view === 'temporada' ? vSMTemporada(cfg) : view === 'plantilla' ? vSMPlantilla(cfg, t, rn) : vSMJornada(cfg, t, rn);
   return `<section class="panel sm-top"><div class="sm-toprow"><div class="filters" role="group" aria-label="Mis equipos">${chips}<button class="chipbtn" data-smnew="1" title="Equipo hecho a mano, sin Supermanager">+ Nuevo</button></div>${smConnMini()}</div>${smConnMsg()}</section>`
-    + tabsBar([['jornada', 'Jornada'], ['temporada', 'Temporada'], ['plantilla', 'Plantilla']], view, 'data-smview')
+    + `<div class="sm-tabsrow">${tabsBar([['jornada', 'Jornada'], ['temporada', 'Temporada'], ['plantilla', 'Plantilla']], view, 'data-smview')}<div class="filters sm-metric" role="group" aria-label="Qué contar"><button class="chipbtn" data-smmetric="sm" aria-pressed="${!smBk()}">Puntos SM</button><button class="chipbtn" data-smmetric="broker" aria-pressed="${smBk()}" title="BrokerBasket: cómo sube o baja el precio de tus jugadores">Broker</button></div></div>`
     + `<div class="stack" id="tabpanel" role="tabpanel" aria-labelledby="tab-${view}" style="margin-top:14px">${V}</div>`;
 }
 
@@ -3971,6 +4167,8 @@ document.addEventListener('click', async e => {
   else if (d.smout) { smLogout(); SMX.msg = 'Desconectado. Tus equipos se quedan como estaban; ya no se actualizan desde Supermanager.'; SMX.err = false; render(); }
   else if (d.smfill) { smFill(); render(); }
   else if (d.smsort) { S.smSort = d.smsort; render(); }
+  else if (d.smmetric) { S.smMetric = d.smmetric === 'broker' ? 'broker' : 'sm'; store.set('sm-metric', S.smMetric); render(); if (smBk() && smAuth()) { if (!Object.keys(smMarket()).length) smSync(true); else smLoadPriceHist(); } }
+  else if (d.smph) { smLoadPriceHist(true); }
   else if (d.smgame) { S.smGame = !S.smGame; store.set('sm-game', S.smGame); render(); }
   else if (d.smlayout) { S.smLayout = d.smlayout; store.set('sm-layout', d.smlayout); render(); }
   else if (d.smadd || d.smrm) { const c = smCfg(), t = c.teams[c.cur], rn = smRn(), pid = Number(d.smadd || d.smrm), r = smRoster(t, rn).slice(), i = r.indexOf(pid); if (d.smrm && i >= 0) r.splice(i, 1); else if (d.smadd && i < 0 && r.length < SM_MAX) r.push(pid); smSetRoster(t, rn, r); smSave(c); const y = scrollY; render(); if (y) scrollTo(0, y); smRefresh(); }
@@ -4045,7 +4243,7 @@ document.addEventListener('change', e => {
   else if (t.id === 'in-tcolors') { store.set('teamcolors', t.checked); render(true); }
 });
 document.addEventListener('submit', e => { if (e.target.id === 'sm-login') { e.preventDefault(); smDoLogin(e.target); } });
-document.addEventListener('input', e => { const t = e.target; if (t.id === 'in-smuser') { S.smUser = t.value; return; } if (t.id === 'in-smq') { S.smQ = t.value; const l = $('#sm-plist'); if (l) { const c = smCfg(); l.innerHTML = smPoolList(c.teams[c.cur], smRn()); } return; } if (t.dataset && t.dataset.notes) store.set(t.dataset.notes, t.value); });
+document.addEventListener('input', e => { const t = e.target; if (t.id === 'in-smuser') { S.smUser = t.value; return; } if (t.id === 'in-small') { S.smAllQ = t.value; const l = $('#sm-all'); if (l) l.innerHTML = smAllTable(smRn()); return; } if (t.id === 'in-smq') { S.smQ = t.value; const l = $('#sm-plist'); if (l) { const c = smCfg(); l.innerHTML = smPoolList(c.teams[c.cur], smRn()); } return; } if (t.dataset && t.dataset.notes) store.set(t.dataset.notes, t.value); });
 document.addEventListener('focusout', () => { if (S.pendingRender) setTimeout(() => { if (S.pendingRender) render(true); }, 0); });
 $('#m-match').onclick = () => setMode('match');
 $('#m-scout').onclick = () => setMode('scout');

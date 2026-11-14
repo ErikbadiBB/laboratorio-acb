@@ -22,6 +22,11 @@ const smx = { jwt: 'J1', refreshOk: true, calls: [], bodies: [],
     { position: 1, statusTeamSquad: 'empty' }] };
 // Plantillas guardadas de cada jornada (como /basic/userteamplayer/journeys/{id}): J1 con Juan Desconocido, J2 sin él, J3 = la de ahora, J4 vacía
 const P = n => smx.players().find(p => p.idPlayer === n);
+// Mercado de Supermanager: precio, precio inicial y media de cada jugador
+const MARKET = [{ idPlayer: 9001, fullName: 'Darrun Hilliard', price: 1450000, initialPrice: 1300000, competitionAverage: 30, position: 1 },
+  { idPlayer: 9002, shortName: 'NORMANTAS, M.', price: 400000, initialPrice: 500000, competitionAverage: 18, position: 3 },
+  { idPlayer: 9003, fullName: 'Nick Ongenda', price: 600000, initialPrice: 600000, competitionAverage: 17, position: 5 },
+  { idPlayer: 9005, fullName: 'Eric Vila', price: 300000, initialPrice: 350000, competitionAverage: 5, position: 5 }];
 const J3 = smx.players();
 smx.journeys = () => [{ number: 1, playerList: [P(9001), P(9002), P(9004)] }, { number: 2, playerList: [P(9001), P(9003)] }, { number: 3, playerList: J3 }, { number: 4, playerList: [] }];
 const dom = new JSDOM(html, { url: 'https://erikbadibb.github.io/laboratorio-acb/', runScripts: 'dangerously', pretendToBeVisual: true,
@@ -33,7 +38,9 @@ const dom = new JSDOM(html, { url: 'https://erikbadibb.github.io/laboratorio-acb
       if (u === 'https://supermanager.acb.com/oauth/V2/open/refresh') return smx.refreshOk && JSON.parse(o.body).token === 'R1' ? resp({ type: 'Bearer', jwt: smx.jwt, refresh: 'R1' }) : resp([{ code: 'x' }], 401);
       if (u.startsWith('https://supermanager.acb.com/api/')) {
         if (hd.Authorization !== 'Bearer ' + smx.jwt) return resp([{ code: 'FRWLL011', message: 'El token de acceso no existe.' }], 401);
-        if (u.endsWith('/basic/userteam/all')) return resp([{ name: null }, { name: 'Liga Endesa 26-27', idCompetition: 1, userTeamList: [{ idUserTeam: 77, nameTeam: 'Erik BB' }] }]);
+        if (u.endsWith('/basic/userteam/all')) return resp([{ name: null }, { name: 'Liga Endesa 26-27', idCompetition: 1, journeyActual: { idJourney: 503, number: 3 }, userTeamList: [{ idUserTeam: 77, nameTeam: 'Erik BB', amount: 250000, brokerValor: 9000000 }] }]);
+        if (u.includes('/basic/player?')) { const q = new URL(u).searchParams; smx.market = JSON.parse(q.get('_filters')); return resp(MARKET); }
+        if (u.includes('/basic/playerstats/1/')) { const id = +u.split('/').pop(), m = MARKET.find(x => x.idPlayer === id); return resp({ initialPrice: m.initialPrice, price: m.price, playerStats: [{ numberJourney: 1, playerPrice: m.initialPrice + 100000 }, { numberJourney: 2, playerPrice: m.initialPrice + 50000 }] }); }
         if (u.endsWith('/basic/userteamplayer/journeys/77')) return resp(smx.journeys());
         if (u.endsWith('/basic/userteamplayer/77')) return resp(smx.players());
         return resp({}, 404);
@@ -135,6 +142,33 @@ const login = async pass => { d.querySelector('#in-smuser').value = 'erik'; d.qu
   const h3 = team().hist.find(h => h.from === 3).players, h4 = (team().hist.find(h => h.from === 4) || {}).players || [];
   console.log('J3:', h3.join(','), '| J4:', h4.join(','));
   check(h3.includes(N) && h3.includes(F) && !h3.includes(V) && h4.includes(V) && h4.includes(F) && !h4.includes(N), 'SM: los cambios con la jornada empezada valen desde la siguiente');
+  // Broker: precio nuevo = 50.000 × (SM acumulado + SM de la jornada) ÷ (partidos + 1), con un tope del 15 %
+  check(smx.market && smx.market[0].field === 'competition.idCompetition' && smx.market[0].value === 1, 'SM: el mercado debe pedirse para la competición de Supermanager');
+  d.querySelector('#view [data-smview="jornada"]').click(); await wait(30);
+  d.querySelector('#view [data-smmetric="broker"]').click();
+  await until(() => d.querySelector(`#view .sm-tile[data-pid="${H}"] .sm-tpts`) && /k/.test(d.querySelector(`#view .sm-tile[data-pid="${H}"] .sm-tpts`).textContent));
+  const tH = d.querySelector(`#view .sm-tile[data-pid="${H}"]`), heroB = d.querySelector('#view .sm-head').textContent.replace(/\s+/g, ' ');
+  const thB = [...d.querySelectorAll('#view table th')].map(x => x.textContent.replace(/[↑↓]/g, '').trim()), trB = [...d.querySelectorAll('#view table tbody tr')].find(tr => /Hilliard/.test(tr.textContent));
+  console.log('broker:', tH.querySelector('.sm-tpts').textContent, '|', heroB.slice(0, 120), '|', trB && [...trB.children].slice(0, 9).map(c => c.textContent.trim()).join(' | '));
+  // Hilliard: 2 partidos antes (30 + 30 SM), 30 SM en la J3, precio 1.450.000 → 50.000 × 90 / 3 = 1.500.000 (+50.000)
+  check(tH.querySelector('.sm-tpts').textContent === '+50 k' && tH.querySelector('.sm-tbar').classList.contains('is-good'), 'SM: broker de Hilliard en la jornada (+50 k)');
+  check(thB.includes('Precio') && thB.includes('Sube máx') && trB && ['1,45 M', '1,50 M', '+50 k', '40', '27', '14'].every(v => [...trB.children].some(c => c.textContent.trim() === v)), 'SM: tabla del broker (precio, nuevo, y puntos para subir, igual y bajar)');
+  check(/broker de la jornada/.test(heroB) && /caja/.test(heroB), 'SM: la cabecera debe dar el broker de la jornada y el valor con la caja');
+  // Temporada en broker: gráficas con el historial de precios
+  d.querySelector('#view [data-smview="temporada"]').click();
+  await until(() => d.querySelectorAll('#view .chart rect').length > 0 && d.querySelectorAll('#view .sm-hb').length > 0, 8000);
+  console.log('temporada broker: barras', d.querySelectorAll('#view .chart rect').length, '| líneas', d.querySelectorAll('#view .chart path').length, '| jugadores', [...d.querySelectorAll('#view .sm-hb')].map(x => x.textContent.replace(/\s+/g, ' ').trim()).join(' / '));
+  check(/Broker por jornada/.test(d.querySelector('#view').textContent) && d.querySelectorAll('#view .chart path').length >= 1, 'SM: Temporada en broker debe tener sus gráficas');
+  // Temporada en puntos: gráficas de barras, líneas y aportación
+  d.querySelector('#view [data-smmetric="sm"]').click(); await wait(40);
+  check(/Puntos por jornada/.test(d.querySelector('#view').textContent) && d.querySelectorAll('#view .chart rect').length >= 3 && d.querySelectorAll('#view .sm-hb').length >= 3, 'SM: Temporada en puntos debe tener sus gráficas');
+  // Plantilla: tabla con todos los jugadores, su estadística y su broker
+  d.querySelector('#view [data-smview="plantilla"]').click(); await wait(40);
+  const tha = [...d.querySelectorAll('#sm-all th')].map(x => x.textContent.replace(/[↑↓]/g, '').trim()), tra = [...d.querySelectorAll('#sm-all tbody tr')].find(tr => /Hilliard/.test(tr.textContent));
+  console.log('todos:', d.querySelectorAll('#sm-all tbody tr').length, 'jugadores |', tha.join(' '), '|', tra && [...tra.children].map(c => c.textContent.trim()).join(' | '));
+  check(d.querySelectorAll('#sm-all tbody tr').length >= 20 && ['SM media', 'Precio', 'Var. temp.', 'Var. J3', 'Sube máx'].every(h => tha.includes(h)) && tra && /1,45 M/.test(tra.textContent) && /\+150 k/.test(tra.textContent), 'SM: Plantilla debe tener la tabla de todos los jugadores con su broker');
+  const qa = d.querySelector('#in-small'); qa.value = 'ongen'; qa.dispatchEvent(new w.Event('input', { bubbles: true }));
+  check(d.querySelectorAll('#sm-all tbody tr').length === 1, 'SM: el buscador de la tabla de todos');
   // 6) Sesión caducada sin poder renovarla: pide conectar otra vez
   smx.jwt = 'J3'; smx.refreshOk = false; d.querySelector('#view [data-smsync]').click();
   await until(() => /caducado/.test(d.querySelector('#view .sm-top').textContent));
