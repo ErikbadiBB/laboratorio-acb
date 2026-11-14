@@ -34,6 +34,7 @@ const dom = new JSDOM(html, { url: 'https://erikbadibb.github.io/laboratorio-acb
       if (u.includes('match-header')) return resp({ matchStatus: live.status, currentQuarter: 3, timeLeft: '4:21' });
       return Promise.reject(new TypeError('Failed to fetch')); };
     Object.defineProperty(w.HTMLElement.prototype, 'clientWidth', { get() { return 800; } });
+    w.localStorage.setItem('lab-acb:sm-layout', '"tarjetas"'); // aquí se prueban las tarjetas; la vista Pista, en sm-link.js
   } });
 const w = dom.window, d = w.document, errs = []; w.addEventListener('error', e => errs.push(e.message)); w.console.error = (...a) => errs.push(a.join(' '));
 const wait = ms => new Promise(r => setTimeout(r, ms));

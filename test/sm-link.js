@@ -69,7 +69,18 @@ const login = async pass => { d.querySelector('#in-smuser').value = 'erik'; d.qu
   check(t && t.miss.length === 1 && t.miss[0].n === 'Juan Desconocido', 'SM: el jugador que no se reconoce debe quedar para enlazar a mano');
   check(!allStorage().includes(PASS) && !smx.bodies.some((b, i) => b.includes(encodeURIComponent(PASS)) && !smx.calls[i].includes('signIn')), 'SM: la contraseña no debe guardarse ni enviarse fuera de la ACB');
   check(JSON.parse(w.localStorage.getItem('lab-acb:sm-auth')).jwt === 'J1', 'SM: no se guarda la sesión');
-  // 2) Jornada: tarjetas por posición, con foto o iniciales y puntos en pastilla dorada
+  // 2) Jornada, vista Pista: bases arriba, aleros en medio, pívots abajo, y al lado la estadística completa
+  await until(() => d.querySelectorAll('#view .sm-crow').length === 3 && d.querySelector(`#view .sm-tile[data-pid="${H}"] .sm-tpts`) && /\d/.test(d.querySelector(`#view .sm-tile[data-pid="${H}"] .sm-tpts`).textContent));
+  const crow = [...d.querySelectorAll('#view .sm-crow')].map(r => [...r.querySelectorAll('.sm-tile')].map(x => +x.dataset.pid));
+  const tileH = d.querySelector(`#view .sm-tile[data-pid="${H}"]`), hdr = [...d.querySelectorAll('#view table th')].map(x => x.textContent.replace(/[↑↓]/g, '').trim());
+  const trH = [...d.querySelectorAll('#view table tbody tr')].find(tr => /Hilliard/.test(tr.textContent));
+  console.log('pista:', JSON.stringify(crow), '|', tileH.querySelector('.sm-tname').textContent, tileH.querySelector('.sm-tbar').textContent.trim(), '| tabla:', hdr.join(' '), '|', trH && [...trH.children].map(c => c.textContent.trim()).join(' | '));
+  check(crow[0].join() === String(H) && crow[1].join() === String(M) && crow[2].join() === String(N), 'SM: en la pista, bases arriba, aleros en medio y pívots abajo');
+  check(tileH.querySelector('.sm-tname').textContent === 'Hilliard' && tileH.querySelector('.sm-tbar').classList.contains('is-good'), 'SM: la ficha muestra el apellido y los puntos en verde');
+  check(['Jugador', 'SM', 'Partido', 'Min', 'Pts', 'T2', 'T3', 'TL', 'RO', 'RD', 'Ast', 'Val', '+/-'].every(h => hdr.includes(h)), 'SM: la tabla debe tener la estadística completa como en «Jugadores»');
+  check(trH && /\d+\/\d+/.test(trH.textContent) && trH.children[1].textContent.replace('★', '').trim() === tileH.querySelector('.sm-tpts').textContent.trim(), 'SM: la tabla debe traer tiros y los mismos puntos que la pista');
+  // Vista Tarjetas: por posición, con foto o iniciales y puntos en pastilla dorada
+  d.querySelector('#view [data-smlayout="tarjetas"]').click();
   await until(() => d.querySelectorAll('#view .sm-pos').length === 3 && d.querySelector(`#view .sm-card[data-pid="${H}"] .sm-gold`));
   const pos = [...d.querySelectorAll('#view .sm-pos')].map(x => x.textContent.replace(/\s+/g, ' ').trim());
   console.log('grupos:', pos.join(' · '), '|', d.querySelector('#view .sm-conn').textContent.replace(/\s+/g, ' ').trim());
