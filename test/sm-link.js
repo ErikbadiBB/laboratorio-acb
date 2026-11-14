@@ -146,29 +146,39 @@ const login = async pass => { d.querySelector('#in-smuser').value = 'erik'; d.qu
   check(smx.market && smx.market[0].field === 'competition.idCompetition' && smx.market[0].value === 1, 'SM: el mercado debe pedirse para la competición de Supermanager');
   d.querySelector('#view [data-smview="jornada"]').click(); await wait(30);
   d.querySelector('#view [data-smmetric="broker"]').click();
-  await until(() => d.querySelector(`#view .sm-tile[data-pid="${H}"] .sm-tpts`) && /k/.test(d.querySelector(`#view .sm-tile[data-pid="${H}"] .sm-tpts`).textContent));
+  await until(() => d.querySelector(`#view .sm-tile[data-pid="${H}"] .sm-tpts`) && /\d\.\d{3}/.test(d.querySelector(`#view .sm-tile[data-pid="${H}"] .sm-tpts`).textContent));
   const tH = d.querySelector(`#view .sm-tile[data-pid="${H}"]`), heroB = d.querySelector('#view .sm-head').textContent.replace(/\s+/g, ' ');
   const thB = [...d.querySelectorAll('#view table th')].map(x => x.textContent.replace(/[↑↓]/g, '').trim()), trB = [...d.querySelectorAll('#view table tbody tr')].find(tr => /Hilliard/.test(tr.textContent));
   console.log('broker:', tH.querySelector('.sm-tpts').textContent, '|', heroB.slice(0, 120), '|', trB && [...trB.children].slice(0, 9).map(c => c.textContent.trim()).join(' | '));
   // Hilliard: 2 partidos antes (30 + 30 SM), 30 SM en la J3, precio 1.450.000 → 50.000 × 90 / 3 = 1.500.000 (+50.000)
-  check(tH.querySelector('.sm-tpts').textContent === '+50 k' && tH.querySelector('.sm-tbar').classList.contains('is-good'), 'SM: broker de Hilliard en la jornada (+50 k)');
-  check(thB.includes('Precio') && thB.includes('Sube máx') && trB && ['1,45 M', '1,50 M', '+50 k', '40', '27', '14'].every(v => [...trB.children].some(c => c.textContent.trim() === v)), 'SM: tabla del broker (precio, nuevo, y puntos para subir, igual y bajar)');
-  check(/broker de la jornada/.test(heroB) && /caja/.test(heroB), 'SM: la cabecera debe dar el broker de la jornada y el valor con la caja');
+  check(tH.querySelector('.sm-tpts').textContent === '+50.000' && tH.querySelector('.sm-tbar').classList.contains('is-good'), 'SM: broker de Hilliard en la jornada (+50.000, cifra completa)');
+  check(thB.includes('Precio') && thB.includes('Sube máx') && trB && ['1.450.000 €', '1.500.000 €', '+50.000 €', '40', '27', '14'].every(v => [...trB.children].some(c => c.textContent.trim() === v)), 'SM: tabla del broker (precio, nuevo, y puntos para subir, igual y bajar)');
+  check(/broker de la jornada/.test(heroB) && /caja 250\.000 €/.test(heroB) && !/\d k\b|\d M\b/.test(heroB), 'SM: la cabecera debe dar el broker de la jornada y el valor con la caja, en cifras completas');
   // Temporada en broker: gráficas con el historial de precios
   d.querySelector('#view [data-smview="temporada"]').click();
   await until(() => d.querySelectorAll('#view .chart rect').length > 0 && d.querySelectorAll('#view .sm-hb').length > 0, 8000);
   console.log('temporada broker: barras', d.querySelectorAll('#view .chart rect').length, '| líneas', d.querySelectorAll('#view .chart path').length, '| jugadores', [...d.querySelectorAll('#view .sm-hb')].map(x => x.textContent.replace(/\s+/g, ' ').trim()).join(' / '));
-  check(/Broker por jornada/.test(d.querySelector('#view').textContent) && d.querySelectorAll('#view .chart path').length >= 1, 'SM: Temporada en broker debe tener sus gráficas');
+  const kp = [...d.querySelectorAll('#view .sm-kpi')].map(x => x.textContent.replace(/\s+/g, ' ').trim());
+  console.log('cifras:', kp.join(' / '));
+  check(/Variación por jornada/.test(d.querySelector('#view').textContent) && /Valor de la plantilla por jornada/.test(d.querySelector('#view').textContent) && d.querySelectorAll('#view .chart path').length >= 1, 'SM: Temporada en broker debe tener sus gráficas (valor y variación)');
+  check(kp.some(x => /caja\s*250\.000 €/i.test(x)) && kp.some(x => /Dinero total/.test(x)) && d.querySelector('#view table') && /Valor de la plantilla/.test(d.querySelector('#view table').textContent), 'SM: Temporada en broker debe dar caja, dinero total y la tabla por jornada');
   // Temporada en puntos: gráficas de barras, líneas y aportación
   d.querySelector('#view [data-smmetric="sm"]').click(); await wait(40);
   check(/Puntos por jornada/.test(d.querySelector('#view').textContent) && d.querySelectorAll('#view .chart rect').length >= 3 && d.querySelectorAll('#view .sm-hb').length >= 3, 'SM: Temporada en puntos debe tener sus gráficas');
   // Plantilla: tabla con todos los jugadores, su estadística y su broker
   d.querySelector('#view [data-smview="plantilla"]').click(); await wait(40);
   const tha = [...d.querySelectorAll('#sm-all th')].map(x => x.textContent.replace(/[↑↓]/g, '').trim()), tra = [...d.querySelectorAll('#sm-all tbody tr')].find(tr => /Hilliard/.test(tr.textContent));
-  console.log('todos:', d.querySelectorAll('#sm-all tbody tr').length, 'jugadores |', tha.join(' '), '|', tra && [...tra.children].map(c => c.textContent.trim()).join(' | '));
-  check(d.querySelectorAll('#sm-all tbody tr').length >= 20 && ['SM media', 'Precio', 'Var. temp.', 'Var. J3', 'Sube máx'].every(h => tha.includes(h)) && tra && /1,45 M/.test(tra.textContent) && /\+150 k/.test(tra.textContent), 'SM: Plantilla debe tener la tabla de todos los jugadores con su broker');
-  const qa = d.querySelector('#in-small'); qa.value = 'ongen'; qa.dispatchEvent(new w.Event('input', { bubbles: true }));
-  check(d.querySelectorAll('#sm-all tbody tr').length === 1, 'SM: el buscador de la tabla de todos');
+  console.log('mi broker:', d.querySelectorAll('#sm-all tbody tr').length, 'jugadores |', tha.join(' '), '|', tra && [...tra.children].map(c => c.textContent.trim()).join(' | '), '|', d.querySelector('#sm-all tfoot') && d.querySelector('#sm-all tfoot').textContent.replace(/\s+/g, ' '));
+  check(d.querySelectorAll('#sm-all tbody tr').length === team().hist.find(h => h.from === 3).players.length && ['SM media', 'Precio', 'Var. temporada', 'Var. J3', 'Sube máx'].every(h => tha.includes(h)) && tra && /1\.450\.000 €/.test(tra.textContent) && /\+150\.000 €/.test(tra.textContent), 'SM: Plantilla debe tener el broker solo de los jugadores de tu equipo');
+  check(/Dinero en caja/.test(d.querySelector('#sm-all').textContent) && /Total/.test(d.querySelector('#sm-all tfoot').textContent), 'SM: el broker de tu equipo con caja y total');
+  // Ocultar un equipo: deja de verse en los botones (y vuelve al marcarlo)
+  d.querySelector('#view [data-smnew]').click(); await wait(30);
+  d.querySelector('#view [data-smteams="1"]').click(); await wait(20);
+  const ck = d.querySelectorAll('#view [data-smhide]'); ck[1].checked = false; ck[1].dispatchEvent(new w.Event('change', { bubbles: true })); await wait(30);
+  check(cfg().teams[1].hide === true && d.querySelectorAll('#view [data-smteam]').length === 1 && cfg().cur === 0, 'SM: ocultar un equipo lo quita de los botones');
+  const ck2 = d.querySelectorAll('#view [data-smhide]'); check(ck2[0].disabled, 'SM: no se puede ocultar el último equipo visible');
+  ck2[1].checked = true; ck2[1].dispatchEvent(new w.Event('change', { bubbles: true })); await wait(30);
+  check(!cfg().teams[1].hide && d.querySelectorAll('#view [data-smteam]').length === 2, 'SM: volver a mostrar un equipo');
   // 6) Sesión caducada sin poder renovarla: pide conectar otra vez
   smx.jwt = 'J3'; smx.refreshOk = false; d.querySelector('#view [data-smsync]').click();
   await until(() => /caducado/.test(d.querySelector('#view .sm-top').textContent));
