@@ -3293,7 +3293,10 @@ function applyTeamColors(view) {
 // Los partidos terminados se resumen (valoración y estadística por jugador) y se guardan en el dispositivo (lab-acb:sm-games).
 const SM_MAX = 10;
 const SM = { live: new Map(), cache: null, matches: [], rounds: null, rid: null, cur: null, meta: new Map(), on: false, busy: false, filling: false, timer: 0, sig: '', err: '', msg: '', loading: false, at: null };
-const smNorm = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+// Texto para buscar: sin acentos, en minúsculas y con guiones, puntos o apóstrofos como espacios («López-Aróstegui» → «lopez arostegui»)
+const smNorm = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9ñ]+/g, ' ').trim();
+// Coincide si cada palabra buscada está en el nombre o el equipo (en cualquier orden); también vale escribirlo todo junto
+const smMatch = (txt, q) => { const t = smNorm(txt); return q.split(' ').every(w => t.includes(w)) || t.replace(/ /g, '').includes(q.replace(/ /g, '')); };
 const smR = v => Math.round(v * 10) / 10;
 const smFmt = v => v == null ? '–' : nf(smR(v), Math.round(v * 10) % 10 ? 1 : 0);
 function smCfg() {
@@ -3448,7 +3451,7 @@ function smPoolList(t, rn) {
   let arr = Object.entries(pl).map(([pid, o]) => Object.assign({ pid: Number(pid) }, o));
   const n = arr.length;
   if (tf) arr = arr.filter(x => String(x.t) === tf);
-  if (q) arr = arr.filter(x => smNorm(x.n + ' ' + x.a + ' ' + x.tn).includes(q));
+  if (q) arr = arr.filter(x => smMatch(x.n + ' ' + x.a + ' ' + x.tn, q));
   const inRound = new Set(); smRoundIds(rn).forEach(id => Object.keys(smData(id).p).forEach(p => inRound.add(+p)));
   arr = arr.filter(x => !roster.includes(x.pid)).sort((a, b) => (inRound.has(b.pid) - inRound.has(a.pid)) || (avg.get(b.pid) ?? -99) - (avg.get(a.pid) ?? -99) || a.n.localeCompare(b.n, 'es'));
   if (!arr.length) return `<p class="empty">${n ? 'Ningún jugador coincide. Si jugó hace tiempo, pulsa «↻ Buscar en toda la temporada».' : SM.loading ? 'Cargando jugadores…' : 'Todavía no hay jugadores: pulsa «↻ Buscar en toda la temporada».'}</p>`;
