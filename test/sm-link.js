@@ -79,13 +79,14 @@ const login = async pass => { d.querySelector('#in-smuser').value = 'erik'; d.qu
   check(tileH.querySelector('.sm-tname').textContent === 'Hilliard' && tileH.querySelector('.sm-tbar').classList.contains('is-good'), 'SM: la ficha muestra el apellido y los puntos en verde');
   check(['Jugador', 'SM', 'Partido', 'Min', 'Pts', 'T2', 'T3', 'TL', 'RO', 'RD', 'Ast', 'Val', '+/-'].every(h => hdr.includes(h)), 'SM: la tabla debe tener la estadística completa como en «Jugadores»');
   check(trH && /\d+\/\d+/.test(trH.textContent) && trH.children[1].textContent.replace('★', '').trim() === tileH.querySelector('.sm-tpts').textContent.trim(), 'SM: la tabla debe traer tiros y los mismos puntos que la pista');
-  // Botón «Resultado»: oculta el marcador en la pista y en la tabla, y lo vuelve a mostrar
-  const sc = () => d.querySelector(`#view .sm-tile[data-pid="${H}"]`).textContent + [...d.querySelectorAll('#view table tbody tr')].find(tr => /Hilliard/.test(tr.textContent)).textContent;
-  check(/107–92/.test(sc()), 'SM: con «Resultado» visible debe verse el marcador');
-  d.querySelector('#view [data-smscore]').click(); await wait(30);
-  check(!/107–92/.test(sc()) && /Final/.test(sc()) && w.localStorage.getItem('lab-acb:sm-score') === 'false', 'SM: con «Resultado» oculto no debe verse el marcador');
-  d.querySelector('#view [data-smscore]').click(); await wait(30);
-  check(/107–92/.test(sc()), 'SM: el marcador debe volver al activarlo');
+  // Botón «Columna Partido»: quita y vuelve a poner esa columna de la tabla; la ficha no cambia
+  const ths = () => [...d.querySelectorAll('#view table th')].map(x => x.textContent.replace(/[↑↓]/g, '').trim());
+  const tile0 = d.querySelector(`#view .sm-tile[data-pid="${H}"]`).outerHTML;
+  d.querySelector('#view [data-smgame]').click(); await wait(30);
+  check(!ths().includes('Partido') && ths().includes('SM') && w.localStorage.getItem('lab-acb:sm-game') === 'false', 'SM: con la columna oculta no debe salir «Partido»');
+  check(d.querySelector(`#view .sm-tile[data-pid="${H}"]`).outerHTML === tile0, 'SM: ocultar la columna no debe cambiar la ficha');
+  d.querySelector('#view [data-smgame]').click(); await wait(30);
+  check(ths().includes('Partido'), 'SM: la columna «Partido» debe volver');
   // Vista Tarjetas: por posición, con foto o iniciales y puntos en pastilla dorada
   d.querySelector('#view [data-smlayout="tarjetas"]').click();
   await until(() => d.querySelectorAll('#view .sm-pos').length === 3 && d.querySelector(`#view .sm-card[data-pid="${H}"] .sm-gold`));
