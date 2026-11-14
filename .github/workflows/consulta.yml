@@ -1,0 +1,25 @@
+name: Consultar un jugador
+
+# Diagnóstico con datos reales de la ACB: en qué jornadas aparece un jugador. Se lanza a mano desde Actions.
+on:
+  workflow_dispatch:
+    inputs:
+      jugador:
+        description: 'Nombre o apellido del jugador'
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  consultar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Buscar al jugador en todas las jornadas
+        run: node test/buscar-jugador.js "$JUGADOR"
+        env:
+          JUGADOR: ${{ github.event.inputs.jugador }}
