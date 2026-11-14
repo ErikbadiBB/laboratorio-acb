@@ -3351,7 +3351,8 @@ async function smRefresh() {
     SM.meta.set(rn, { total: SM.matches.length, fin: SM.matches.filter(m => m.status === 'FIN').length });
     const pl = smPool(), teamIds = new Set();
     cfg.teams.forEach(t => smRoster(t, rn).forEach(pid => { if (pl[pid]) teamIds.add(pl[pid].t); }));
-    const todo = SM.matches.filter(m => (m.status === 'LIVE' || (m.status === 'FIN' && !smCache()[m.id])) && (teamIds.has(m.home.id) || teamIds.has(m.away.id)));
+    // Terminados: todos los de la jornada (así cualquier jugador que la jugó está en la lista); en directo, solo los de tus equipos
+    const todo = SM.matches.filter(m => (m.status === 'FIN' && !smCache()[m.id]) || (m.status === 'LIVE' && (teamIds.has(m.home.id) || teamIds.has(m.away.id))));
     let saved = false;
     await pool(todo, 4, async m => {
       const res = await fetchGame('acb', m.id); if (!res) return;
@@ -3388,13 +3389,13 @@ async function smFetchFinished(list, label) {
   smSaveCache();
 }
 // Lista de jugadores de la competición: partidos de las últimas 4 jornadas (crece sola con los que se siguen)
-async function smLoadRoster(rounds = 4) {
+async function smLoadRoster(rounds = 4) { // rounds = 0: toda la temporada
   if (SM.loading) return; SM.loading = true; SM.msg = 'Buscando los partidos de las últimas jornadas…'; smStatus();
   try {
     const c = await loadComp(), cur = c.cur.roundNumber, list = [];
-    for (const r of c.rounds.filter(r => r.roundNumber <= cur && r.roundNumber > cur - rounds))
+    for (const r of c.rounds.filter(r => r.roundNumber <= cur && (!rounds || r.roundNumber > cur - rounds)))
       (await roundMatches(r.id)).forEach(m => { if (m.matchStatus === 'FINALIZED') list.push([m.id, r.roundNumber]); });
-    await smFetchFinished(list.filter(([id]) => !smCache()[id] || !Object.keys(smPool()).length), 'Cargando jugadores');
+    await smFetchFinished(list.filter(([id]) => !smCache()[id] || !Object.keys(smPool()).length), rounds ? 'Cargando jugadores' : 'Buscando en toda la temporada');
     SM.msg = Object.keys(smPool()).length + ' jugadores disponibles';
   } catch (e) { SM.msg = isNet(e) ? 'Sin conexión con la API de la ACB.' : e.message; }
   SM.loading = false; if (S.mode === 'sm') render(true);
@@ -3448,8 +3449,9 @@ function smPoolList(t, rn) {
   const n = arr.length;
   if (tf) arr = arr.filter(x => String(x.t) === tf);
   if (q) arr = arr.filter(x => smNorm(x.n + ' ' + x.a + ' ' + x.tn).includes(q));
-  arr = arr.filter(x => !roster.includes(x.pid)).sort((a, b) => (avg.get(b.pid) ?? -99) - (avg.get(a.pid) ?? -99) || a.n.localeCompare(b.n, 'es'));
-  if (!arr.length) return `<p class="empty">${n ? 'Ningún jugador coincide.' : SM.loading ? 'Cargando jugadores…' : 'Todavía no hay jugadores: pulsa «↻ Actualizar lista».'}</p>`;
+  const inRound = new Set(); smRoundIds(rn).forEach(id => Object.keys(smData(id).p).forEach(p => inRound.add(+p)));
+  arr = arr.filter(x => !roster.includes(x.pid)).sort((a, b) => (inRound.has(b.pid) - inRound.has(a.pid)) || (avg.get(b.pid) ?? -99) - (avg.get(a.pid) ?? -99) || a.n.localeCompare(b.n, 'es'));
+  if (!arr.length) return `<p class="empty">${n ? 'Ningún jugador coincide. Si jugó hace tiempo, pulsa «↻ Buscar en toda la temporada».' : SM.loading ? 'Cargando jugadores…' : 'Todavía no hay jugadores: pulsa «↻ Buscar en toda la temporada».'}</p>`;
   return `<div class="sm-list">${arr.slice(0, 60).map(x => `<button class="sm-pl" data-smadd="${x.pid}" ${full ? 'disabled' : ''}><b aria-hidden="true">+</b> <span>${esc(x.n)} <span class="faint">${esc(x.a)}</span></span><span class="sm-avg" title="Media de puntos SM por partido jugado">${avg.has(x.pid) ? smFmt(avg.get(x.pid)) : ''}</span></button>`).join('')}</div>${arr.length > 60 ? `<p class="note">Se muestran 60 de ${arr.length} (los de mejor media): escribe o elige un equipo para filtrar.</p>` : ''}`;
 }
 // Media de puntos SM por partido jugado, con los partidos guardados
@@ -3507,10 +3509,10 @@ function vSMPlantilla(cfg, t, rn) {
       <button class="btn ghost" data-smdel="1" ${cfg.teams.length > 1 ? '' : 'disabled'}>${S.smDelArm ? '¿Seguro? Pulsa otra vez' : 'Borrar equipo'}</button></div>
     <div>${smRoundNav(rn)}<div class="sec-h" style="margin-top:8px"><h3>Plantilla en la jornada ${rn} · ${roster.length}/${SM_MAX}</h3><span class="note">Los cambios valen desde esta jornada; las anteriores no se tocan. El número es su media de puntos SM por partido.</span></div>
       <ol class="sm-slots">${slots}</ol></div></section>
-  <section class="panel stack" style="gap:8px"><div class="sec-h"><h2>Añadir jugadores</h2><span class="note">${roster.length >= SM_MAX ? 'Plantilla completa: quita a alguien para añadir.' : 'Ordenados por media de puntos SM'}</span></div>
+  <section class="panel stack" style="gap:8px"><div class="sec-h"><h2>Añadir jugadores</h2><span class="note">${roster.length >= SM_MAX ? 'Plantilla completa: quita a alguien para añadir.' : `Primero los que jugaron la jornada ${rn}; después, por media de puntos SM`}</span></div>
     <div class="row"><input type="text" id="in-smq" value="${esc(S.smQ || '')}" placeholder="Buscar jugador o equipo…" aria-label="Buscar jugador" style="flex:1 1 200px;width:auto">
       <select id="sel-smt" aria-label="Filtrar por equipo" style="width:auto;max-width:220px"><option value="">Todos los equipos</option>${teamsOpts.map(o => `<option value="${o.t}" ${String(o.t) === (S.smT || '') ? 'selected' : ''}>${esc(o.tn)}</option>`).join('')}</select>
-      <button class="btn ghost" data-smload="1" ${SM.loading ? 'disabled' : ''} title="Vuelve a mirar los partidos de las últimas jornadas">↻ Actualizar lista</button></div>
+      <button class="btn ghost" data-smload="1" ${SM.loading ? 'disabled' : ''} title="Mira todas las jornadas ya jugadas (solo descarga lo que falte)">↻ Buscar en toda la temporada</button></div>
     <div class="status" id="st-sm" role="status">${esc(SM.err || SM.msg || '')}</div>
     <div id="sm-plist">${smPoolList(t, rn)}</div></section>`;
 }
@@ -3601,7 +3603,7 @@ document.addEventListener('click', async e => {
   else if (d.smteam) { const c = smCfg(); c.cur = Number(d.smteam); smSave(c); S.smDelArm = false; render(); smRefresh(); }
   else if (d.smnew) { const c = smCfg(), rn = smRn(); c.teams.push({ name: 'Equipo ' + (c.teams.length + 1), start: rn, hist: [{ from: rn, players: [] }] }); c.cur = c.teams.length - 1; smSave(c); S.smView = 'plantilla'; render(); const n = $('#in-smname'); if (n) { n.focus(); n.select(); } }
   else if (d.smdel) { if (!S.smDelArm) { S.smDelArm = true; render(); } else { const c = smCfg(); if (c.teams.length > 1) { c.teams.splice(c.cur, 1); c.cur = Math.max(0, c.cur - 1); smSave(c); } S.smDelArm = false; S.smView = 'jornada'; render(); } }
-  else if (d.smload) { smLoadRoster(); }
+  else if (d.smload) { smLoadRoster(0); }
   else if (d.smfill) { smFill(); render(); }
   else if (d.smsort) { S.smSort = d.smsort; render(); }
   else if (d.smadd || d.smrm) { const c = smCfg(), t = c.teams[c.cur], rn = smRn(), pid = Number(d.smadd || d.smrm), r = smRoster(t, rn).slice(), i = r.indexOf(pid); if (d.smrm && i >= 0) r.splice(i, 1); else if (d.smadd && i < 0 && r.length < SM_MAX) r.push(pid); smSetRoster(t, rn, r); smSave(c); const y = scrollY; render(); if (y) scrollTo(0, y); smRefresh(); }
