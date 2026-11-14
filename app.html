@@ -384,7 +384,7 @@ th[data-sort]:focus-visible { outline-offset: -2px }
 .sm-p1 { --pcol: #3fa34d } .sm-p3 { --pcol: #2a8fd6 } .sm-p5 { --pcol: #e8892b }
 @media (max-width: 520px) { .sm-tile { flex: 0 0 calc((100% - 15px) / 4) } .sm-crow { gap: 5px } .sm-tname { font-size: .74rem } .sm-tbar { font-size: .92rem } .sm-court { min-height: 0; padding: 12px 5px } }
 .sm-fix { align-items: center } .sm-fix > span { flex: 1 1 160px } .sm-fix select { flex: 1 1 220px; width: auto }
-.sm-head { display: grid; gap: 14px; justify-items: center; text-align: center } .sm-nav { max-width: 360px } .sm-head .sm-nav { width: 100%; max-width: 320px }
+.sm-head { display: grid; gap: 14px } .sm-nav { max-width: 360px }
 .sm-total { display: grid; gap: 10px; justify-items: center }
 .sm-big { display: grid; gap: 6px; justify-items: center } .sm-big span { font-size: .74rem; color: var(--ink-3); text-transform: uppercase; letter-spacing: .08em } .sm-big em { font-style: normal; color: var(--bad); font-weight: 600 }
 .sm-acc { display: flex; gap: 6px; align-items: baseline; font-size: .82rem; color: var(--ink-3) } .sm-acc b { font: 600 1.15rem/1 var(--f-display); color: var(--ink); font-variant-numeric: tabular-nums }
@@ -392,25 +392,15 @@ th[data-sort]:focus-visible { outline-offset: -2px }
 .sm-seg.is-fin { background: var(--good) } .sm-seg.is-live { background: var(--bad); animation: smblink 1.6s ease-in-out infinite } @media (prefers-reduced-motion: reduce) { .sm-seg.is-live { animation: none } }
 .sm-leg { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 16px; font-size: .78rem; color: var(--ink-2) } .sm-leg span { display: inline-flex; align-items: center; gap: 6px } .sm-leg .sm-seg { flex: none; width: 14px; height: 6px; animation: none }
 .sm-upd { font-size: .74rem; color: var(--ink-3); margin: 0 }
-/* Cabecera de la jornada (variantes) */
-.sm-head.hv-a, .sm-head.hv-b, .sm-head.hv-c, .sm-head.hv-d { justify-items: stretch; text-align: left }
-.hv-a .sm-total, .hv-b .sm-total, .hv-c .sm-total { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 14px 26px; align-items: center; justify-items: start; max-width: 760px }
-.sm-hr { display: grid; gap: 10px; justify-items: start; min-width: 0; width: 100% }
-.sm-hr .sm-nav { margin: 0; width: 100%; max-width: 300px } .sm-hr .sm-prog { max-width: 380px } .sm-hr .sm-leg { justify-content: flex-start }
-.hv-a .sm-big b, .hv-b .sm-big b { font-size: clamp(2.8rem, 7vw, 3.6rem); padding: 10px 22px 6px; border-radius: 16px }
-.sm-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; width: 100% }
-.sm-kpi { border: 1px solid var(--line); border-radius: var(--r); background: var(--surface-2); padding: 10px 12px; display: grid; gap: 8px; align-content: start }
-.sm-kpi .sm-acc { display: grid; gap: 2px } .sm-kpi .sm-acc b { font-size: 1.5rem }
-.sm-kt { font-size: .82rem; color: var(--ink-3) } .sm-kt b { font: 600 1.5rem/1 var(--f-display); color: var(--ink); margin-left: 4px } .sm-kpi .sm-prog { max-width: none }
-.sm-ring { position: relative; width: 168px; aspect-ratio: 1; display: grid; place-items: center }
-.sm-ring svg { position: absolute; inset: 0; width: 100%; height: 100% }
-.sm-arc { fill: none; stroke-width: 8; stroke-linecap: round; stroke: var(--line) } .sm-arc.is-fin { stroke: var(--good) } .sm-arc.is-live { stroke: var(--bad); animation: smblink 1.6s ease-in-out infinite }
-.hv-c .sm-big b { background: none; box-shadow: none; padding: 0; color: var(--ink); font-size: 2.9rem; min-width: 0 } .hv-c .sm-big { gap: 4px } .hv-c .sm-big span { font-size: .62rem; line-height: 1.3; text-align: center }
-.hv-d .sm-total { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; justify-items: start }
-.hv-d .sm-nav { margin: 0; width: auto; max-width: 260px; flex: 0 1 260px } .hv-d .sm-big b { font-size: 2.4rem; padding: 6px 16px 3px; border-radius: 12px } .hv-d .sm-big { justify-items: start }
-.hv-d .sm-hr { width: auto; flex: 1 1 260px } .hv-d .sm-upd { justify-self: start }
-@media (max-width: 520px) { .hv-a .sm-total, .hv-b .sm-total { gap: 12px 14px } .hv-a .sm-big b, .hv-b .sm-big b { font-size: 2.2rem; padding: 8px 12px 5px; border-radius: 12px; min-width: 0 } .sm-big span { font-size: .62rem } .hv-b .sm-total { align-items: start } .sm-kpis { grid-template-columns: 1fr }
-  .hv-c .sm-total { grid-template-columns: auto 1fr; gap: 12px } .sm-ring { width: 128px } .hv-c .sm-big b { font-size: 2.1rem } }
+/* Cabecera de la jornada: total | acumulado y partidos | jornada (a la derecha del todo) */
+.sm-head { justify-items: stretch; text-align: left }
+.sm-head .sm-total { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 12px 26px; align-items: center; justify-items: start }
+.sm-hr { display: grid; gap: 9px; justify-items: start; min-width: 0; width: 100% }
+.sm-hr .sm-prog { max-width: 380px } .sm-hr .sm-leg { justify-content: flex-start }
+.sm-head .sm-big b { font-size: clamp(2.8rem, 7vw, 3.6rem); padding: 10px 22px 6px; border-radius: 16px }
+.sm-head .sm-nav-s { margin: 0; width: auto; max-width: none; align-self: start; justify-self: end; gap: 8px } .sm-nav-s .pk-round { min-width: 6.2em; text-align: center; white-space: nowrap }
+@media (max-width: 720px) { .sm-head .sm-total { grid-template-columns: auto minmax(0, 1fr); gap: 10px 14px } .sm-head .sm-nav-s { grid-column: 1 / -1; grid-row: 1; justify-self: stretch; justify-content: space-between }
+  .sm-head .sm-big b { font-size: 2.3rem; padding: 8px 12px 5px; border-radius: 12px; min-width: 0 } .sm-big span { font-size: .62rem } }
 .sm-toprow { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px }
 .sm-conn { display: inline-flex; align-items: center; gap: 8px; font-size: .8rem; color: var(--ink-3); margin-left: auto }
 .sm-conn .sm-badge { width: 22px; height: 22px; font-size: .6rem; border-radius: 6px }
@@ -2946,28 +2936,16 @@ function smAverages() {
   Object.values(smCache()).forEach(s => Object.entries(s.p).forEach(([pid, row]) => { if (row[2] > 0) { const a = acc.get(+pid) || [0, 0]; a[0] += smPts(row, s); a[1]++; acc.set(+pid, a); } }));
   return new Map([...acc].map(([k, [v, n]]) => [k, v / n]));
 }
-function smRoundNav(rn) {
+function smRoundNav(rn, short) {
   const i = SM.rounds ? SM.rounds.findIndex(r => r.id === SM.rid) : -1;
-  return `<div class="pk-nav sm-nav"><button class="pk-arrow" data-smround="-1" aria-label="Jornada anterior" ${i > 0 ? '' : 'disabled'}>‹</button><div class="pk-round">Jornada ${rn}${SM.cur && rn === SM.cur ? ' <span class="faint">· actual</span>' : ''}</div><button class="pk-arrow" data-smround="1" aria-label="Jornada siguiente" ${i >= 0 && i < SM.rounds.length - 1 ? '' : 'disabled'}>›</button></div>`;
+  return `<div class="pk-nav sm-nav ${short ? 'sm-nav-s' : ''}"><button class="pk-arrow" data-smround="-1" aria-label="Jornada anterior" ${i > 0 ? '' : 'disabled'}>‹</button><div class="pk-round">${short ? `<span aria-label="Jornada ${rn}">J${rn}</span>` : 'Jornada ' + rn}${SM.cur && rn === SM.cur ? ' <span class="faint">· actual</span>' : ''}</div><button class="pk-arrow" data-smround="1" aria-label="Jornada siguiente" ${i >= 0 && i < SM.rounds.length - 1 ? '' : 'disabled'}>›</button></div>`;
 }
-// Cabecera de la jornada: el total a la izquierda y lo demás a la derecha (variantes de prueba: window.SMHERO)
+// Cabecera de la jornada: el total a la izquierda, en medio acumulado y partidos, y la jornada a la derecha del todo
 function smHero(J, acc, t, rn, segs, leg, upd) {
-  const v = window.SMHERO || 'a', prov = J.live ? ' · <em>provisional</em>' : '';
-  const big = `<div class="sm-big"><b>${smFmt(J.sum)}</b><span>puntos${prov}</span></div>`;
+  const big = `<div class="sm-big"><b>${smFmt(J.sum)}</b><span>puntos${J.live ? ' · <em>provisional</em>' : ''}</span></div>`;
   const accH = `<div class="sm-acc"><span>Acumulado</span> <b>${smFmt(acc)}</b> <span>desde la J${t.start || rn}</span></div>`;
   const bar = J.rows.length ? `<div class="sm-prog" role="img" aria-label="${J.done} terminados, ${J.live} en juego, ${J.pend + J.none} por jugar">${segs}</div><div class="sm-leg">${leg}</div>` : '';
-  const st = `<div class="status sm-upd ${SM.err ? 'err' : ''}" id="st-sm" role="status">${esc(upd)}</div>`;
-  if (v === 'b') return `<section class="panel sm-head hv-b"><div class="sm-total">${big}<div class="sm-hr">${smRoundNav(rn)}
-      <div class="sm-kpis"><div class="sm-kpi">${accH}</div><div class="sm-kpi"><div class="sm-kt">Partidos <b>${J.done}</b><span>/${J.rows.length}</span></div>${bar}</div></div>${st}</div></div></section>`;
-  if (v === 'c') {
-    const n = J.rows.length || 1, R = 50, gap = n > 1 ? 7 : 0, P = a => [60 + R * Math.cos((a - 90) * Math.PI / 180), 60 + R * Math.sin((a - 90) * Math.PI / 180)].map(x => x.toFixed(2)).join(' ');
-    const order = J.rows.slice().sort((a, b) => ['FIN', 'LIVE', 'SCH', 'NONE'].indexOf(a.st) - ['FIN', 'LIVE', 'SCH', 'NONE'].indexOf(b.st));
-    const arcs = order.map((r, i) => { const a0 = i * 360 / n + gap / 2, a1 = (i + 1) * 360 / n - gap / 2; return `<path class="sm-arc is-${r.st === 'FIN' ? 'fin' : r.st === 'LIVE' ? 'live' : 'wait'}" d="M ${P(a0)} A ${R} ${R} 0 ${a1 - a0 > 180 ? 1 : 0} 1 ${P(a1)}"/>`; }).join('');
-    return `<section class="panel sm-head hv-c"><div class="sm-total"><div class="sm-ring"><svg viewBox="0 0 120 120" aria-hidden="true">${arcs}</svg><div class="sm-big"><b>${smFmt(J.sum)}</b><span>puntos${J.live ? '<br><em>provisional</em>' : ''}</span></div></div>
-      <div class="sm-hr">${smRoundNav(rn)}${accH}<div class="sm-leg">${leg}</div>${st}</div></div></section>`;
-  }
-  if (v === 'd') return `<section class="panel sm-head hv-d"><div class="sm-total">${smRoundNav(rn)}${big}<div class="sm-hr">${accH}${bar}</div></div>${st}</section>`;
-  return `<section class="panel sm-head hv-a"><div class="sm-total">${big}<div class="sm-hr">${smRoundNav(rn)}${accH}${bar}${st}</div></div></section>`;
+  return `<section class="panel sm-head"><div class="sm-total">${big}<div class="sm-hr">${accH}${bar}<div class="status sm-upd ${SM.err ? 'err' : ''}" id="st-sm" role="status">${esc(upd)}</div></div>${smRoundNav(rn, true)}</div></section>`;
 }
 function vSMJornada(cfg, t, rn) {
   const J = smJornada(t, rn), acc = smR(SM.rounds ? SM.rounds.filter(r => r.roundNumber >= (t.start || rn) && r.roundNumber <= rn).reduce((a, r) => a + smWeek(t, r.roundNumber), 0) : J.sum);
