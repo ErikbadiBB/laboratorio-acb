@@ -1,0 +1,38 @@
+name: Explorar una web
+
+# Diagnóstico a mano: descarga una dirección (y sus scripts) y muestra cabeceras y coincidencias de un patrón.
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: 'Dirección'
+        required: true
+      buscar:
+        description: 'Patrón a buscar (expresión regular, opcional)'
+        required: false
+      metodo:
+        description: 'GET o POST'
+        required: false
+        default: 'GET'
+      cuerpo:
+        description: 'Cuerpo JSON para POST (opcional, sin datos personales)'
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  explorar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Explorar
+        run: node test/explorar.js "$URL" "$BUSCAR" "$METODO" "$CUERPO"
+        env:
+          URL: ${{ github.event.inputs.url }}
+          BUSCAR: ${{ github.event.inputs.buscar }}
+          METODO: ${{ github.event.inputs.metodo }}
+          CUERPO: ${{ github.event.inputs.cuerpo }}
