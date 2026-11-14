@@ -68,8 +68,10 @@ const addBySearch = async txt => { const q = d.querySelector('#in-smq'); q.value
   check(total() === fmt(e300.reduce((a, b) => a + b, 0)), 'SM: total en directo');
   check(/\+20 %\?/.test(card(H).textContent) && !/\+20/.test(card(N).textContent), 'SM: el bonus provisional debe marcarse solo al equipo que va ganando');
   // 4) Más jugadas
+  const el0 = card(H), tot0 = d.querySelector('#view .sm-total');
   live.limit = 520; await until(() => cardPts(H) === fmt(smExp(520, H)), 9000);
   check(cardPts(H) === fmt(smExp(520, H)), 'SM: no se actualiza en directo');
+  check(card(H) === el0 && el0.isConnected && d.querySelector('#view .sm-total') === tot0, 'SM: al actualizar en directo no debe redibujarse todo (parpadeo): las tarjetas deben ser las mismas');
   // 5) Final: bonus definitivo
   live.status = 'FINALIZED'; await until(() => /Final/.test(card(H).textContent) && cardPts(H) === fmt(smExp(0, H)), 9000);
   const ef = [H, M, N].map(p => smExp(0, p)), sumF = ef.reduce((a, b) => a + b, 0);

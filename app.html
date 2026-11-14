@@ -3032,6 +3032,29 @@ function scheduleRender() {
   if (S.raf) return;
   S.raf = requestAnimationFrame(() => { S.raf = 0; render(true); });
 }
+// Actualiza el contenido de «a» para que quede como «b» tocando lo mínimo: mismo nodo si es la misma etiqueta,
+// solo los atributos y textos que cambian (las imágenes que no cambian no se vuelven a cargar)
+function morphNode(a, b) {
+  if (a.nodeType !== b.nodeType || a.nodeName !== b.nodeName) { a.replaceWith(b); return; }
+  if (a.nodeType !== 1) { if (a.nodeValue !== b.nodeValue) a.nodeValue = b.nodeValue; return; }
+  for (const at of [...a.attributes]) if (!b.hasAttribute(at.name)) a.removeAttribute(at.name);
+  for (const at of b.attributes) if (a.getAttribute(at.name) !== at.value) a.setAttribute(at.name, at.value);
+  if ((a.tagName === 'INPUT' || a.tagName === 'SELECT' || a.tagName === 'TEXTAREA') && a !== document.activeElement) { if (a.type === 'checkbox' || a.type === 'radio') a.checked = b.checked; else if (a.value !== b.value) a.value = b.value; }
+  morphChildren(a, b);
+}
+// Los hijos con data-pid o id se emparejan por esa clave (si un jugador cambia de sitio, su tarjeta y su foto se mueven, no se rehacen)
+const morphKey = n => n.nodeType === 1 ? (n.getAttribute('data-pid') || n.id || null) : null;
+function morphChildren(a, b) {
+  const keyed = new Map(); a.childNodes.forEach(n => { const k = morphKey(n); if (k) keyed.set(k, n); });
+  let cur = a.firstChild;
+  for (const n of [...b.childNodes]) {
+    const k = morphKey(n), m = k && keyed.get(k);
+    if (m) { keyed.delete(k); if (m === cur) cur = cur.nextSibling; else a.insertBefore(m, cur); morphNode(m, n); }
+    else if (cur && !morphKey(cur)) { const next = cur.nextSibling; morphNode(cur, n); cur = next; }
+    else a.insertBefore(n, cur);
+  }
+  while (cur) { const next = cur.nextSibling; cur.remove(); cur = next; }
+}
 function render(silent) {
   const view = $('#view');
   const ae = document.activeElement;
@@ -3042,7 +3065,7 @@ function render(silent) {
   const vkey = S.mode + '|' + (S.mode === 'match' ? S.tab : S.stab);
   const tabsX = (view.querySelector('.tabs') || {}).scrollLeft || 0;
   const scrollX = S.vkey === vkey ? [...view.querySelectorAll('.scroll')].map(x => x.scrollLeft) : [];
-  S.vkey = vkey;
+  const sameView = S.vkey === vkey; S.vkey = vkey;
   CHARTS.length = 0; hideTip();
   $('#m-match').setAttribute('aria-pressed', S.mode === 'match'); $('#m-scout').setAttribute('aria-pressed', S.mode === 'scout');
   document.querySelectorAll('[data-compet]').forEach(b => b.setAttribute('aria-pressed', S.mode !== 'sm' && b.dataset.compet === S.compet));
@@ -3065,7 +3088,9 @@ function render(silent) {
     html = `<section class="panel"><div class="sec-h" style="margin:0"><h2><i class="sw t0"></i> ${esc(t.name)}</h2><span class="note">${list.length} partidos · jornadas ${list.map(x => x.round).join(', ')}</span></div></section>` + tabsBar(STABS, S.stab, 'data-stab') + `<div class="stack" id="tabpanel" role="tabpanel" aria-labelledby="tab-${S.stab}" style="margin-top:14px">${V(list)}</div>`;
   }
   applyTeamColors(view);
-  view.innerHTML = html;
+  // En el Supermanager, al actualizarse solo se cambia lo que cambia (sin redibujar fotos ni tablas: no parpadea)
+  if (S.mode === 'sm' && sameView && view.firstChild) { const tpl = document.createElement('div'); tpl.innerHTML = html; morphChildren(view, tpl); }
+  else view.innerHTML = html;
   const tb = view.querySelector('.tabs');
   if (tb && tabsX) tb.scrollLeft = tabsX;
   else if (tb) { const sel = tb.querySelector('[aria-selected="true"]'); if (sel && sel.offsetLeft + sel.offsetWidth > tb.clientWidth) tb.scrollLeft = sel.offsetLeft - 8; } // pestaña elegida a la vista al entrar

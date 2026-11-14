@@ -117,6 +117,13 @@ const login = async pass => { d.querySelector('#in-smuser').value = 'erik'; d.qu
   await until(() => team().miss.length === 0 && team().hist.find(h => h.from === 3).players.includes(F));
   check(team().hist.find(h => h.from === 3).players.includes(F) && JSON.parse(w.localStorage.getItem('lab-acb:sm-links'))['9004'] === F, 'SM: el enlace a mano debe recordarse y entrar en la plantilla');
   check(at(team(), 1).includes(F) && !at(team(), 2).includes(F), 'SM: el jugador enlazado a mano solo entra en las jornadas en que estaba');
+  // Al volver a dibujar (sincronizar), las fichas de la pista y sus fotos son las mismas: no parpadean
+  d.querySelector('#view [data-smview="jornada"]').click(); await until(() => d.querySelector(`#view .sm-tile[data-pid="${H}"]`));
+  if (d.querySelector('#view [data-smlayout="pista"]').getAttribute('aria-pressed') !== 'true') { d.querySelector('#view [data-smlayout="pista"]').click(); await wait(30); }
+  const tileA = d.querySelector(`#view .sm-tile[data-pid="${H}"]`), tblA = d.querySelector('#view table');
+  d.querySelector('#view [data-smsync]').click(); await until(() => !/Sincronizando/.test(d.querySelector('#view .sm-top').textContent)); await wait(200);
+  check(d.querySelector(`#view .sm-tile[data-pid="${H}"]`) === tileA && d.querySelector('#view table') === tblA, 'SM: al actualizar no se deben rehacer las fichas ni la tabla (parpadeo)');
+  d.querySelector('#view [data-smview="plantilla"]').click(); await wait(40);
   // 4) La sesión caduca: se renueva sola
   smx.jwt = 'J2'; d.querySelector('#view [data-smsync]').click();
   await until(() => JSON.parse(w.localStorage.getItem('lab-acb:sm-auth') || '{}').jwt === 'J2' && !/Sincronizando/.test(d.querySelector('#view .sm-top').textContent));
