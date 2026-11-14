@@ -2753,20 +2753,36 @@ async function smSync(quiet) {
         const blank = cfg.teams.findIndex(x => !x.link && x.hist.every(h => !h.players.length));
         if (blank >= 0) cfg.teams[blank] = t; else cfg.teams.push(t);
       }
-      const from = !smRoster(t, cur).length ? cur : started ? cur + 1 : cur, was = new Map((t.miss || []).map(m => [m.id, m.from]));
-      t.link = { id: tm.id }; t.name = tm.name; t.pos = t.pos || {}; t.miss = [];
-      const pids = [];
-      list.forEach(x => { const pid = smxResolve(x, pool, links); if (pid && !pids.includes(pid)) { pids.push(pid); if (x.pos) t.pos[pid] = x.pos; if (x.img && pool[pid] && !pool[pid].i) { pool[pid].i = x.img; poolCh = true; } }
-        else if (!pid) { const n = x.names.slice().sort((a, b) => b.length - a.length)[0], id = x.id || 'n:' + smNorm(n); t.miss.push({ id, n, pos: x.pos, from: Math.min(was.get(id) || from, from) }); } });
+      t.link = { id: tm.id }; t.name = tm.name; t.pos = t.pos || {};
+      const missing = new Map(); // jugadores sin reconocer: en qué jornadas estaban
+      const resolve = (lst, rn) => { const pids = [];
+        lst.forEach(x => { const pid = smxResolve(x, pool, links);
+          if (pid && !pids.includes(pid)) { pids.push(pid); if (x.pos) t.pos[pid] = x.pos; if (x.img && pool[pid] && !pool[pid].i) { pool[pid].i = x.img; poolCh = true; } }
+          else if (!pid) { const n = x.names.slice().sort((a, b) => b.length - a.length)[0], id = x.id || 'n:' + smNorm(n), m = missing.get(id) || { id, n, pos: x.pos, rs: [] }; if (!m.rs.includes(rn)) m.rs.push(rn); missing.set(id, m); } });
+        return pids.slice(0, SM_MAX); };
+      const setAt = (rn, pids) => { if (smRoster(t, rn).slice().sort().join() !== pids.slice().sort().join()) smSetRoster(t, rn, pids); };
+      // Jornadas ya jugadas: Supermanager guarda tu plantilla de cada una
+      let jrs = [];
+      try {
+        const j = await smGet('/basic/userteamplayer/journeys/' + encodeURIComponent(tm.id));
+        jrs = (Array.isArray(j) ? j : []).map(x => ({ n: Number(x.number != null ? x.number : x.numberJourney), list: (x.playerList || x.players || []).map(smxPlayer).filter(p => !p.empty && p.names.length) }))
+          .filter(x => x.n >= 1 && x.n <= cur && x.list.length).sort((a, b) => a.n - b.n);
+      } catch (e) { if (e.smAuth) throw e; }
+      jrs.forEach(x => setAt(x.n, resolve(x.list, x.n)));
+      if (jrs.length) t.start = Math.min(t.start || cur, jrs[0].n);
+      // Plantilla de ahora: vale desde esta jornada si aún no ha empezado; si ya empezó, desde la siguiente
+      const from = !smRoster(t, cur).length ? cur : started ? cur + 1 : cur;
+      setAt(from, resolve(list, from));
+      t.miss = [...missing.values()].map(m => Object.assign(m, { from: Math.min(...m.rs) }));
       miss += t.miss.length;
-      const next = pids.slice(0, SM_MAX);
-      if (smRoster(t, from).slice().sort().join() !== next.slice().sort().join()) smSetRoster(t, from, next);
     }
     const ix = cfg.teams.findIndex(x => x.link); if (ix >= 0 && !(cfg.teams[cfg.cur] || {}).link) cfg.cur = ix;
     smSave(cfg); store.set('sm-sync', Date.now()); if (poolCh) store.set('sm-pool', pool);
+    // Algún jugador sin reconocer puede ser de jornadas antiguas que aún no se han mirado: se busca en toda la temporada y se repite (una vez)
+    if (miss && !SMX.full) { SMX.full = true; SMX.msg = 'Buscando jugadores de jornadas anteriores…'; render(true); await smLoadRoster(0); SMX.busy = false; return smSync(quiet); }
     SMX.msg = `Sincronizado con Supermanager: ${teams.length === 1 ? '1 equipo' : teams.length + ' equipos'}` + (miss ? ` · ${miss === 1 ? 'falta enlazar 1 jugador' : 'faltan por enlazar ' + miss + ' jugadores'} (en «Plantilla»)` : '') + (started ? `. Los cambios cuentan desde la jornada ${cur + 1}.` : '.');
   } catch (e) { SMX.err = true; SMX.msg = e.smAuth ? e.message : isNet(e) ? 'No se pudo conectar con Supermanager. Se reintentará al volver a abrir.' : e.message; }
-  SMX.busy = false; if (S.mode === 'sm') { render(true); smRefresh(); }
+  SMX.busy = false; if (S.mode === 'sm') { render(true); await smRefresh(); smFill(); }
 }
 const smAgo = t => { const m = Math.round((Date.now() - t) / 60000); return m < 1 ? 'ahora mismo' : m < 60 ? 'hace ' + m + ' min' : m < 1440 ? 'hace ' + Math.round(m / 60) + ' h' : 'hace ' + Math.round(m / 1440) + ' d'; };
 function smConnBar() {
@@ -2787,9 +2803,10 @@ function smConnBar() {
 function smFix(id, pid) {
   const l = smLinks(); l[id] = pid; store.set('sm-links', l);
   const c = smCfg(), t = c.teams[c.cur], m = (t.miss || []).find(x => x.id === id); if (!m) return;
-  const from = m.from || t.start || smRn();
-  if (!t.hist.some(h => h.from === from)) smSetRoster(t, from, smRoster(t, from).slice());
-  t.hist.forEach(h => { if (h.from >= from && !h.players.includes(pid) && h.players.length < SM_MAX) h.players.push(pid); });
+  const rs = m.rs && m.rs.length ? m.rs : [m.from || t.start || smRn()], lo = Math.min(...rs), hi = Math.max(...rs);
+  // cada jornada con su propia plantilla, para añadirlo solo en las que estaba
+  for (let rn = lo; rn <= hi; rn++) if (!t.hist.some(h => h.from === rn)) smSetRoster(t, rn, smRoster(t, rn).slice());
+  t.hist.forEach(h => { if ((rs.includes(h.from) || (m.rs ? false : h.from >= lo)) && !h.players.includes(pid) && h.players.length < SM_MAX) h.players.push(pid); });
   if (m.pos) (t.pos = t.pos || {})[pid] = m.pos;
   t.miss = t.miss.filter(x => x !== m); smSave(c); render(); smRefresh();
 }

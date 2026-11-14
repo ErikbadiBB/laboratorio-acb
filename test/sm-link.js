@@ -20,6 +20,10 @@ const smx = { jwt: 'J1', refreshOk: true, calls: [], bodies: [],
     { position: 5, statusTeamSquad: 'full', idPlayer: 9003, shortName: 'N. Ongenda', fullName: 'Nick Ongenda' },
     { position: 3, statusTeamSquad: 'full', idPlayer: 9004, shortName: 'J. Desconocido', fullName: 'Juan Desconocido' },
     { position: 1, statusTeamSquad: 'empty' }] };
+// Plantillas guardadas de cada jornada (como /basic/userteamplayer/journeys/{id}): J1 con Juan Desconocido, J2 sin él, J3 = la de ahora, J4 vacía
+const P = n => smx.players().find(p => p.idPlayer === n);
+const J3 = smx.players();
+smx.journeys = () => [{ number: 1, playerList: [P(9001), P(9002), P(9004)] }, { number: 2, playerList: [P(9001), P(9003)] }, { number: 3, playerList: J3 }, { number: 4, playerList: [] }];
 const dom = new JSDOM(html, { url: 'https://erikbadibb.github.io/laboratorio-acb/', runScripts: 'dangerously', pretendToBeVisual: true,
   beforeParse(w) {
     w.fetch = (u, o = {}) => { u = String(u); const hd = o.headers || {};
@@ -30,6 +34,7 @@ const dom = new JSDOM(html, { url: 'https://erikbadibb.github.io/laboratorio-acb
       if (u.startsWith('https://supermanager.acb.com/api/')) {
         if (hd.Authorization !== 'Bearer ' + smx.jwt) return resp([{ code: 'FRWLL011', message: 'El token de acceso no existe.' }], 401);
         if (u.endsWith('/basic/userteam/all')) return resp([{ name: null }, { name: 'Liga Endesa 26-27', idCompetition: 1, userTeamList: [{ idUserTeam: 77, nameTeam: 'Erik BB' }] }]);
+        if (u.endsWith('/basic/userteamplayer/journeys/77')) return resp(smx.journeys());
         if (u.endsWith('/basic/userteamplayer/77')) return resp(smx.players());
         return resp({}, 404);
       }
@@ -67,6 +72,8 @@ const login = async pass => { d.querySelector('#in-smuser').value = 'erik'; d.qu
   check(t && [H, M, N].every(p => t.hist.find(h => h.from === 3).players.includes(p)), 'SM: Hilliard, Normantas («NORMANTAS, M.») y Ongenda deben enlazarse por nombre');
   check(t && t.pos[H] === 1 && t.pos[M] === 3 && t.pos[N] === 5, 'SM: posiciones de Supermanager');
   check(t && t.miss.length === 1 && t.miss[0].n === 'Juan Desconocido', 'SM: el jugador que no se reconoce debe quedar para enlazar a mano');
+  const at = (tt, rn) => { let r = []; for (const h of tt.hist) if (h.from <= rn) r = h.players; return r; };
+  check(t && t.start === 1 && at(t, 1).join() === [H, M].join() && at(t, 2).join() === [H, N].join(), 'SM: las jornadas anteriores deben copiarse con su plantilla de cada jornada');
   check(!allStorage().includes(PASS) && !smx.bodies.some((b, i) => b.includes(encodeURIComponent(PASS)) && !smx.calls[i].includes('signIn')), 'SM: la contraseña no debe guardarse ni enviarse fuera de la ACB');
   check(JSON.parse(w.localStorage.getItem('lab-acb:sm-auth')).jwt === 'J1', 'SM: no se guarda la sesión');
   // 2) Jornada, vista Pista: bases arriba, aleros en medio, pívots abajo, y al lado la estadística completa
@@ -87,6 +94,13 @@ const login = async pass => { d.querySelector('#in-smuser').value = 'erik'; d.qu
   check(d.querySelector(`#view .sm-tile[data-pid="${H}"]`).outerHTML === tile0, 'SM: ocultar la columna no debe cambiar la ficha');
   d.querySelector('#view [data-smgame]').click(); await wait(30);
   check(ths().includes('Partido'), 'SM: la columna «Partido» debe volver');
+  // Acumulado desde la J1 con los puntos de las jornadas anteriores (J1: Hilliard + Normantas; J2: Hilliard + Ongenda; J3: los tres + Font)
+  d.querySelector('#view [data-smview="temporada"]').click();
+  await until(() => d.querySelector('#view table') && [...d.querySelectorAll('#view table')[0].querySelectorAll('tbody tr')].length >= 3);
+  const trs = [...d.querySelectorAll('#view table')[0].querySelectorAll('tbody tr, tfoot tr')].map(r => [...r.children].map(c => c.textContent.trim()).join(' | '));
+  console.log('temporada:', trs.join(' / '));
+  check(trs.some(r => /^J1/.test(r) && !/\| 0$/.test(r)) && trs.some(r => /^J2/.test(r) && !/\| 0$/.test(r)), 'SM: las jornadas 1 y 2 deben sumar puntos');
+  d.querySelector('#view [data-smview="jornada"]').click(); await until(() => d.querySelector('#view [data-smlayout="tarjetas"]'));
   // Vista Tarjetas: por posición, con foto o iniciales y puntos en pastilla dorada
   d.querySelector('#view [data-smlayout="tarjetas"]').click();
   await until(() => d.querySelectorAll('#view .sm-pos').length === 3 && d.querySelector(`#view .sm-card[data-pid="${H}"] .sm-gold`));
@@ -102,6 +116,7 @@ const login = async pass => { d.querySelector('#in-smuser').value = 'erik'; d.qu
   const opt = d.createElement('option'); opt.value = F; sel.appendChild(opt); sel.value = String(F); sel.dispatchEvent(new w.Event('change', { bubbles: true }));
   await until(() => team().miss.length === 0 && team().hist.find(h => h.from === 3).players.includes(F));
   check(team().hist.find(h => h.from === 3).players.includes(F) && JSON.parse(w.localStorage.getItem('lab-acb:sm-links'))['9004'] === F, 'SM: el enlace a mano debe recordarse y entrar en la plantilla');
+  check(at(team(), 1).includes(F) && !at(team(), 2).includes(F), 'SM: el jugador enlazado a mano solo entra en las jornadas en que estaba');
   // 4) La sesión caduca: se renueva sola
   smx.jwt = 'J2'; d.querySelector('#view [data-smsync]').click();
   await until(() => JSON.parse(w.localStorage.getItem('lab-acb:sm-auth') || '{}').jwt === 'J2' && !/Sincronizando/.test(d.querySelector('#view .sm-conn').textContent));
