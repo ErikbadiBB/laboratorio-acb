@@ -21,7 +21,7 @@ const resumen = () => {
 };
 (async () => {
   const opt = { method, headers: { 'User-Agent': UA, Accept: '*/*', Origin: 'https://erikbadibb.github.io' }, redirect: 'follow' };
-  if (body) { opt.body = body; opt.headers['Content-Type'] = 'application/json'; }
+  if (body) { opt.body = body; opt.headers['Content-Type'] = /^\s*[{[]/.test(body) ? 'application/json' : 'application/x-www-form-urlencoded'; }
   if (method === 'OPTIONS') Object.assign(opt.headers, { 'Access-Control-Request-Method': 'GET', 'Access-Control-Request-Headers': 'authorization,content-type' });
   const r = await fetch(url, opt);
   console.log('URL final:', r.url, '| estado', r.status);
